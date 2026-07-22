@@ -1,0 +1,48 @@
+<!-- Apache-2.0 (public verifier repo) -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Swarrm — the "verify yourself" trust badge</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1rem; }
+    pre { background: #f4f4f6; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 13px; }
+    .demo { margin: 1.5rem 0; }
+  </style>
+</head>
+<body>
+  <h1>The trust badge</h1>
+  <p>Put this on your own product or docs. It tells your customers the actions
+  your agents take are recorded as tamper-evident, signed evidence — and lets
+  them <b>verify it themselves</b>, in their own browser, trusting no one. It is
+  a static inline-SVG anchor with no callback to us.</p>
+
+  <h2>Live preview</h2>
+  <div class="demo">
+    <!-- BADGE START -->
+    <a href="https://verify.swarrm.ai/" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font:600 13px system-ui,sans-serif;color:#0a7d33;border:1px solid #0a7d33;border-radius:6px;padding:5px 10px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0a7d33" stroke-width="2.4" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+      actions verified — check it yourself
+    </a>
+    <!-- BADGE END -->
+  </div>
+
+  <h2>Copy-paste embed</h2>
+  <p>Paste anywhere. Optionally deep-link to a specific bundle you host by
+  appending <code>?bundle=&lt;https URL of your bundle.json&gt;</code> to the
+  href — the verifier fetches it client-side and verifies it in the visitor's
+  browser (still zero trust in us).</p>
+  <pre>&lt;a href="https://verify.swarrm.ai/"
+   style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;
+          font:600 13px system-ui,sans-serif;color:#0a7d33;border:1px solid #0a7d33;
+          border-radius:6px;padding:5px 10px"&gt;
+  &lt;svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0a7d33"
+       stroke-width="2.4"&gt;&lt;path d="M20 6L9 17l-5-5"/&gt;&lt;/svg&gt;
+  actions verified — check it yourself
+&lt;/a&gt;</pre>
+
+  <p style="color:#666;font-size:14px">The badge is honest by construction: it
+  does not assert anything itself — it links to a verifier the visitor runs. The
+  claim is only ever as strong as the bundle the visitor checks.</p>
+</body>
+</html>

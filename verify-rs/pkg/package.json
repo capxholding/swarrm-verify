@@ -1,0 +1,16 @@
+{
+  "name": "swarrm-verify",
+  "type": "module",
+  "description": "Independent Rust verifier for evd/bundle/v1 — second implementation, spec-hardening",
+  "version": "0.1.0",
+  "files": [
+    "swarrm_verify_bg.wasm",
+    "swarrm_verify.js",
+    "swarrm_verify.d.ts"
+  ],
+  "main": "swarrm_verify.js",
+  "types": "swarrm_verify.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
