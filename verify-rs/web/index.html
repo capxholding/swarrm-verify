@@ -1,0 +1,119 @@
+<!-- Apache-2.0 (public verifier repo) -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Swarrm — verify an evidence bundle (offline, in your browser)</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1rem; color: #16161a; }
+    #drop { border: 2px dashed #bbb; border-radius: 8px; padding: 3rem; text-align: center; color: #666; cursor: pointer; }
+    #drop.over { border-color: #0a7d33; color: #0a7d33; }
+    #verdict { font-size: 40px; font-weight: 800; margin-top: 1.5rem; }
+    .ok { color: #0a7d33; } .bad { color: #b3261e; }
+    .note { color: #666; font-size: 14px; }
+    button { font: inherit; padding: 6px 12px; margin-top: .5rem; }
+    code { background: #f4f4f6; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+    #integrity { color: #888; font-size: 12px; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Verify an evidence bundle</h1>
+  <p class="note">Everything runs <b>in your browser</b>. Your bundle never leaves this page —
+  no server, no network, no upload, no analytics. This is a second, independent verifier
+  (Rust → WASM); it agrees with the reference verifier on the shared golden suite. Open your
+  browser's Network panel and confirm: verifying makes <b>zero</b> requests.</p>
+
+  <div id="drop">drop <code>bundle.json</code> here, or click to choose
+    <input id="file" type="file" accept="application/json" hidden />
+  </div>
+  <div id="verdict"></div>
+  <div id="controls" style="display:none">
+    <button id="flip">flip a byte &amp; re-verify (watch it break)</button>
+  </div>
+  <p id="detail" class="note"></p>
+
+  <div id="integrity">
+    verifier build sha256 (this page loaded): <code id="buildhash">…</code><br />
+    compare to <a href="./INTEGRITY.txt">INTEGRITY.txt</a> — rebuild from source to confirm
+    the verifier was not swapped.
+  </div>
+
+  <script type="module">
+    import init, { verify_bundle_json } from "./pkg/swarrm_verify.js";
+
+    const KNOWN_SCHEMA = "evd/bundle/v1";
+    const drop = document.getElementById("drop");
+    const file = document.getElementById("file");
+    const verdict = document.getElementById("verdict");
+    const detail = document.getElementById("detail");
+    const controls = document.getElementById("controls");
+    const flip = document.getElementById("flip");
+    let currentText = null;
+
+    // load + hash the wasm ourselves so the page can display what it ran
+    const wasmUrl = new URL("./pkg/swarrm_verify_bg.wasm", import.meta.url);
+    const wasmBytes = await fetch(wasmUrl).then((r) => r.arrayBuffer());
+    const digest = await crypto.subtle.digest("SHA-256", wasmBytes);
+    document.getElementById("buildhash").textContent =
+      [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const ready = init();
+
+    function show(text) {
+      let bundle;
+      try { bundle = JSON.parse(text); } catch { verdict.textContent = "not JSON"; verdict.className = "bad"; return; }
+      if (bundle.schema !== KNOWN_SCHEMA) {
+        verdict.textContent = "unknown bundle schema";
+        verdict.className = "bad";
+        detail.textContent = `this verifier only understands ${KNOWN_SCHEMA}`;
+        return;
+      }
+      const r = verify_bundle_json(text);
+      verdict.textContent = "VERDICT: " + r;
+      verdict.className = r === "VERIFIED" ? "ok" : "bad";
+      detail.textContent = r === "VERIFIED"
+        ? "every receipt, proof, key-log entry and checkpoint checked — offline."
+        : "at least one check failed; this bundle is not trustworthy as presented.";
+    }
+
+    async function handle(text) {
+      await ready;
+      currentText = text;
+      show(text);
+      controls.style.display = "block";
+    }
+
+    flip.onclick = () => {
+      if (!currentText) return;
+      // corrupt one character inside the payload of the first entry, live
+      const i = currentText.indexOf('"payload"');
+      const j = currentText.indexOf('"', currentText.indexOf(":", i) + 1) + 3;
+      const c = currentText[j] === "A" ? "B" : "A";
+      currentText = currentText.slice(0, j) + c + currentText.slice(j + 1);
+      show(currentText);
+      detail.textContent = "one byte flipped in the bundle — verification now fails, in-browser.";
+    };
+
+    // Badge deep-link: ?bundle=<https URL the CUSTOMER hosts>. This makes ONE
+    // fetch to that URL (the customer's host — never us) and verifies it here.
+    // The drop-a-file flow above stays strictly zero-network.
+    const q = new URLSearchParams(location.search).get("bundle");
+    if (q) {
+      detail.textContent = `fetching ${q} (from its host, not us) and verifying in your browser…`;
+      fetch(q).then((r) => r.text()).then(handle).catch((e) => {
+        verdict.textContent = "could not fetch bundle";
+        verdict.className = "bad";
+        detail.textContent = String(e);
+      });
+    }
+
+    drop.onclick = () => file.click();
+    file.onchange = () => file.files[0]?.text().then(handle);
+    drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+    drop.ondragleave = () => drop.classList.remove("over");
+    drop.ondrop = (e) => {
+      e.preventDefault(); drop.classList.remove("over");
+      e.dataTransfer.files[0]?.text().then(handle);
+    };
+  </script>
+</body>
+</html>

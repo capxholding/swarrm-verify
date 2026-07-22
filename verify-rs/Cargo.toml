@@ -1,0 +1,23 @@
+# Apache-2.0 (public verifier repo)
+[package]
+name = "swarrm-verify"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/capxholding/swarrm-verify"
+description = "Independent Rust verifier for evd/bundle/v1 — second implementation, spec-hardening"
+
+[lib]
+crate-type = ["rlib", "cdylib"]  # cdylib for future wasm-pack
+
+[dependencies]
+serde_json = "1"
+sha2 = "0.10"
+ed25519-dalek = "2"
+base64 = "0.22"
+wasm-bindgen = { version = "0.2", optional = true }
+
+[features]
+wasm = ["dep:wasm-bindgen"]
+
+[dev-dependencies]

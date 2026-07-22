@@ -1,0 +1,10 @@
+{
+  "foreign_jwks": "NOT_VERIFIED",
+  "forged_anchor": "NOT_VERIFIED",
+  "missing_keylog": "NOT_VERIFIED",
+  "post_revocation_forgery": "NOT_VERIFIED",
+  "rotation_valid": "VERIFIED",
+  "tampered_payload": "NOT_VERIFIED",
+  "valid_e1": "VERIFIED",
+  "wrong_leaf_index": "NOT_VERIFIED"
+}

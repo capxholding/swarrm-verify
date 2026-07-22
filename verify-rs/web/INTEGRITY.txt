@@ -1,0 +1,21 @@
+Swarrm public verifier — build integrity
+=========================================
+
+The verifier that runs in your browser must be auditable: you should be able
+to confirm the WASM you are served is the one built from this repo's source
+(verify-rs/), and not a silently substituted one.
+
+Reproduce and check:
+
+    cd verify-rs
+    wasm-pack build --target web --features wasm
+    shasum -a 256 pkg/swarrm_verify_bg.wasm
+
+Expected sha256 of swarrm_verify_bg.wasm (built from this source tree):
+
+    2190a6b75783756340ef42787cabfd4c86c1c76f90a900da42b80c6d9cc81006
+
+The build is deterministic from the pinned crate versions in Cargo.toml.
+The page displays the sha256 of the module it actually loaded; compare it to
+the value above. The verifier is client-side only — it never uploads your
+bundle — so trusting it reduces to trusting this hash, which you can rebuild.

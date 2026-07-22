@@ -1,0 +1,63 @@
+{
+  "checkpoint_chain": [
+    {
+      "checkpoint": {
+        "body": {
+          "origin": "evd://tenant/t_golden",
+          "prev_hash": "",
+          "root_hash": "c3a92d2ac23c1728ea729a6cb0c1cdd3217c7d357703f331aa1bf05446f2338a",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 4,
+          "ts": "2026-07-18T00:53:41.250242Z"
+        },
+        "kid": "Vkdap1RjR0wChd9d",
+        "sig": "5R5246o8e0phgWkA/0/IOQtiKTsAsCg+vc/uT/sAafkVZESggkoATLu+haYFEJgrlVVvEq8xiQVjfi5hjXdgAQ=="
+      }
+    }
+  ],
+  "entries": [
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MX0sImlkZW1wb3RlbmN5X2tleSI6ImlkZW0tMSIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "ffXbabAuIGCDkQXTrrWuK+dGGlWf8AfXwJgwSt5dXQ+FXL/vZ8n4BnUnGiJ/DlwghM+YBh6nvuR0KmbM39oRCw=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "d92759a1046f6fbcb84d914d247624c9c590605c11b837de556cd132723cd826",
+        "72e5639986d96d258a6174ec61a6c6e5b1d17742a8f4f19032666a66735e7f02"
+      ],
+      "leaf_index": 2
+    }
+  ],
+  "jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "Vkdap1RjR0wChd9d",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+      }
+    ]
+  },
+  "origin": "evd://tenant/t_golden",
+  "schema": "evd/bundle/v1",
+  "target_checkpoint": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "prev_hash": "",
+      "root_hash": "c3a92d2ac23c1728ea729a6cb0c1cdd3217c7d357703f331aa1bf05446f2338a",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 4,
+      "ts": "2026-07-18T00:53:41.250242Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "5R5246o8e0phgWkA/0/IOQtiKTsAsCg+vc/uT/sAafkVZESggkoATLu+haYFEJgrlVVvEq8xiQVjfi5hjXdgAQ=="
+  }
+}
