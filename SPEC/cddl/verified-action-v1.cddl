@@ -1,0 +1,288 @@
+; Apache-2.0 — ships with the public verifier repo.
+; CDDL (RFC 8610) for verified-action-v1: contract objects, verdict input,
+; verdict vector. JSON-compatible subset: text keys, no tags, integers only.
+; These shapes are FROZEN. Extending any enum or object requires updating
+; ci/verdict_matrix.json, ci/verdict_input_schema.json, both engines and
+; fixtures in the same commit (three-roles rule, A_BUILD §0.2).
+
+; ---------- shared scalars ----------
+hex32 = text .regexp "[0-9a-f]{64}"       ; SHA-256 hex
+ts    = text                               ; RFC 3339 UTC
+b64   = text
+
+; ---------- closed verdict enums ----------
+identity-result       = "VERIFIED" / "NOT_VERIFIED" / "CONFLICT"
+authority-result      = "VERIFIED" / "NOT_VERIFIED" / "CONFLICT"
+intent-result         = "RECORDED" / "NOT_RECORDED" / "CONFLICT"
+outcome-result        = "CORROBORATED" / "CLAIM_ONLY" / "CONTRADICTED" / "ORPHAN"
+linkage-result        = "DIRECT" / "DETERMINISTIC" / "AMBIGUOUS" / "NONE"
+coverage-result       = "CLOSED" / "GAPPED" / "UNKNOWN"
+integrity-result      = "VALID" / "INVALID"
+source-signature      = "ASYMMETRIC" / "SHARED_SECRET" / "NONE"
+control-domain        = "INDEPENDENT" / "OVERLAPPING" / "UNKNOWN"
+node-observation      = "OBSERVED" / "NOT_OBSERVED"
+client-attestation    = "ATTESTED" / "NONE"
+coverage-basis        = "SOURCE_PROVEN_POPULATION" / "ATTESTED_NODE_FULL_SCAN" / "INSUFFICIENT"
+node-integrity-basis  = "HARDWARE_ATTESTED" / "INDEPENDENTLY_ATTESTED" / "LOG_WITNESSED_SOFTWARE"
+temporal-binding      = "PROVEN_SOURCE_ECHO" / "PROVEN_INDEPENDENT" / "UNPROVEN"
+surface-mechanism     = "ENFORCED" / "OBSERVED" / "DECLARED" / "UNKNOWN"
+surface-scope         = "DECLARED" / "OUT_OF_SCOPE" / "BOUNDARY_BREACH"
+accountability-basis  = "SPONSOR_ASSERTED" / "PARENT_GUARANTEED" / "INSURER_CORROBORATED"
+                      / "BONDED_OR_ESCROWED" / "UNKNOWN"
+assurance-linkage     = "DIRECT" / "DETERMINISTIC" / "AMBIGUOUS" / "NONE"
+scope-relation        = "RELATED" / "UNRELATED" / "UNKNOWN"
+population-status     = "PROVEN" / "INDETERMINATE"
+history-state         = "CLOSED_SINCE_BIRTH" / "NO_EVIDENCED_HISTORY_IN_PRESENTED_SCOPE"
+authority-proof       = "ACTION_SPECIFIC_AUTHORIZATION" / "DISCLOSED_LIMIT" / "NONE"
+technical-eligibility = "ELIGIBLE" / "INELIGIBLE" / "NOT_RECOMPUTED"
+registration-status   = "REGISTERED" / "PENDING" / "UNREGISTERED"
+mark-render           = "VERIFIED_CORROBORATED" / "VERIFIED_OBSERVED" / "UNMARKED_TECHNICAL"
+                      / "UNMARKED_UNREGISTERED" / "PENDING_REGISTRATION" / "NOT_RECOMPUTED"
+
+; ---------- lifecycle enums ----------
+attestation-state  = "ISSUED" / "LAPSED" / "EXPIRED" / "REVOKED"       ; prospective only
+finding-state      = "OPEN" / "UNDER_TRIAGE" / "RESOLVED_FACTUAL"
+                   / "ACCEPTED_LIMITATION" / "EXPIRED"
+registration-state = "ISSUED" / "AMENDED" / "EXPIRED" / "SUSPENDED"    ; append-only chain
+proof-type         = "asymmetric_signature" / "mac" / "authenticated_read_transcript"
+                   / "client_attestation"
+key-provenance-method = "DOMAIN_CONTROL" / "TRUST_LIST" / "EXTERNAL_CA"
+accountability-kind = "SPONSOR" / "PARENT" / "INSURER" / "BOND_ESCROW"   ; exact match; anything else never qualifies
+
+; ---------- canonical scope descriptor (comparable; a digest is opaque) ----------
+ScopeDescriptor = {
+  org: text, source_system: text, account: text,
+  action_classes: [* text],
+  selector: { kind: text, predicates: { * text => [* text] } },
+}
+
+; ---------- B21.7 contract objects ----------
+AgentActionClaim = {
+  schema: "evd/claim/v1", action_id: text, action_class: text,
+  ? value: text, ? currency: text, ? counterparty: text, ? external_ref: text,
+  ? inputs_commitment: hex32, ? context_commitment: hex32,
+}
+
+SourceEvent = {
+  schema: "evd/source-event/v1", event_key: text,            ; immutable source key
+  source_identity_ref: text, outcome: text, finality: text,
+  source_effect_time: ts,                                     ; SOURCE clock, never reconciled
+  ? value: text, ? currency: text, ? counterparty: text, ? reference: text,
+  ? proof_digests: [* hex32],                                 ; retained proof material
+}
+
+; ActionFact is the PAIRING of one claim with zero or one event plus verdicts —
+; never a merged record.
+ActionFact = {
+  schema: "evd/action-fact/v1", claim: AgentActionClaim, ? event: SourceEvent,
+  linkage: linkage-result, outcome: outcome-result,
+}
+
+SourceIdentity = {
+  schema: "evd/source-identity/v1", source_system: text, account: text,
+  declared_control_domain: control-domain, declared_controller: text,
+  keys: [* { kid: text, algorithm_family: text, valid_from: ts, ? valid_to: ts }],
+  ? rotation_pointer: text,
+}
+
+SourceBatch = {
+  schema: "evd/source-batch/v1", source_identity_ref: text,
+  cursor_start: text, cursor_end: text, filter_digest: hex32,
+  mapping_version: text, declared_count: uint, event_key_root: hex32,
+  finality_watermark: text, exclusions: [* text], gaps: [* text],
+  ? population_proof: { kind: text, source_scope_defined: bool, verified: bool },
+}
+
+SourceProof = {
+  schema: "evd/source-proof/v1", proof_type: proof-type,
+  material_digest: hex32,                                     ; digest-addressed, vault-retained
+  key_identity: text, verified: bool,
+}
+
+; Cursor semantics: opaque, monotonic, source-defined; persisted only after the
+; batch it closes is durably written. Rollback, reuse, or an inter-range gap is
+; a finding and forces coverage GAPPED. Cursors are never reconstructed.
+
+ControlDomainEvidence = {
+  schema: "evd/control-evidence/v1", subject_party: text,
+  claimed_control_domain: control-domain,
+  ? legal_evidence: { source_registry: text, registry_id: text,
+      ultimate_controller: text, retrieved_at: ts, retrieval_proof: hex32 },
+  ? key_provenance: { method: key-provenance-method, evidence: text,
+      valid_from: ts, ? valid_to: ts },
+  operator_ultimate_controller: text, evaluator: text, ? signature: b64,
+}
+
+PopulationIndex = {
+  schema: "evd/population-index/v1", org_id: hex32, population_class: text,
+  ? dense_seq_range: { start: uint, end: uint }, ? tree_size: uint,
+  ? checkpoint_ref: hex32, ? consistency_proof_ref: hex32,
+  ? query_descriptor: ScopeDescriptor,                        ; canonical, not a digest
+  ? result_root: hex32, ? count: uint, ? signature: b64,
+}
+
+NodeAttestation = {
+  schema: "evd/node-attestation/v1", attester_identity: text,
+  attester_control_domain: control-domain, deployment_id: text,
+  node_public_key: b64, measured_digest: hex32,
+  method: node-integrity-basis, valid_from: ts, valid_to: ts,
+  state: attestation-state, ? continuity_requirements: text,
+  ? revocation_pointer: text, signature: b64,
+}
+
+SurfaceEntry = {
+  schema: "evd/surface/v1", birthtag_id: hex32, surface_id: text,
+  surface_class: text, mechanism_declaration: surface-mechanism,
+  controlling_party: text, ? evidence_source_ref: text,
+  controller_grounded_independent: bool, controller_admits_overlap: bool,
+  coverage_closed: bool, coverage_gap: bool,
+  effective_from: ts, ? effective_to: ts, signature: b64,
+}
+AgentSurfaceManifest = { schema: "evd/surface-manifest/v1", entries: [* SurfaceEntry] }
+
+ConnectorHealth = {
+  schema: "evd/connector-health/v1", last_cursor: text, last_cursor_wall_time: ts,
+  lag_seconds: uint, consecutive_failures: uint,
+  credential_validity_remaining_s: uint, declared_algorithm_family: text,
+  observed_algorithm_family: text, ? degradation_reason: text,
+}
+
+; ---------- registration / view objects (frozen HERE; B24 binds, B25 operates) ----------
+ScopeRegistration = {
+  schema: "evd/scope-registration/v1", registration_id: hex32, registry_key_id: text,
+  covered_scope_digest: hex32, scope_description_digest: hex32,
+  term_start: ts, term_end: ts, policy_version: text, policy_digest: hex32,
+  band_commitment: hex32, entitlement_status: registration-state,
+  ? prev_registration_id: hex32, signature: b64,
+}
+RegistrationIntent = {
+  schema: "evd/registration-intent/v1", intent_id: hex32, statement_digest: hex32,
+  scope_digest: hex32, policy_version: text, created_at_checkpoint: hex32,
+  signature: b64,
+}
+RegistrationAttempt = {
+  schema: "evd/registration-attempt/v1", attempt_id: hex32, intent_id: hex32,
+  endpoint: text, attempted_at_checkpoint: hex32, transport_outcome: text,
+  retry_count: uint, signature: b64,
+}
+VerificationViewManifest = {
+  schema: "evd/view-manifest/v1", certificate_id: hex32,
+  disclosed_field_set: [* text], withheld_field_set: [* text],
+  policy_version: text, mark_result: mark-render, manifest_digest: hex32,
+  signature: b64,
+}
+
+; ---------- B28 seams (shapes frozen; handshake logic waits for B28) ----------
+AgentTrustChallengeV1 = {
+  schema: "evd/trust-challenge/v1", nonce: b64, action_description: text,
+  action_class: text, policy_digest: hex32, challenger_identity: text, expiry: ts,
+}
+StatusSnapshotV1 = {
+  schema: "evd/status-snapshot/v1", revocation_state: text, grant_valid_from: ts,
+  grant_valid_to: ts, binding_state: text, continuity_unbroken: bool,
+  as_of_checkpoint: hex32, status_as_of: ts,
+}
+AgentTrustPresentationV1 = {
+  schema: "evd/trust-presentation/v1", birthtag_id: hex32, revision_id: hex32,
+  key_proof: b64, authority_proof_kind: authority-proof,
+  ? asa: { action_id: text, action_class: text, value: text, currency: text,
+      nonce: b64, authorising_party: text, subject_party: text,
+      grant_id: hex32, grant_version: uint, issued_at: ts, expiry: ts,
+      replay_id: text, root_sig: b64 },
+  ? disclosed_limit: { field: text, value: text, nonce_hex: text },
+  status: StatusSnapshotV1, ? transcript_digest: hex32,
+  non_assertion: text,                                        ; mandatory non-assertion block
+}
+TrustPolicyV1 = {
+  schema: "evd/trust-policy/v1", required_action_class: text,
+  acceptable_source_signature: [* source-signature],
+  acceptable_control_domain: [* control-domain],
+  acceptable_node_integrity: [* node-integrity-basis],
+  max_staleness_seconds: uint, required_continuity: bool,
+  on_indeterminate: text,
+}
+
+; ---------- passport ----------
+BirthtagPassportV1 = {
+  schema: "evd/passport/v1", birthtag_id: hex32,
+  bundle: { * text => any },                                  ; an ordinary evd/bundle/v1
+  transfer: { birthtag_id: hex32, successor_root_kid: text,
+              effective_ts: ts, transfer_sig: b64 },
+}
+
+; ---------- engine input ----------
+VerdictInput = {
+  schema: "evd/verdict-input/v1",
+  action: { action_id: text, action_class: text, ? value: text, ? currency: text },
+  authority: {                                                ; bundle-derived or supplied
+    identity: identity-result, authority: authority-result, intent: intent-result,
+    integrity: integrity-result,
+    intent_interval: { lower: ts / null, upper: ts / null },
+    ? subject_ids: { * text => hex32 },
+    ? operator_entity: text,
+  },
+  ? claim: AgentActionClaim,
+  ? events: [* SourceEvent],
+  ? event_matches: [* { event_key: text, echoed_action_id: bool,
+      immutable_ref_match: bool, unique_field_match: bool, final: bool,
+      material_mismatch: bool }],
+  ? source_identity: SourceIdentity,
+  ? source_proofs: [* SourceProof],
+  ? control_evidence: ControlDomainEvidence,
+  ? control_declarations: [* { declarer: text, claims_overlap: bool }],
+  ? batch: SourceBatch,
+  ? scan: { performed: bool, complete: bool, cursor_gap_free: bool,
+      authenticated_read: bool, node_signed: bool },
+  ? node_attestation: NodeAttestation,
+  fork_findings_open: bool,
+  ? population_index: PopulationIndex,
+  ? surfaces: { manifest: AgentSurfaceManifest,
+      activity: [* { surface_class: text, explained: bool }] },
+  ? temporal: { ? source_effect_time: ts,
+      echo: { echoed_intent_digest: bool, echoed_action_id: bool, echoed_nonce: bool },
+      ? intent_bounds: { lower: ts, upper: ts, attester_independent: bool },
+      ? event_bounds: { lower: ts, upper: ts, attester_independent: bool },
+      source_clock_sync_declared: bool },
+  ? registration: { ? scope_registration: { registration: ScopeRegistration,
+        covers_scope: bool, term_valid: bool },
+      ? intent: RegistrationIntent, ? attempts: [* RegistrationAttempt],
+      scitt_receipt_valid: bool },
+  ? view: { withheld_fields: [* text] },
+  ? accountability: { bindings: [* { kind: accountability-kind, signed: bool,
+      agent_specific: bool, mandate_specific: bool, value_bounded: bool,
+      time_bounded: bool, externally_grounded: bool }] },
+  ? assurance: { ? intent_digest: hex32, ? presented_transcript_digest: hex32,
+      challenge_nonce_match: bool, candidates: uint },
+  ? handshake_authority: { construction: authority-proof,
+      ? asa_bindings_complete: bool, ? disclosed_limit_covers: bool },
+  ? mandates: { presented_scope: ScopeDescriptor / hex32,
+      candidates: [* { mandate_id: hex32, ? scope: ScopeDescriptor,
+          scope_digest_only: bool, open_findings: uint }] },
+  ? history: { born_with_evidence: bool,
+      surfaces_closed_since_birth: [* text], evidenced_history_in_scope: bool },
+  client_attestation_present: bool,
+}
+
+; ---------- engine output ----------
+VerdictVector = {
+  schema: "evd/verdict-vector/v1",
+  identity: identity-result, authority: authority-result, intent: intent-result,
+  outcome: outcome-result / null, linkage: linkage-result,
+  coverage: coverage-result, integrity: integrity-result,
+  source_signature: source-signature, control_domain: control-domain,
+  node_observation: node-observation, client_attestation: client-attestation,
+  coverage_basis: coverage-basis, node_integrity_basis: node-integrity-basis,
+  temporal_binding: temporal-binding,
+  intent_interval: { lower: ts / null, upper: ts / null },
+  surfaces: [* { surface_id: text, mechanism: surface-mechanism,
+      control_domain: control-domain, coverage: coverage-result }],
+  out_of_scope_surfaces: [* text], boundary_breaches: [* text],
+  accountability_basis: accountability-basis,
+  assurance_linkage: assurance-linkage, scope_relation: scope-relation / null,
+  population_status: population-status / null,
+  history_state: { state: history-state, surfaces: [* text] } / null,
+  authority_proof: authority-proof / null,
+  technical_eligibility: technical-eligibility,
+  registration_status: registration-status, mark: mark-render,
+  ? subject_ids: { * text => hex32 },
+}

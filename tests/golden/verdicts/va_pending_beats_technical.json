@@ -1,0 +1,82 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "100.00"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-1",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": false
+    }
+  ],
+  "events": [
+    {
+      "currency": "EUR",
+      "event_key": "evt-1",
+      "finality": "FINAL",
+      "outcome": "SETTLED",
+      "reference": "ref-901",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T00:20:00Z",
+      "source_identity_ref": "src-1",
+      "value": "100.00"
+    }
+  ],
+  "fork_findings_open": false,
+  "registration": {
+    "attempts": [
+      {
+        "attempt_id": "f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4",
+        "attempted_at_checkpoint": "f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5",
+        "endpoint": "https://registry.example/submit",
+        "intent_id": "f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+        "retry_count": 1,
+        "schema": "evd/registration-attempt/v1",
+        "signature": "c2lnLXJhdHQ=",
+        "transport_outcome": "TIMEOUT"
+      }
+    ],
+    "intent": {
+      "created_at_checkpoint": "f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3",
+      "intent_id": "f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+      "policy_version": "1",
+      "schema": "evd/registration-intent/v1",
+      "scope_digest": "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2",
+      "signature": "c2lnLXJpbnQ=",
+      "statement_digest": "f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2"
+    },
+    "scitt_receipt_valid": true
+  },
+  "scan": {
+    "authenticated_read": true,
+    "complete": true,
+    "cursor_gap_free": false,
+    "node_signed": true,
+    "performed": true
+  },
+  "schema": "evd/verdict-input/v1"
+}

@@ -1,0 +1,41 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "client_attestation_present": false,
+  "fork_findings_open": false,
+  "node_attestation": {
+    "attester_control_domain": "INDEPENDENT",
+    "attester_identity": "Attester Corp",
+    "deployment_id": "node-dep-1",
+    "measured_digest": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+    "method": "HARDWARE_ATTESTED",
+    "node_public_key": "bm9kZS1rZXk=",
+    "schema": "evd/node-attestation/v1",
+    "signature": "c2lnLW5vZGU=",
+    "state": "ISSUED",
+    "valid_from": "2025-12-01T00:00:00Z",
+    "valid_to": "2026-02-01T00:00:00Z"
+  },
+  "scan": {
+    "authenticated_read": true,
+    "complete": true,
+    "cursor_gap_free": true,
+    "node_signed": true,
+    "performed": true
+  },
+  "schema": "evd/verdict-input/v1"
+}

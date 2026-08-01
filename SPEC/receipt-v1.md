@@ -101,3 +101,13 @@ so hosted leaf order matches edge seq order with zero silent gaps.
 4. `receipt_hash` is recomputed from payload bytes — never trusted from
    context.
 5. Inclusion in the log is checked per log-v1 §4 using the recomputed hash.
+
+**Ed25519 strictness (decided, not accidental)** — both shipped verifiers
+deliberately use *non-strict* Ed25519 verification: the Python verifier via
+`cryptography` (OpenSSL's RFC 8032 check) and the Rust verifier via
+`ed25519-dalek`'s `verify` (not `verify_strict`). This guarantees the two
+implementations accept exactly the same signature set, so a bundle can never
+verify under one verifier and fail under the other. The extra canonicity
+rejections of strict mode buy nothing here: `receipt_hash` commits to the
+payload bytes alone (rule 4) and signatures are attached, never hashed, so
+signature malleability cannot alter what a receipt proves.

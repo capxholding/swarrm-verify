@@ -1,0 +1,205 @@
+<!-- Apache-2.0 — this file ships with the public verifier repo. -->
+
+# SPEC: node-v1 — Customer Evidence Node
+
+**Status: NORMATIVE (v1).** The Node is ONE private, out-of-path component in
+the customer's boundary (A_BUILD B22). It receives agent receipts
+asynchronously, independently reads authoritative sources with least
+privilege, and never proxies or authorises the business action. Contract
+shapes it produces are frozen in SPEC/action-fact-v1.md +
+SPEC/cddl/verified-action-v1.cddl; this spec defines the component: package,
+config, storage, pipeline, egress, health, integrity, and the receipts it
+writes. Fail-open is law: evidence failure never blocks or delays the
+customer's action; missing evidence becomes an explicit gap.
+
+## 1. Package, roles, config
+
+- Package `node/` composes the existing pieces (LogStore, local key via the
+  recorder's first-boot shape, spool, `core/vault.py`); role picked by
+  command: `python -m node.node` / `swarrm node`. Same code ships local,
+  Docker and customer-VPC; `node/Dockerfile` mirrors the recorder's
+  (non-root, HEALTHCHECK on `/evd/health`).
+- **One configuration file**: `EVD_NODE_CONFIG` (JSON). It declares the Node
+  identity and the bound sources:
+  `{ "deployment_id", "hosted_url"?, "sources": [ {"name", "kind":
+  "https_feed"|"signed_webhook"|"emulator", "base_url"?, "auth": {"mode":
+  "env"|"token_cmd", "ref"}, "cursor_param"?, "page_size"?,
+  "event_key_field", "mapping_version", "correlation_field"?,
+  "material_fields": [..], "identity": SourceIdentity } ] }`.
+  Config profile `node` (core/config.py) adds: `EVD_NODE_CONFIG` (required),
+  `EVD_NODE_KEY_FILE`, `EVD_NODE_MASTER_KEY` / `EVD_NODE_MASTER_KEY_FILE`,
+  `EVD_NODE_DATA_DIR`, `EVD_NODE_SCAN_INTERVAL`.
+- **One diagnostic command**: `swarrm node doctor` — effective config,
+  master-key mode (dev file-key mode prints a NON-PRODUCTION banner), per
+  source: reachability, auth mode, cursor capability, last complete cursor,
+  lag, spool depth/age, key/attestation state.
+
+## 2. Customer vault (B22.2)
+
+Two layers, both under customer-held key material, dev mode visibly
+non-production:
+- **Nonce vault**: `core/vault.py` (per-line AES-256-GCM, `enc1:` framing,
+  legacy plaintext lines readable).
+- **Evidence store** (`node/evidence_store.py`): content-addressed encrypted
+  blobs for raw source artifacts and retained proof material. `put(bytes) ->
+  sha256_hex`; file `vault/<d[:2]>/<digest>` holds `env1:` +
+  base64(wrapped_data_key || nonce || AESGCM ciphertext); the per-blob data
+  key is wrapped (AESGCM) under the master secret (`EVD_NODE_MASTER_KEY`, 64
+  hex, or dev key file). `get(digest)` decrypts and VERIFIES the digest over
+  plaintext; mismatch or unwrap failure returns nothing and raises a finding
+  — never a crash. `SourceProof.material_digest` and
+  `SourceEvent.proof_digests` resolve here; proof material is retained
+  through certificate generation and export (action-fact-v1 §7). Credentials
+  are NEVER stored in either layer (§6).
+
+## 3. Durable intake (B22.3)
+
+Per source batch, strictly in this order — crash anywhere earlier repeats
+safely (at-least-once, idempotent):
+1. **validate** the batch (schema, declared_count vs events, event-key root);
+2. **persist**: raw encrypted bytes → evidence store; canonical
+   `SourceEvent`s + `SourceBatch` → the Node store; one
+   `source.batch.recorded` receipt (context: source name,
+   cursor_start/cursor_end, mapping_version, declared_count, event_key_root,
+   finality_watermark, gaps, exclusions; commitments: the canonical batch
+   document) under the `_node` agent;
+3. **fsync**: the Node store commits with `PRAGMA synchronous=FULL` and the
+   evidence-store blob file is fsynced before step 4;
+4. **advance cursor**: `cursors` table (source → last_cursor, wall time),
+   monotonic; a cursor may only advance after step 3 completes.
+Cursor rollback, reuse, or an inter-range gap at read time is a FINDING (§8)
+and forces coverage `GAPPED`; cursors are never reconstructed. Agent-side
+receipts arrive via the recorder's existing spool/ingest path unchanged.
+
+## 4. Connectors (B22.5) and emulator (B22.7)
+
+`node/connectors.py` implements the frozen interface (A_BUILD B22):
+`authenticate() -> SourceIdentity`, `scan(cursor) -> SourceBatch` (events +
+per-event and batch proofs), `normalise(raw) -> SourceEvent`,
+`verify_source_proof(raw) -> SourceProof | None`, `health() ->
+ConnectorHealth`. Vendor auth/pagination/mapping stay in the connector;
+reconciliation and verification contain no vendor branch.
+- **DeclarativeHttpsConnector** — config-driven paginated full-feed read
+  (GET base_url + cursor/page params; `authenticated_read_transcript`
+  SourceProof over the response, digest-addressed).
+- **SignedWebhookConnector** — inbound deliveries; verifies an asymmetric
+  signature or MAC against the pre-bound `SourceIdentity.keys`;
+  `SourceProof.proof_type` is `asymmetric_signature` or `mac` accordingly (a
+  MAC is possession, never origin — verdict semantics per
+  verified-action-v1 §2.2); raw delivery retained encrypted.
+- **Emulator** (`node/emulator.py`) — ships WITH the Node: an in-process
+  deterministic fake source (fixed seed; cursor pages; Ed25519-signed or MAC
+  modes; injectable gaps/rollbacks/duplicates) so the whole loop runs before
+  any real credential exists, and so chaos tests are reproducible.
+- **Autodiscovery**: `swarrm node discover <base_url>` probes known feed
+  shapes and emits a DRAFT SourceManifest for the reviewer to correct.
+  **Pre-flight**: `swarrm node preflight` checks the four readiness facts
+  (dedicated service identity declared · signing source · cursor-capable
+  feed · writable correlation field) and prints an honest report.
+- **Read-only law**: connector config declaring any write/execute
+  credential scope fails configuration (mechanical check at load).
+
+## 5. Egress allow-list (B22.4)
+
+All Node outbound goes through one guarded client (`node/egress.py`): the
+allow-list is derived from config (source base_urls for reads; `hosted_url`;
+opt-in anchor RPC / TSA when set) and any other host raises
+`EgressDenied` before a connection is attempted. Only signed commitments,
+permitted provenance, health and transparency submissions leave the
+boundary. The Node sentinel test (B22.9) drives sentinel bytes through
+payloads, nonces AND credentials and asserts none appear in any outbound
+request or in hosted storage.
+
+## 6. Credentials never at rest (B22.9)
+
+`auth.mode = "env"`: the credential lives in the named env var, read at scan
+time, never written to disk, receipts, logs, config or support bundles.
+`auth.mode = "token_cmd"`: a customer-supplied command mints a short-lived
+token per scan. The Node data dir and config contain no credential bytes
+(test-proven with a credential sentinel). Lost credentials degrade
+`ConnectorHealth` (which degrades COVERAGE); they never block execution.
+
+## 7. Node identity, heartbeats, fork detection (B22.10–B22.11)
+
+- Node key: first-boot generated like the recorder key (0600, kid printed,
+  registered hosted-side before ingest).
+- **`node.registered`** receipt (`_node` agent): deployment_id, node kid,
+  measured_digest (the running package digest), and the current
+  `NodeAttestation` (basics plaintext; the signed attestation document
+  committed). Without a valid `ISSUED`, in-window attestation the basis is
+  `LOG_WITNESSED_SOFTWARE` — never silently upgraded
+  (verified-action-v1 §2.4). Witness-grade claims require
+  `HARDWARE_ATTESTED` (B22.10); this spec adds no exception.
+- **`node.heartbeat`** receipt each sync interval: `epoch` (increments on
+  every restart/upgrade), `beat` (dense within epoch), per-source
+  `cursor_digest`, spool depth. The heartbeat chain is what makes a CLONED
+  key used concurrently/divergently detectable: two beats at one
+  (epoch, beat) with different content, cursor regression against the
+  recorded chain, or overlapping epochs raise a FORK finding →
+  `fork_findings_open` → coverage `GAPPED`. **Exclusive use of an extracted
+  key after the original stops produces no divergence and is NOT
+  detectable** — stated here, in the threat model, and in every report.
+- **`node.upgraded`** receipt (B22.12): binds release/config digests,
+  predecessor kid + final heartbeat hash, per-source cursor digests, vault
+  root, successor kid, an explicit handover interval, and the
+  org-root detached approval (`root_sig`, authority-v1 §2 rule). Blue-green
+  runs separate epochs. Emergency replacement without the old key is
+  possible via the Organisation Root but raises a CONTINUITY-GAP finding
+  that renders. No silent auto-update, no sequence reuse.
+
+## 8. Findings, gaps, recovery (B22.8, B22.13)
+
+- **`evd.finding.raised`** (`_node` agent) — raised by PUBLISHED
+  deterministic rules only, never by a person: `rule_id ∈ {cursor_gap,
+  cursor_rollback, cursor_reuse, count_mismatch, event_root_mismatch,
+  fork_divergence, continuity_gap, algorithm_family_mismatch,
+  credential_expired, vault_unreadable}`, scope (source, period), evidence
+  digests. `finding_id` = the receipt hash (derived, never declared).
+- **`evd.finding.triaged`** — a practitioner's SIGNED factual statement:
+  finding_id, new state ∈ `RESOLVED_FACTUAL` | `ACCEPTED_LIMITATION`, the
+  statement text, practitioner identity + detached signature. A practitioner
+  can never declare coverage closed, invent a finding, or waive a hard
+  failure (cryptographic gap, fork, invalid signature, open coverage gap);
+  coverage changes only by recomputation (B23 implements the recomputation;
+  untriaged findings past their window degrade coverage to `UNKNOWN`).
+- **`evd.gap.declared`** — the explicit signed gap: scope, period, what is
+  unrecoverable and why. Emitted on restore-without-backup, vault
+  unreadability, or any zero-SILENT-loss boundary. Coverage for the window
+  is `GAPPED`, never `CLOSED`.
+- **Recovery**: the customer-controlled durable Evidence Store/backup (the
+  Node data dir: store + evidence vault + cursors + key) is a documented
+  deployment prerequisite. Restore from it loses nothing (drill-tested).
+  Without it, source effects backfill from the source and everything else
+  becomes an explicit `evd.gap.declared` — losing the nonce vault is an
+  evidenced capability loss (no disclosure for those items), not a
+  confidentiality breach.
+
+## 9. Honest health (B22.6)
+
+`/evd/health` (Node role) exposes: role, kid, attestation state/basis, spool
+depth and age, per-source `ConnectorHealth` verbatim (last cursor + wall
+time, lag, consecutive failures, credential validity remaining, declared vs
+observed algorithm family, degradation reason), open findings count,
+transparency lag (null until B25). A broken evidence plane is LOUD here and
+in `swarrm node doctor`, and never blocks the agent.
+
+## 10. New receipt vocabulary (dial rows land with this spec)
+
+`_node` joins the internal-agent allowlist (both verifiers). New
+action types — all ordinary `evd/receipt/v1`, no new envelope (rule 10:
+an existing receipt type cannot carry them because each binds a distinct
+lifecycle document with its own context keys and finding/gap semantics):
+`source.batch.recorded` · `node.registered` · `node.heartbeat` ·
+`node.upgraded` · `evd.finding.raised` · `evd.finding.triaged` ·
+`evd.gap.declared`. Exact plaintext/committed key sets live in
+SPEC/context-v1.md rows added in the same commit as the emitters; no verdict
+enum changes (the matrix is untouched — B22 produces evidence, B21 already
+derives from it).
+
+## 11. Claim boundary
+
+The Node evidences what it ingested, from where, under which cursor
+discipline, key and attestation basis. It does not prove source truth,
+completeness beyond the stated basis (`INSUFFICIENT` stays `INSUFFICIENT`
+for a software Node), or anything about periods it did not scan. Swarrm
+never holds the Node's plaintext, credentials, or master secret.

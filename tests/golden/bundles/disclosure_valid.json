@@ -1,0 +1,8 @@
+{
+  "domain": "evd/v1/prompt",
+  "field": "prompt",
+  "nonce_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "payload_b64": "Z29sZGVuIGRpc2Nsb3N1cmUgcGF5bG9hZDogdGhlIGFnZW50IHNhaWQgZXhhY3RseSB0aGlz",
+  "receipt_hash": "9f562bc7ed0a0491ab285df4e19663243a2651e6f2b56a6502352f480de2a8b1",
+  "schema": "evd/disclosure/v1"
+}

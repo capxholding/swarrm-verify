@@ -49,7 +49,7 @@ A checkpoint is a signed statement of the log's state:
 |---|---|---|
 | E0 | receipt exists, intact | DSSE signature |
 | E1 | cannot be silently altered/deleted | inclusion + consistency under signed checkpoints |
-| E2 | independent time + public commitment | checkpoint anchored (L2 tx) + RFC 3161 qualified timestamp — *attachment format TBD in anchor-v1* |
+| E2 | independent time + public commitment | checkpoint anchored (L2 tx) + RFC 3161 timestamp (a qualified TSP in production; non-qualified dev TSAs are always labeled as such) — *attachment format TBD in anchor-v1* |
 | E3 | non-repudiation for both operator & log; controls attested | edge co-signature (customer KMS) + policy attestation block |
 
 ## 5. Key transparency (NORMATIVE as of Build 4)

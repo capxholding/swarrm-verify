@@ -1,0 +1,27 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "client_attestation_present": false,
+  "control_declarations": [
+    {
+      "claims_overlap": false,
+      "declarer": "Source AG"
+    }
+  ],
+  "fork_findings_open": false,
+  "schema": "evd/verdict-input/v1"
+}
