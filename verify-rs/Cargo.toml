@@ -13,7 +13,20 @@ serde_json = "1"
 sha2 = "0.10"
 ed25519-dalek = "2"
 base64 = "0.22"
+# RFC 3161 parity crates — the RustCrypto set sanctioned in A_BUILD §0.2·3
+# (owner, 2026-08-01). Exact pins mirrored in ci/architecture_policy.json.
+p256 = "=0.13.2"
+der = "=0.7.10"
+x509-cert = "=0.2.5"
+cms = "=0.2.3"
 wasm-bindgen = { version = "0.2", optional = true }
+
+# NOT a new crate: getrandom is already in the graph via the sanctioned p256
+# (ecdsa -> signature/rand_core; rand_core/std needs an entropy source). This
+# entry only turns on its JS shim so the wasm verifier page keeps building —
+# the verifier itself never draws randomness (verify-only).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
 
 [features]
 wasm = ["dep:wasm-bindgen"]
