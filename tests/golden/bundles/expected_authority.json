@@ -1,0 +1,329 @@
+{
+  "b21_adopted_authority_valid": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "f969fe94b40c52a7e8cac7f093569e25297ffab11c9d7a80be8dc8daab5050b8",
+      "birthtag_id": "1fa9afd099c22922c1d41804824ab40311ac78abc0ec83a544c6b125024a9d62",
+      "grant_id": "234cd453c86f5ef0277fb5c9aea69b80e3b3fe91dca7266bca4f525c48b0f0dc",
+      "intent_id": "990e58323f8e7cb1e9abc46818ff6811a2b67a7a9449f58b373b44db452404c6",
+      "mandate_id": "234cd453c86f5ef0277fb5c9aea69b80e3b3fe91dca7266bca4f525c48b0f0dc",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_authority_valid": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "9d88b0a8e2e5e0f9a40a409197ac67a1837c6c15d6fe904d9a2e695b3531acf9",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "intent_id": "c273006e21c5986b55775d6eea328431ffecdcdf1fa00c377555198246cc2606",
+      "mandate_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_concurrent_binding_explicit": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "babb093feebdb86ada7da57cbbac3e37c7c07a8a71baa7767afa10d8f5d99347",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "632e52c4b1f1cb11c9bf4cc47cd0bcc80dc2ba9834903c5839a67dfbf37b9d4b",
+      "intent_id": "587387cce8630014226cdd8bcae4178e3a03f5036ed083f3e5d68d6d8f81cbf3",
+      "mandate_id": "632e52c4b1f1cb11c9bf4cc47cd0bcc80dc2ba9834903c5839a67dfbf37b9d4b",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_forged_root_binding": {
+    "authority": "VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "f047b5f2d47be421d2d31ef11fec895fff49229ce60e9a7cc749d957b1d24cf5",
+      "intent_id": "3f55dea4c68c9f99a0d3c72920ab54537a997ec6ab87734329d9455cd18a95fd",
+      "mandate_id": "f047b5f2d47be421d2d31ef11fec895fff49229ce60e9a7cc749d957b1d24cf5",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_forged_root_grant": {
+    "authority": "NOT_VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "9d88b0a8e2e5e0f9a40a409197ac67a1837c6c15d6fe904d9a2e695b3531acf9",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "intent_id": "3b54f7d33dc0a7268a3839f4014c5e97f23a5ca7ac346cd1b0dac851f8d650d7",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_grant_revised_valid": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "9d88b0a8e2e5e0f9a40a409197ac67a1837c6c15d6fe904d9a2e695b3531acf9",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "e89df9816beb6cc4e85ce6ecdf93965908760a799fa441acbe4f5e1bd0b5b28b",
+      "intent_id": "17d2b1b77d324282970d58503333eccb1fd9c12cf3ae933078817b50e0775af1",
+      "mandate_id": "e89df9816beb6cc4e85ce6ecdf93965908760a799fa441acbe4f5e1bd0b5b28b",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_grant_rewrite": {
+    "authority": "CONFLICT",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "9d88b0a8e2e5e0f9a40a409197ac67a1837c6c15d6fe904d9a2e695b3531acf9",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "intent_id": "c273006e21c5986b55775d6eea328431ffecdcdf1fa00c377555198246cc2606",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_intent_conflict": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "CONFLICT",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "9d88b0a8e2e5e0f9a40a409197ac67a1837c6c15d6fe904d9a2e695b3531acf9",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "mandate_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_no_intent": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "VALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_overlapping_binding": {
+    "authority": "VERIFIED",
+    "identity": "CONFLICT",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "grant_id": "632e52c4b1f1cb11c9bf4cc47cd0bcc80dc2ba9834903c5839a67dfbf37b9d4b",
+      "intent_id": "587387cce8630014226cdd8bcae4178e3a03f5036ed083f3e5d68d6d8f81cbf3",
+      "mandate_id": "632e52c4b1f1cb11c9bf4cc47cd0bcc80dc2ba9834903c5839a67dfbf37b9d4b",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_passport_copied": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "intent_id": "752ca864066d7a824a97a5cfda08b3f7fb1f4d3453c9eac6e5c1bbd144fba622",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_passport_migration": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "68b7adb930a20c23b9b4c602b2e9191959ec796265c9abd90502056b21550b38",
+      "birthtag_id": "47c3134cf581cd76c2727b2e5afc129c82c83918e761990548b0c1943a7e5ff6",
+      "grant_id": "b4f63ef51d4dd8a3debdc05d22a857461703e5e47cfeb862d066500c165a15ff",
+      "intent_id": "ced488ab0ce643129ae625989d21bccdae905ecd20019fe796ab19d687cd452f",
+      "mandate_id": "b4f63ef51d4dd8a3debdc05d22a857461703e5e47cfeb862d066500c165a15ff",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_post_revocation_grant": {
+    "authority": "NOT_VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "9d88b0a8e2e5e0f9a40a409197ac67a1837c6c15d6fe904d9a2e695b3531acf9",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "intent_id": "c273006e21c5986b55775d6eea328431ffecdcdf1fa00c377555198246cc2606",
+      "mandate_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_pre_grant": {
+    "authority": "NOT_VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "9d88b0a8e2e5e0f9a40a409197ac67a1837c6c15d6fe904d9a2e695b3531acf9",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "926d3caf84748e7dcc8d4618c7fe9ecdc1931a6e49e6d3a6eb67c43524d46c08",
+      "intent_id": "ef3514d855d7656db24a174eddfe7d21d0b99d354c47a87ca04ae0017bd03e69",
+      "mandate_id": "926d3caf84748e7dcc8d4618c7fe9ecdc1931a6e49e6d3a6eb67c43524d46c08",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_self_enrolled_root": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "subject_ids": {
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "intent_id": "c528b172067777fc648c3280b17ce28fc2aad31cc282c9d77c51027e1a040fa3"
+    }
+  },
+  "b21_substituted_runtime_key": {
+    "authority": "VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "bd0eced0fe6cc1003bc4e113684aad6e5765d23ed980858fdbe9690a0e344f0e",
+      "intent_id": "fe55b2867f58975b2aa17f32a3ba324aee32d434c26bca5a159baf8c27d11a03",
+      "mandate_id": "bd0eced0fe6cc1003bc4e113684aad6e5765d23ed980858fdbe9690a0e344f0e",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_tampered_integrity": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "b21_unanchored_interval": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "intent_id": "c273006e21c5986b55775d6eea328431ffecdcdf1fa00c377555198246cc2606",
+      "mandate_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
+  "b21_wrong_revision": {
+    "authority": "VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "intent_id": "f92f0762e8a09f56fd0867e2cbfabaf0baf154492fc635c9dfeb35f60d7e473d",
+      "mandate_id": "2acb59e91c47c78790ec9bb2eb672bd952f01d90592ed15b9d9a1e07d64491c5",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  }
+}

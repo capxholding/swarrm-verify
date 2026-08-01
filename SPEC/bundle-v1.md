@@ -49,7 +49,7 @@ no API access, no cooperation from the log operator, no network.
   anchored key-transparency entries, or a prior trusted bundle) — a bundle
   alone cannot defeat an attacker who forges *everything including the
   keys*. E2 anchoring closes this: the anchored checkpoint hash pins the
-  history to a public chain and a qualified timestamp no key swap can
+  history to a public chain and an RFC 3161 timestamp no key swap can
   reproduce. (Anchor attachment format: anchor-v1, next increment.)
 - Selective disclosure of payloads = revealing `(payload, nonce)` for a
   specific commitment; the verifier recomputes and compares (§receipt-v1).

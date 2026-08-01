@@ -1,0 +1,51 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "client_attestation_present": false,
+  "fork_findings_open": false,
+  "population_index": {
+    "consistency_proof_ref": "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+    "count": 42,
+    "dense_seq_range": {
+      "end": 42,
+      "start": 1
+    },
+    "org_id": "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a",
+    "population_class": "registered_agents",
+    "query_descriptor": {
+      "account": "acct-1",
+      "action_classes": [
+        "payment.execute"
+      ],
+      "org": "Org AG",
+      "selector": {
+        "kind": "account_filter",
+        "predicates": {
+          "currency": [
+            "EUR"
+          ]
+        }
+      },
+      "source_system": "bank_x"
+    },
+    "result_root": "0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d",
+    "schema": "evd/population-index/v1",
+    "signature": "c2lnLXBvcA==",
+    "tree_size": 128
+  },
+  "schema": "evd/verdict-input/v1"
+}

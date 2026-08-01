@@ -1,0 +1,100 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "100.00"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-1",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": false
+    }
+  ],
+  "events": [
+    {
+      "currency": "EUR",
+      "event_key": "evt-1",
+      "finality": "FINAL",
+      "outcome": "SETTLED",
+      "reference": "ref-901",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T00:20:00Z",
+      "source_identity_ref": "src-1",
+      "value": "100.00"
+    }
+  ],
+  "fork_findings_open": false,
+  "node_attestation": {
+    "attester_control_domain": "INDEPENDENT",
+    "attester_identity": "Attester Corp",
+    "deployment_id": "node-dep-1",
+    "measured_digest": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+    "method": "INDEPENDENTLY_ATTESTED",
+    "node_public_key": "bm9kZS1rZXk=",
+    "schema": "evd/node-attestation/v1",
+    "signature": "c2lnLW5vZGU=",
+    "state": "ISSUED",
+    "valid_from": "2025-12-01T00:00:00Z",
+    "valid_to": "2026-02-01T00:00:00Z"
+  },
+  "registration": {
+    "scitt_receipt_valid": true,
+    "scope_registration": {
+      "covers_scope": true,
+      "registration": {
+        "band_commitment": "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "covered_scope_digest": "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2",
+        "entitlement_status": "ISSUED",
+        "policy_digest": "e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4",
+        "policy_version": "1",
+        "registration_id": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+        "registry_key_id": "registry-key-1",
+        "schema": "evd/scope-registration/v1",
+        "scope_description_digest": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+        "signature": "c2lnLXJlZw==",
+        "term_end": "2027-01-01T00:00:00Z",
+        "term_start": "2026-01-01T00:00:00Z"
+      },
+      "term_valid": true
+    }
+  },
+  "scan": {
+    "authenticated_read": true,
+    "complete": true,
+    "cursor_gap_free": true,
+    "node_signed": true,
+    "performed": true
+  },
+  "schema": "evd/verdict-input/v1",
+  "temporal": {
+    "echo": {
+      "echoed_action_id": true,
+      "echoed_intent_digest": false,
+      "echoed_nonce": false
+    },
+    "source_clock_sync_declared": false
+  }
+}

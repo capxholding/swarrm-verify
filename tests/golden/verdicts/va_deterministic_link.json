@@ -1,0 +1,95 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "100.00"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": false,
+      "event_key": "evt-1",
+      "final": true,
+      "immutable_ref_match": true,
+      "material_mismatch": false,
+      "unique_field_match": false
+    }
+  ],
+  "events": [
+    {
+      "currency": "EUR",
+      "event_key": "evt-1",
+      "finality": "FINAL",
+      "outcome": "SETTLED",
+      "reference": "ref-901",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T00:20:00Z",
+      "source_identity_ref": "src-1",
+      "value": "100.00"
+    }
+  ],
+  "fork_findings_open": false,
+  "registration": {
+    "scitt_receipt_valid": true,
+    "scope_registration": {
+      "covers_scope": true,
+      "registration": {
+        "band_commitment": "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "covered_scope_digest": "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2",
+        "entitlement_status": "ISSUED",
+        "policy_digest": "e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4",
+        "policy_version": "1",
+        "registration_id": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+        "registry_key_id": "registry-key-1",
+        "schema": "evd/scope-registration/v1",
+        "scope_description_digest": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+        "signature": "c2lnLXJlZw==",
+        "term_end": "2027-01-01T00:00:00Z",
+        "term_start": "2026-01-01T00:00:00Z"
+      },
+      "term_valid": true
+    }
+  },
+  "schema": "evd/verdict-input/v1",
+  "source_identity": {
+    "account": "acct-1",
+    "declared_control_domain": "INDEPENDENT",
+    "declared_controller": "Source AG",
+    "keys": [
+      {
+        "algorithm_family": "Ed25519",
+        "kid": "src-key-1",
+        "valid_from": "2025-01-01T00:00:00Z"
+      }
+    ],
+    "schema": "evd/source-identity/v1",
+    "source_system": "bank_x"
+  },
+  "source_proofs": [
+    {
+      "key_identity": "src-key-1",
+      "material_digest": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "proof_type": "asymmetric_signature",
+      "schema": "evd/source-proof/v1",
+      "verified": true
+    }
+  ]
+}

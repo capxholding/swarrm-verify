@@ -1,0 +1,28 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "100.00"
+  },
+  "client_attestation_present": false,
+  "fork_findings_open": false,
+  "schema": "evd/verdict-input/v1"
+}

@@ -1,0 +1,96 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-1",
+    "currency": "EUR",
+    "value": "100.00"
+  },
+  "authority": {
+    "authority": "VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    }
+  },
+  "client_attestation_present": false,
+  "fork_findings_open": false,
+  "schema": "evd/verdict-input/v1",
+  "surfaces": {
+    "activity": [
+      {
+        "explained": true,
+        "surface_class": "email_send"
+      },
+      {
+        "explained": false,
+        "surface_class": "tool_calls"
+      }
+    ],
+    "manifest": {
+      "entries": [
+        {
+          "birthtag_id": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+          "controller_admits_overlap": true,
+          "controller_grounded_independent": false,
+          "controlling_party": "Operator GmbH",
+          "coverage_closed": true,
+          "coverage_gap": false,
+          "effective_from": "2026-01-01T00:00:00Z",
+          "evidence_source_ref": "cfg://egress-policy/v3",
+          "mechanism_declaration": "ENFORCED",
+          "schema": "evd/surface/v1",
+          "signature": "c2lnLXNyZg==",
+          "surface_class": "tool_calls",
+          "surface_id": "srf-1"
+        },
+        {
+          "birthtag_id": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+          "controller_admits_overlap": false,
+          "controller_grounded_independent": true,
+          "controlling_party": "Operator GmbH",
+          "coverage_closed": false,
+          "coverage_gap": true,
+          "effective_from": "2026-01-01T00:00:00Z",
+          "evidence_source_ref": "node://scan/2026-01",
+          "mechanism_declaration": "OBSERVED",
+          "schema": "evd/surface/v1",
+          "signature": "c2lnLXNyZg==",
+          "surface_class": "network_egress",
+          "surface_id": "srf-2"
+        },
+        {
+          "birthtag_id": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+          "controller_admits_overlap": false,
+          "controller_grounded_independent": false,
+          "controlling_party": "Operator GmbH",
+          "coverage_closed": false,
+          "coverage_gap": false,
+          "effective_from": "2026-01-01T00:00:00Z",
+          "mechanism_declaration": "DECLARED",
+          "schema": "evd/surface/v1",
+          "signature": "c2lnLXNyZg==",
+          "surface_class": "file_io",
+          "surface_id": "srf-3"
+        },
+        {
+          "birthtag_id": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+          "controller_admits_overlap": false,
+          "controller_grounded_independent": false,
+          "controlling_party": "Operator GmbH",
+          "coverage_closed": false,
+          "coverage_gap": false,
+          "effective_from": "2026-01-01T00:00:00Z",
+          "mechanism_declaration": "UNKNOWN",
+          "schema": "evd/surface/v1",
+          "signature": "c2lnLXNyZg==",
+          "surface_class": "subprocess",
+          "surface_id": "srf-4"
+        }
+      ],
+      "schema": "evd/surface-manifest/v1"
+    }
+  }
+}

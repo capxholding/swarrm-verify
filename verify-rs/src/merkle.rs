@@ -72,38 +72,59 @@ pub fn verify_consistency(
         sn >>= 1;
     }
     let mut it = proof.iter();
-    let (mut fr, mut sr) = if fnn != 0 {
-        let seed = match it.next() {
-            Some(p) => *p,
-            None => return false,
-        };
-        (seed, seed)
+    let seed = match consistency_seed(fnn, first_root, &mut it) {
+        Some(s) => s,
+        None => return false,
+    };
+    let (mut fr, mut sr) = (seed, seed);
+    for c in it {
+        if !consistency_step(c, &mut fnn, &mut sn, &mut fr, &mut sr) {
+            return false;
+        }
+    }
+    fnn == 0 && fr.as_slice() == first_root && sr.as_slice() == second_root
+}
+
+fn consistency_seed(
+    fnn: u64,
+    first_root: &[u8],
+    it: &mut std::slice::Iter<'_, [u8; 32]>,
+) -> Option<[u8; 32]> {
+    if fnn != 0 {
+        it.next().copied()
     } else {
         let mut a = [0u8; 32];
         if first_root.len() != 32 {
-            return false;
+            return None;
         }
         a.copy_from_slice(first_root);
-        (a, a)
-    };
-    for c in it {
-        if sn == 0 {
-            return false;
-        }
-        if lsb(fnn) || fnn == sn {
-            fr = node(c, &fr);
-            sr = node(c, &sr);
-            if !lsb(fnn) {
-                while !lsb(fnn) && fnn != 0 {
-                    fnn >>= 1;
-                    sn >>= 1;
-                }
-            }
-        } else {
-            sr = node(&sr, c);
-        }
-        fnn >>= 1;
-        sn >>= 1;
+        Some(a)
     }
-    fnn == 0 && fr.as_slice() == first_root && sr.as_slice() == second_root
+}
+
+fn consistency_step(
+    c: &[u8; 32],
+    fnn: &mut u64,
+    sn: &mut u64,
+    fr: &mut [u8; 32],
+    sr: &mut [u8; 32],
+) -> bool {
+    if *sn == 0 {
+        return false;
+    }
+    if lsb(*fnn) || *fnn == *sn {
+        *fr = node(c, &*fr);
+        *sr = node(c, &*sr);
+        if !lsb(*fnn) {
+            while !lsb(*fnn) && *fnn != 0 {
+                *fnn >>= 1;
+                *sn >>= 1;
+            }
+        }
+    } else {
+        *sr = node(&*sr, c);
+    }
+    *fnn >>= 1;
+    *sn >>= 1;
+    true
 }
