@@ -1,0 +1,39 @@
+{
+  "_note": "Cross-verifier RFC 3161 cases: each verifier asserts ITS column. python/rust may differ ONLY where why_diverges documents the \u00a70.2\u00b73 sanction scope gap (Rust has no rsa/p384 crates).",
+  "tsa_p256_tampered": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_tampered.der"
+  },
+  "tsa_p256_valid": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": true,
+    "rust": true,
+    "token": "tsa_p256_valid.der"
+  },
+  "tsa_tampered": {
+    "chain": "tsa_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_tampered.der"
+  },
+  "tsa_valid": {
+    "chain": "tsa_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": true,
+    "rust": false,
+    "token": "tsa_valid.der",
+    "why_diverges": "real freeTSA token: ECDSA P-384 signer key + RSA-signed chain; the \u00a70.2\u00b73 sanction covers p256 only \u2014 extend it with the rsa (and p384) crates to lift this"
+  },
+  "tsa_wrong_imprint": {
+    "chain": "tsa_chain.pem",
+    "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "python": false,
+    "rust": false,
+    "token": "tsa_valid.der"
+  }
+}

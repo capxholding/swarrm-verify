@@ -8,6 +8,7 @@
 pub mod action;
 pub(crate) mod jcs;
 mod merkle;
+pub mod tsa;
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
