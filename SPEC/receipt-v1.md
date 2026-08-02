@@ -23,6 +23,13 @@ payload was truthful (tamper-proof, not lie-proof).
   key))[:16] — deterministic from key material; verifiers MUST reject a JWK
   whose `kid` does not match its key.
 
+**Size cap (normative).** The RFC 8785 canonical body MUST NOT exceed
+**8192 bytes**. Producing an oversize receipt is a producer-side error:
+producers MUST refuse to sign it (receipts are metadata; anything bigger is
+payload smuggling). Verifiers do NOT enforce the cap — existing logs may
+legally contain historic receipts, and the verifier judges signatures and
+proofs, not the producer's budget.
+
 ## 3. Body fields (all REQUIRED)
 
 | Field | Type | Meaning |

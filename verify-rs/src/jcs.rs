@@ -3,28 +3,48 @@
 //!
 //! Covers exactly the value shapes that appear in signed structures here:
 //! objects (keys sorted by UTF-16 code units), arrays, strings, integers,
-//! booleans, null. Non-integer numbers do not appear in any structure this
-//! verifier canonicalizes (checkpoint bodies, JWKs) — they would panic
-//! loudly rather than silently mis-canonicalize.
+//! booleans, null. Canonicalization FAILS (None) instead of panicking on
+//! hostile shapes (H5): non-integer numbers, and container nesting past
+//! MAX_DEPTH — the guard bails at depth MAX_DEPTH+1, so recursion is bounded
+//! long before it could overflow the stack, and a failed canonicalization
+//! can never verify (no honest signature covers its output).
 
 use serde_json::Value;
 
+/// Same cap as MAX_JCS_DEPTH in core/canonical.py — the two verifiers must
+/// reject identically.
+pub(crate) const MAX_DEPTH: i64 = 64;
+
+/// Infallible wrapper for legacy call sites: a value that cannot be
+/// canonicalized yields empty bytes, which no honest signature or pinned
+/// digest ever covers — every downstream check fails closed.
 pub fn canonical(v: &Value) -> Vec<u8> {
-    let mut out = Vec::new();
-    write_value(v, &mut out);
-    out
+    canonical_checked(v).unwrap_or_default()
 }
 
-fn write_value(v: &Value, out: &mut Vec<u8>) {
+/// Fallible canonicalization: None on over-deep nesting or a non-integer
+/// number. Verification callers must treat None as "does not verify".
+pub(crate) fn canonical_checked(v: &Value) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    if write_value(v, &mut out, MAX_DEPTH) {
+        Some(out)
+    } else {
+        None
+    }
+}
+
+fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
+    if limit < 0 {
+        return false; // nested deeper than MAX_DEPTH — refuse, don't recurse on
+    }
     match v {
         Value::Null => out.extend_from_slice(b"null"),
         Value::Bool(b) => out.extend_from_slice(if *b { b"true" } else { b"false" }),
         Value::Number(n) => {
             // Only integers occur in canonicalized structures here.
-            let i = n.as_i64().or_else(|| n.as_u64().map(|u| u as i64));
-            match i {
+            match n.as_i64().or_else(|| n.as_u64().map(|u| u as i64)) {
                 Some(i) => out.extend_from_slice(i.to_string().as_bytes()),
-                None => panic!("JCS: non-integer number in a canonicalized structure"),
+                None => return false,
             }
         }
         Value::String(s) => write_string(s, out),
@@ -34,7 +54,9 @@ fn write_value(v: &Value, out: &mut Vec<u8>) {
                 if i > 0 {
                     out.push(b',');
                 }
-                write_value(e, out);
+                if !write_value(e, out, limit - 1) {
+                    return false;
+                }
             }
             out.push(b']');
         }
@@ -48,11 +70,14 @@ fn write_value(v: &Value, out: &mut Vec<u8>) {
                 }
                 write_string(k, out);
                 out.push(b':');
-                write_value(&m[*k], out);
+                if !write_value(&m[*k], out, limit - 1) {
+                    return false;
+                }
             }
             out.push(b'}');
         }
     }
+    true
 }
 
 fn utf16_cmp(a: &str, b: &str) -> std::cmp::Ordering {

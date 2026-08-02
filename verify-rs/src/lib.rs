@@ -21,6 +21,67 @@ const CHECKPOINT_TYPE: &str = "application/vnd.evd.checkpoint.v1+json";
 const DISCLOSURE_SCHEMA: &str = "evd/disclosure/v1";
 const DOMAIN_PREFIX: &str = "evd/v1/";
 
+// H5 resource caps — IDENTICAL to verify/verifier.py: a bundle over any cap
+// is NOT VERIFIED by BOTH implementations, so golden agreement stays pinned.
+// All caps sit far above every legitimate bundle.
+#[allow(dead_code)] // enforced at byte entry points (verify_bundle_json/wasm)
+const MAX_BUNDLE_BYTES: usize = 64 * 1024 * 1024;
+const MAX_ENTRIES: usize = 200_000;
+const MAX_INCLUSION_PROOF_LEN: usize = 64;
+const MAX_CHECKPOINT_CHAIN_LEN: usize = 100_000;
+const MAX_SIGNATURES_PER_ENVELOPE: usize = 8;
+const MAX_JSON_DEPTH: i64 = jcs::MAX_DEPTH; // 64 — whole bundle shares the JCS cap
+
+fn depth_exceeds(v: &Value, limit: i64) -> bool {
+    // bounded recursion: bails at the first over-deep branch (limit+2 frames
+    // at most), so the walk itself can never overflow the stack
+    if limit < 0 {
+        return true;
+    }
+    match v {
+        Value::Array(a) => a.iter().any(|x| depth_exceeds(x, limit - 1)),
+        Value::Object(m) => m.values().any(|x| depth_exceeds(x, limit - 1)),
+        _ => false,
+    }
+}
+
+fn entry_within_caps(e: &Value) -> bool {
+    if let Some(proof) = e.get("inclusion_proof").and_then(|v| v.as_array()) {
+        if proof.len() > MAX_INCLUSION_PROOF_LEN {
+            return false;
+        }
+    }
+    let sigs = e
+        .get("envelope")
+        .and_then(|v| v.get("signatures"))
+        .and_then(|v| v.as_array());
+    if let Some(sigs) = sigs {
+        if sigs.len() > MAX_SIGNATURES_PER_ENVELOPE {
+            return false;
+        }
+    }
+    true
+}
+
+/// H5 resource caps, checked BEFORE any cryptographic work — same caps,
+/// same order as _cap_error in verify/verifier.py.
+fn within_caps(bundle: &Value) -> bool {
+    if let Some(entries) = bundle.get("entries").and_then(|v| v.as_array()) {
+        if entries.len() > MAX_ENTRIES {
+            return false;
+        }
+        if !entries.iter().all(entry_within_caps) {
+            return false;
+        }
+    }
+    if let Some(chain) = bundle.get("checkpoint_chain").and_then(|v| v.as_array()) {
+        if chain.len() > MAX_CHECKPOINT_CHAIN_LEN {
+            return false;
+        }
+    }
+    !depth_exceeds(bundle, MAX_JSON_DEPTH)
+}
+
 pub(crate) fn sha256(data: &[u8]) -> [u8; 32] {
     let mut h = Sha256::new();
     h.update(data);
@@ -243,7 +304,10 @@ fn apply_key_rotated(
         return false;
     }
     // continuity: prev key signed canonical(jwk)
-    let jwk_canon = jcs::canonical(jwk);
+    let jwk_canon = match jcs::canonical_checked(jwk) {
+        Some(c) => c,
+        None => return false, // over-deep / non-integer jwk cannot verify
+    };
     let cont = match B64.decode(continuity.unwrap()) {
         Ok(c) => c,
         Err(_) => return false,
@@ -316,7 +380,7 @@ pub(crate) fn kid_valid_at(kid: &str, at: &str, revoked_at: &BTreeMap<String, St
 
 pub(crate) fn checkpoint_body_hash(cp: &Value) -> Option<String> {
     let body = cp.get("body")?;
-    Some(hex(&sha256(&jcs::canonical(body))))
+    Some(hex(&sha256(&jcs::canonical_checked(body)?)))
 }
 
 pub(crate) fn hex(b: &[u8]) -> String {
@@ -324,7 +388,9 @@ pub(crate) fn hex(b: &[u8]) -> String {
 }
 
 fn hex_decode(s: &str) -> Option<Vec<u8>> {
-    if s.len() % 2 != 0 {
+    // is_ascii first: byte-slicing a multi-byte char boundary would panic,
+    // and hex is ASCII by definition anyway (H5: no panic on hostile input)
+    if !s.is_ascii() || s.len() % 2 != 0 {
         return None;
     }
     (0..s.len())
@@ -354,7 +420,11 @@ fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool 
         Ok(s) => s,
         Err(_) => return false,
     };
-    let msg = pae(CHECKPOINT_TYPE, &jcs::canonical(body));
+    let canon = match jcs::canonical_checked(body) {
+        Some(c) => c,
+        None => return false, // over-deep / non-integer body cannot verify
+    };
+    let msg = pae(CHECKPOINT_TYPE, &canon);
     ed25519_verify(pubkey, &msg, &sig)
 }
 
@@ -939,6 +1009,10 @@ pub fn verify_bundle(bundle: &Value) -> bool {
     if bundle.get("schema").and_then(|v| v.as_str()) != Some("evd/bundle/v1") {
         return false;
     }
+    // H5 resource caps (parse phase) — over-cap is NOT VERIFIED, never a panic
+    if !within_caps(bundle) {
+        return false;
+    }
     let entries: Vec<Value> = bundle
         .get("entries")
         .and_then(|v| v.as_array())
@@ -971,6 +1045,11 @@ mod wasm {
     /// "NOT VERIFIED" / "ERROR: <reason>". For the file-drop static page.
     #[wasm_bindgen]
     pub fn verify_bundle_json(json: &str) -> String {
+        // H5 byte cap: this entry point receives raw bytes, so the size cap
+        // is enforced BEFORE parsing (identical cap documented in verifier.py)
+        if json.len() > super::MAX_BUNDLE_BYTES {
+            return "NOT VERIFIED".to_string();
+        }
         match serde_json::from_str::<serde_json::Value>(json) {
             Ok(v) => {
                 if super::verify_bundle(&v) {
