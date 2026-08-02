@@ -9,11 +9,13 @@
     #drop { border: 2px dashed #bbb; border-radius: 8px; padding: 3rem; text-align: center; color: #666; cursor: pointer; }
     #drop.over { border-color: #0a7d33; color: #0a7d33; }
     #verdict { font-size: 40px; font-weight: 800; margin-top: 1.5rem; }
-    .ok { color: #0a7d33; } .bad { color: #b3261e; }
+    .ok { color: #0a7d33; } .bad { color: #b3261e; } .mid { color: #8a6d00; }
     .note { color: #666; font-size: 14px; }
     button { font: inherit; padding: 6px 12px; margin-top: .5rem; }
     code { background: #f4f4f6; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
     #integrity { color: #888; font-size: 12px; margin-top: 2rem; }
+    #cert table { border-collapse: collapse; font-size: 13px; }
+    #cert td { border: 1px solid #ddd; padding: 2px 8px; }
   </style>
 </head>
 <body>
@@ -23,10 +25,11 @@
   (Rust → WASM); it agrees with the reference verifier on the shared golden suite. Open your
   browser's Network panel and confirm: verifying makes <b>zero</b> requests.</p>
 
-  <div id="drop">drop <code>bundle.json</code> here, or click to choose
-    <input id="file" type="file" accept="application/json" hidden />
+  <div id="drop">drop <code>bundle.json</code> or a <code>.cbor</code>/<code>.cert</code> certificate here, or click to choose
+    <input id="file" type="file" accept=".json,.cbor,.cert,application/json" hidden />
   </div>
   <div id="verdict"></div>
+  <div id="cert" class="note"></div>
   <div id="controls" style="display:none">
     <button id="flip">flip a byte &amp; re-verify (watch it break)</button>
   </div>
@@ -39,12 +42,15 @@
   </div>
 
   <script type="module">
-    import init, { verify_bundle_json } from "./pkg/swarrm_verify.js";
+    // NOTE: INTEGRITY.txt re-pins the wasm sha256 on every `make wasm`
+    // (wasm-pack) build — a page/wasm change without a re-pin is a red flag.
+    import init, { verify_bundle_json, verify_certificate_cbor } from "./pkg/swarrm_verify.js";
 
     const KNOWN_SCHEMA = "evd/bundle/v1";
     const drop = document.getElementById("drop");
     const file = document.getElementById("file");
     const verdict = document.getElementById("verdict");
+    const cert = document.getElementById("cert");
     const detail = document.getElementById("detail");
     const controls = document.getElementById("controls");
     const flip = document.getElementById("flip");
@@ -77,9 +83,68 @@
 
     async function handle(text) {
       await ready;
+      cert.innerHTML = "";
       currentText = text;
       show(text);
       controls.style.display = "block";
+    }
+
+    // ---- certificate branch (B24.3): .cbor/.cert → verify_certificate_cbor.
+    // The JSON bundle path above is untouched; CBOR is detected by the first
+    // byte not being '{'.
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    function certHeadline(r) {
+      if (!r.parse_ok) return ["not a certificate (CBOR parse failed)", "bad"];
+      // neutral, not red: a view that cannot recompute did not FAIL (§4.5)
+      if (!r.core_present && r.errors.length === 0) return ["VIEW ONLY — nothing recomputed", "mid"];
+      if (r.mark === null) return ["NOT VERIFIED", "bad"];
+      if (r.mark === "NOT_RECOMPUTED" && r.cross_checks_ok) return ["MARK: NOT_RECOMPUTED", "mid"];
+      const ok = r.cross_checks_ok && (r.mark === "VERIFIED_CORROBORATED" || r.mark === "VERIFIED_OBSERVED");
+      return ["MARK: " + r.mark, ok ? "ok" : "bad"];
+    }
+
+    function certBody(r) {
+      const rows = [];
+      rows.push(`<b>layers held:</b> ${r.layers.length ? r.layers.map(esc).join(" + ") : "none"} — a verifier renders only the layers it holds`);
+      rows.push(`<b>certificate_id:</b> <code>${esc(r.certificate_id ?? "—")}</code>`);
+      rows.push(`<b>cross-checks:</b> ${r.cross_checks_ok ? "all recomputations agree" : "NOT passed"}`);
+      if (r.errors.length) rows.push(`<b>errors:</b> ${r.errors.map(esc).join(", ")}`);
+      if (r.mark === "NOT_RECOMPUTED" || (!r.core_present && r.errors.length === 0)) {
+        rows.push("<b>NOT_RECOMPUTED:</b> this view cannot recompute — <i>not a failure</i>. " +
+          "A gated field is withheld from this view (or the core is not attached), so the verdict is " +
+          "not re-derivable here; a fuller view may recompute more. Nothing is implied to pass.");
+      }
+      if (r.vector) {
+        const cells = Object.entries(r.vector)
+          .filter(([k]) => k !== "schema")
+          .map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td>${esc(JSON.stringify(v))}</td></tr>`);
+        rows.push(`<details><summary>recomputed verdict vector (${cells.length} dimensions)</summary>` +
+          `<div style="overflow-x:auto"><table>${cells.join("")}</table></div></details>`);
+      }
+      return rows.map((x) => `<p>${x}</p>`).join("");
+    }
+
+    async function handleCertificate(bytes) {
+      await ready;
+      currentText = null;
+      controls.style.display = "none";
+      let r;
+      try { r = JSON.parse(verify_certificate_cbor(bytes)); }
+      catch { verdict.textContent = "verifier error"; verdict.className = "bad"; cert.innerHTML = ""; return; }
+      const [headline, cls] = certHeadline(r);
+      verdict.textContent = headline;
+      verdict.className = cls;
+      detail.textContent = "verified offline, in this browser — certificate core, embedded bundle, " +
+        "cross-recomputations and view manifest checked against the bytes you dropped.";
+      cert.innerHTML = certBody(r);
+    }
+
+    async function handleFile(f) {
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      if (bytes[0] === 0x7b) return handle(new TextDecoder().decode(bytes)); // '{' → JSON bundle
+      return handleCertificate(bytes);
     }
 
     flip.onclick = () => {
@@ -107,12 +172,12 @@
     }
 
     drop.onclick = () => file.click();
-    file.onchange = () => file.files[0]?.text().then(handle);
+    file.onchange = () => { if (file.files[0]) handleFile(file.files[0]); };
     drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
     drop.ondragleave = () => drop.classList.remove("over");
     drop.ondrop = (e) => {
       e.preventDefault(); drop.classList.remove("over");
-      e.dataTransfer.files[0]?.text().then(handle);
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
     };
   </script>
 </body>

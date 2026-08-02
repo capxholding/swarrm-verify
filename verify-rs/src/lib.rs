@@ -6,6 +6,9 @@
 //! evidence that the format is unambiguous. Verify-only, offline, no network.
 
 pub mod action;
+#[allow(dead_code)] // canonical_from_json: golden-phase seam; tests use #[path]
+mod cbor;
+pub mod certificate; // B24.3 — verify_certificate_cbor doubles as the wasm export
 pub(crate) mod jcs;
 mod merkle;
 pub mod tsa;

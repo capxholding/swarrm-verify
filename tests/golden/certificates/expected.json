@@ -1,0 +1,176 @@
+{
+  "claim_only": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "UNKNOWN",
+      "identity": "NOT_VERIFIED",
+      "integrity": "VALID",
+      "intent": "NOT_RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CLAIM_ONLY",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "contradicted": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "UNKNOWN",
+      "identity": "NOT_VERIFIED",
+      "integrity": "VALID",
+      "intent": "NOT_RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CONTRADICTED",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "forged": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "UNKNOWN",
+      "identity": "VERIFIED",
+      "integrity": "VALID",
+      "intent": "RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CORROBORATED",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "gapped": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "GAPPED",
+      "identity": "NOT_VERIFIED",
+      "integrity": "VALID",
+      "intent": "NOT_RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CORROBORATED",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "orphan": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "UNKNOWN",
+      "identity": "NOT_VERIFIED",
+      "integrity": "VALID",
+      "intent": "NOT_RECORDED",
+      "linkage": "NONE",
+      "outcome": "ORPHAN",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "revoked": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "UNKNOWN",
+      "identity": "VERIFIED",
+      "integrity": "VALID",
+      "intent": "RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CORROBORATED",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "selectively_disclosed": {
+    "cross_checks_ok": true,
+    "mark": "VERIFIED_CORROBORATED",
+    "partial": {
+      "mark": "NOT_RECOMPUTED",
+      "technical_eligibility": "NOT_RECOMPUTED"
+    },
+    "vector": {
+      "authority": "VERIFIED",
+      "control_domain": "INDEPENDENT",
+      "coverage": "CLOSED",
+      "identity": "VERIFIED",
+      "integrity": "VALID",
+      "intent": "RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CORROBORATED",
+      "registration_status": "REGISTERED",
+      "source_signature": "ASYMMETRIC",
+      "technical_eligibility": "ELIGIBLE",
+      "temporal_binding": "PROVEN_SOURCE_ECHO"
+    }
+  },
+  "stale": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "UNKNOWN",
+      "identity": "NOT_VERIFIED",
+      "integrity": "VALID",
+      "intent": "NOT_RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CORROBORATED",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "valid": {
+    "cross_checks_ok": true,
+    "mark": "VERIFIED_CORROBORATED",
+    "partial": null,
+    "vector": {
+      "authority": "VERIFIED",
+      "control_domain": "INDEPENDENT",
+      "coverage": "CLOSED",
+      "identity": "VERIFIED",
+      "integrity": "VALID",
+      "intent": "RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "CORROBORATED",
+      "registration_status": "REGISTERED",
+      "source_signature": "ASYMMETRIC",
+      "technical_eligibility": "ELIGIBLE",
+      "temporal_binding": "PROVEN_SOURCE_ECHO"
+    }
+  }
+}

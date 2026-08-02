@@ -1,0 +1,53 @@
+; Apache-2.0 — ships with the public verifier repo.
+; CDDL for certificate-v1 (B24). Encoded per SPEC/certificate-v1.md §1:
+; RFC 8949 core deterministic encoding, definite lengths, text map keys
+; sorted by encoded bytes, no floats, no tags. Types referenced from
+; SPEC/cddl/verified-action-v1.cddl. FROZEN: extending any object here
+; requires updating both engines, the canonical-byte vectors and the
+; certificate goldens in the same commit.
+
+CertificateCore = {
+  schema: "evd/certificate/v1",
+  subject: { action_id: text, action_class: text, origin: text,
+             ? subject_ids: { * text => hex32 } },
+  bundle: { * text => any },                      ; complete evd/bundle/v1
+  ? claim: AgentActionClaim,
+  events: [* SourceEvent],
+  event_matches: [* { event_key: text, echoed_action_id: bool,
+      immutable_ref_match: bool, unique_field_match: bool, final: bool,
+      material_mismatch: bool }],
+  ? source_identity: SourceIdentity,
+  ? control_evidence: ControlDomainEvidence,
+  ? batch: SourceBatch,
+  ? scan: { performed: bool, complete: bool, cursor_gap_free: bool,
+            authenticated_read: bool, node_signed: bool },
+  coverage_doc: { * text => any },                ; evd/coverage-manifest/v1
+  ? node_attestation: NodeAttestation,
+  open_findings: [* { finding_id: hex32, rule_id: text, state: finding-state,
+                      source: text, period: { * text => text } }],
+  proof_digests: [* hex32],
+  ? assurance_transcript_digest: hex32,
+  ? presentation_digest: hex32,
+  agent_context_digest: hex32,
+  verdict_input: { * text => any },               ; complete evd/verdict-input/v1
+  limitations: [* text],                          ; closed codes, certificate-v1 §3
+  current_through: ts,
+  policy_version: text,
+  ? attachments: [* { name: text, digest: hex32, bytes_len: uint }],
+}
+
+CertificateView = {
+  schema: "evd/certificate-view/v1",
+  certificate_id: hex32,                          ; sha256 over core CBOR bytes
+  ? core: bstr,                                   ; the core's exact CBOR bytes
+  ? disclosures: [* { * text => text }],          ; evd/disclosure/v1 packages
+  manifest: VerificationViewManifest,             ; names disclosed/withheld
+  signature: b64,                                 ; issuer, over view minus signature
+}
+
+; Registration artifacts (ScopeRegistration / RegistrationIntent /
+; RegistrationAttempt, action-fact-v1 §13) reference certificate_id and are
+; resolved core -> envelope -> registration; they are never embedded.
+
+; Caps (certificate-v1 §4.1): core <= 1 MiB; pack <= 16 MiB; depth <= 64;
+; events/matches/findings <= 10000; attachments <= 1000; disclosures <= 256.
