@@ -1,0 +1,84 @@
+; Apache-2.0 — ships with the public verifier repo.
+; CDDL for scitt-action-profile-v1 (B25). Encoded per SPEC/certificate-v1.md
+; §1 deterministic CBOR. COSE_Sign1 is the CBOR array (tag 18). FROZEN:
+; extending any structure here requires updating both engines, the COSE
+; canonical-byte vectors and the SCITT goldens in the same commit.
+
+hex32 = text .regexp "[0-9a-f]{64}"
+ts    = text
+
+; ---------- COSE_Sign1 (RFC 9052), our deterministic profile ----------
+; The signature is EdDSA (alg -8) over Sig_structure:
+;   ["Signature1", protected: bstr, external_aad: h'' , payload: bstr]
+COSE_Sign1 = [
+  protected:   bstr,           ; deterministic-CBOR header map, wrapped
+  unprotected: { * (int / text) => any },
+  payload:     bstr / null,
+  signature:   bstr,
+]
+
+; protected header map (before wrapping in the bstr)
+StatementProtected = {
+  1: -8,                                        ; alg = EdDSA
+  3: "application/vnd.swarrm.action-certificate+cbor",  ; content type
+  4: bstr,                                      ; kid = ascii bytes of the 16-char kid
+  15: { 1: text, 2: text },                     ; CWT_Claims { iss, sub=certificate_id hex }
+}
+
+ReceiptProtected = {
+  1: -8,                                        ; alg = EdDSA
+  4: bstr,                                       ; TS kid
+  395: 1,                                        ; verifiable data structure = RFC9162_SHA256
+}
+
+; receipt unprotected header
+ReceiptUnprotected = {
+  396: { -1: InclusionProof },                   ; VDS proofs
+  -2: CheckpointBody,                            ; the enclosing TS checkpoint body
+}
+
+InclusionProof = [
+  tree_size:  uint,
+  leaf_index: uint,
+  audit_path: [* bstr],                          ; RFC 6962 audit path, 32-byte hashes
+]
+
+CheckpointBody = {
+  schema:    "evd/checkpoint/v1",
+  origin:    text,                               ; the TS log origin, e.g. "evd://scitt"
+  tree_size: uint,
+  root_hash: hex32,
+  ts:        ts,
+  prev_hash: text,                               ; hex of prev body_hash, "" at genesis
+}
+
+; ---------- registration receipts (frozen in B21.7, operated here) ----------
+; RegistrationIntent / RegistrationAttempt / ScopeRegistration are defined in
+; SPEC/cddl/verified-action-v1.cddl; B25 emits them as ordinary evd/receipt/v1
+; receipts and consumes them for the REGISTERED/PENDING/UNREGISTERED derivation.
+
+RegistrationPolicy = {
+  schema:        "evd/registration-policy/v1",
+  policy_version: text,
+  ts_origin:     text,
+  accepted_profiles: [* text],                   ; e.g. ["scitt-action-profile-v1"]
+  max_statement_bytes: uint,
+  ts_keys:       [* { kid: text, jwk: { * text => text } }],
+  signature:     text,                           ; b64, by the TS root over the policy
+}
+
+; ---------- offline trust pack ----------
+ScittPack = {
+  schema:          "evd/scitt-pack/v1",
+  certificate_id:  hex32,
+  signed_statement: bstr,                         ; the issuer COSE_Sign1
+  receipt:         bstr,                          ; the TS COSE_Sign1
+  checkpoint:      { body: CheckpointBody, kid: text, sig: text },
+  ? anchor_record: { * text => any },             ; AnchorRecord (independent time)
+  ? tst_record:    { * text => any },             ; TstRecord
+  registration_policy: RegistrationPolicy,
+  ts_jwks:         { keys: [* { * text => text }] },
+}
+
+; Caps (scitt-action-profile-v1 §6.1): each COSE_Sign1 <= 64 KiB; CBOR depth
+; <= 16; audit_path <= 64 hashes. Over-cap -> scitt_receipt_valid = false.

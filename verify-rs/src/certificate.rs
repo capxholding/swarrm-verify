@@ -24,11 +24,12 @@
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ciborium::Value as C;
 use serde_json::{json, Value as J};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::action::{authority_facts, derive_vector};
 use crate::cbor::{canonical_cbor, decode_cbor, MAX_BYTES, MAX_DEPTH};
-use crate::{ed25519_verify, hex, replay_key_log, sha256, verify_bundle};
+use crate::scitt::{hex_to_bytes, verify_scitt_receipt};
+use crate::{ed25519_verify, hex, key_from_jwk, replay_key_log, sha256, verify_bundle};
 
 const CORE_SCHEMA: &str = "evd/certificate/v1";
 const VIEW_SCHEMA: &str = "evd/certificate-view/v1";
@@ -296,6 +297,54 @@ fn view_checks(view: &C, id: &str, bundle: &J, mark: &J, errors: &mut Vec<&'stat
     if man.and_then(|m| ctext(m, "mark_result")) != mark.as_str() { errors.push("MARK_MISMATCH") }
 }
 
+// ------------------------------------------------- scitt override (SPEC §6)
+
+/// TS trust keys (kid → raw pubkey) from the pack's published ts_jwks.
+fn scitt_ts_keys(pack: &J) -> BTreeMap<String, [u8; 32]> {
+    let mut keys = BTreeMap::new();
+    let set = pack.get("ts_jwks").and_then(|j| j.get("keys")).and_then(J::as_array);
+    for jwk in set.map(Vec::as_slice).unwrap_or(&[]) {
+        if let Some((raw, kid)) = key_from_jwk(jwk) {
+            keys.insert(kid, raw);
+        }
+    }
+    keys
+}
+
+/// The certificate's own key-log keys — the issuer set §6.2 verifies the
+/// Signed Statement under; empty if the log is unsound.
+fn scitt_issuer_keys(bundle: &J) -> BTreeMap<String, [u8; 32]> {
+    let entries = bundle.get("entries").and_then(J::as_array).cloned().unwrap_or_default();
+    let kl = replay_key_log(&entries);
+    if kl.ok { kl.keys } else { BTreeMap::new() }
+}
+
+/// SPEC §6: `scitt_receipt_valid` is VERIFIER-DERIVED. When the registration
+/// layer carries a scitt pack whose `certificate_id` matches, recompute the
+/// flag via `verify_scitt_receipt` and OVERRIDE any producer-supplied value
+/// BEFORE `derive_vector` — a producer can never self-assert REGISTERED, and a
+/// forged/mismatched pack forces the flag false. No pack → the field is untouched.
+fn apply_scitt_override(vi: &mut J, id: &str, bundle: &J) {
+    let pack = match vi.get("registration").and_then(|r| r.get("scitt_pack")) {
+        Some(p) if p.is_object() => p.clone(),
+        _ => return,
+    };
+    let ss = pack.get("signed_statement").and_then(J::as_str).and_then(hex_to_bytes);
+    let rc = pack.get("receipt").and_then(J::as_str).and_then(hex_to_bytes);
+    let ok = pack.get("certificate_id").and_then(J::as_str) == Some(id)
+        && match (ss, rc) {
+            (Some(ss), Some(rc)) => verify_scitt_receipt(
+                &ss,
+                &rc,
+                &scitt_ts_keys(&pack),
+                &scitt_issuer_keys(bundle),
+                id,
+            ),
+            _ => false,
+        };
+    vi["registration"]["scitt_receipt_valid"] = json!(ok);
+}
+
 // ----------------------------------------------------------------- pipeline
 
 fn core_shape_ok(j: &J) -> bool {
@@ -334,6 +383,7 @@ fn verify_core(id: &str, core: &C, view: Option<&C>) -> J {
         if !vi["authority"].is_object() { vi["authority"] = json!({}) }
         vi["authority"]["integrity"] = json!("INVALID"); // never a partial pass
     }
+    apply_scitt_override(&mut vi, id, &bundle); // SPEC §6: DERIVE scitt_receipt_valid
     let vector = derive_vector(&vi);
     let mark = vector["mark"].clone();
     if let Some(vw) = view {
