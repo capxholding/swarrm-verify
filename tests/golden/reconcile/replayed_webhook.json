@@ -1,0 +1,89 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "currency": "EUR",
+    "value": "380.99"
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "2",
+    "cursor_start": "0",
+    "declared_count": 1,
+    "event_key_root": "7d450c7615dc06bd931c54d6bf4710f441272b279da00cbdbb04f8d55b97b79d",
+    "exclusions": [],
+    "filter_digest": "5d4b02c593e41dda2a33f827baf9b469862b22c50fef71e562fd53b436ab3759",
+    "finality_watermark": "",
+    "gaps": [],
+    "mapping_version": "emu-map-1",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "emu-ledger/acct-23"
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "counterparty": "acme-1369",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "380.99"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-000000",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": false
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": true,
+    "complete": true,
+    "cursor_gap_free": true,
+    "node_signed": true,
+    "performed": true
+  },
+  "schema": "evd/verdict-input/v1",
+  "source_identity": {
+    "account": "acct-23",
+    "declared_control_domain": "UNKNOWN",
+    "declared_controller": "swarrm-emulator",
+    "keys": [
+      {
+        "algorithm_family": "ed25519",
+        "kid": "z53mj9Cchavbq3p-",
+        "valid_from": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "schema": "evd/source-identity/v1",
+    "source_system": "emu-ledger"
+  },
+  "source_proofs": [
+    {
+      "key_identity": "z53mj9Cchavbq3p-",
+      "material_digest": "b114ce6e88e223b4fecfb9bf2177620064f9a7f18b53753b42a403656eabb296",
+      "proof_type": "asymmetric_signature",
+      "schema": "evd/source-proof/v1",
+      "verified": true
+    },
+    {
+      "key_identity": "z53mj9Cchavbq3p-",
+      "material_digest": "b114ce6e88e223b4fecfb9bf2177620064f9a7f18b53753b42a403656eabb296",
+      "proof_type": "asymmetric_signature",
+      "schema": "evd/source-proof/v1",
+      "verified": true
+    }
+  ]
+}

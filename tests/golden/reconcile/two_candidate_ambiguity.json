@@ -1,0 +1,67 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "currency": "EUR",
+    "value": "380.99"
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "7",
+    "cursor_start": "0",
+    "declared_count": 7,
+    "event_key_root": "3ca3bafd75a3d9c6fdff9e3e37e80026bd71e311e113b8145c89b530ed1fb4a4",
+    "exclusions": [],
+    "filter_digest": "5d4b02c593e41dda2a33f827baf9b469862b22c50fef71e562fd53b436ab3759",
+    "finality_watermark": "2026-01-01T00:07:00Z",
+    "gaps": [],
+    "mapping_version": "emu-map-1",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "emu-ledger/acct-23"
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "counterparty": "acme-1369",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "380.99"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-000000",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": false
+    },
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-000001",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": false
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": true,
+    "complete": true,
+    "cursor_gap_free": true,
+    "node_signed": true,
+    "performed": true
+  },
+  "schema": "evd/verdict-input/v1"
+}
