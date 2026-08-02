@@ -16,6 +16,10 @@ base64 = "0.22"
 # RFC 3161 parity crates — the RustCrypto set sanctioned in A_BUILD §0.2·3
 # (owner, 2026-08-01). Exact pins mirrored in ci/architecture_policy.json.
 p256 = "=0.13.2"
+# B24 CBOR primitives — owner sanction O·1 (§0.2·3): ciborium is the ONLY
+# Rust CBOR codec; the canonical emitter in src/cbor.rs owns determinism
+# (ciborium does not sort map keys). Exact pin mirrored in the policy file.
+ciborium = "=0.2.2"
 der = "=0.7.10"
 x509-cert = "=0.2.5"
 cms = "=0.2.3"

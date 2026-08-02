@@ -13,7 +13,7 @@ Reproduce and check:
 
 Expected sha256 of swarrm_verify_bg.wasm (built from this source tree):
 
-    2190a6b75783756340ef42787cabfd4c86c1c76f90a900da42b80c6d9cc81006
+    d7b65af823cc8bdbfe38d0d07e290c8ad24459c2a1358035e82ff66960959fbe
 
 The build is deterministic from the pinned crate versions in Cargo.toml.
 The page displays the sha256 of the module it actually loaded; compare it to
