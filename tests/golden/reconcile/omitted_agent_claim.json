@@ -1,0 +1,57 @@
+{
+  "action": {
+    "action_class": "",
+    "action_id": ""
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "7",
+    "cursor_start": "0",
+    "declared_count": 7,
+    "event_key_root": "3ca3bafd75a3d9c6fdff9e3e37e80026bd71e311e113b8145c89b530ed1fb4a4",
+    "exclusions": [],
+    "filter_digest": "5d4b02c593e41dda2a33f827baf9b469862b22c50fef71e562fd53b436ab3759",
+    "finality_watermark": "2026-01-01T00:07:00Z",
+    "gaps": [],
+    "mapping_version": "emu-map-1",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "emu-ledger/acct-23"
+  },
+  "client_attestation_present": false,
+  "event_matches": [],
+  "events": [
+    {
+      "counterparty": "acme-1369",
+      "currency": "EUR",
+      "event_key": "evt-000000",
+      "finality": "final",
+      "outcome": "succeeded",
+      "proof_digests": [
+        "2a688ab90bc744ec182f1f2e8ca72aa89f4a49c118579d2a877c52f10f45995f"
+      ],
+      "reference": "ref-23-0000",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T00:00:00Z",
+      "source_identity_ref": "emu-ledger/acct-23",
+      "value": "380.99"
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": true,
+    "complete": true,
+    "cursor_gap_free": true,
+    "node_signed": true,
+    "performed": true
+  },
+  "schema": "evd/verdict-input/v1"
+}

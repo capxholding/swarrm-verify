@@ -153,7 +153,9 @@ token per scan. The Node data dir and config contain no credential bytes
   deterministic rules only, never by a person: `rule_id ∈ {cursor_gap,
   cursor_rollback, cursor_reuse, count_mismatch, event_root_mismatch,
   fork_divergence, continuity_gap, algorithm_family_mismatch,
-  credential_expired, vault_unreadable}`, scope (source, period), evidence
+  credential_expired, vault_unreadable, mapping_substituted}` (the last added
+  with B23: a scan under a mapping_version differing from the bound
+  SourceManifest, reconcile-v1 §2), scope (source, period), evidence
   digests. `finding_id` = the receipt hash (derived, never declared).
 - **`evd.finding.triaged`** — a practitioner's SIGNED factual statement:
   finding_id, new state ∈ `RESOLVED_FACTUAL` | `ACCEPTED_LIMITATION`, the

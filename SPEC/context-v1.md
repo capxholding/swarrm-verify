@@ -42,12 +42,18 @@ disclosable later by the payload holder) or must not exist anywhere.
 | `evd.finding.raised` | rule_id, source, period, evidence_digests (node-v1 §8) | — | payload bytes of any evidenced material |
 | `evd.finding.triaged` | finding_id, state, practitioner_id, practitioner_sig (node-v1 §8) | statement (the practitioner's factual statement) | coverage claims of any kind (coverage changes only by recomputation, B23) |
 | `evd.gap.declared` | scope, period, reason (node-v1 §8) | — | credentials; master keys; payload bytes |
+| `evd.coverage.recorded` | source, period_start, period_end, cursor_start, cursor_end, claim_count, event_count, orphan_count, gaps_count, exclusions_count, event_key_root, finality_watermark (system — reconcile-v1 §6) | coverage (the canonical `evd/coverage-manifest/v1` document, domain `evd/v1/node/coverage`) | credentials; master keys; payload bytes |
 
-## 1b. Universal lineage keys (birthtag-v1)
+## 1b. Universal keys (birthtag-v1, reconcile-v1 §1)
 
 `birthtag_id` and `revision_id` are allowed as PLAINTEXT context on EVERY
-action type (they are receipt hashes — derived, non-secret, no PII). They
-are the only universal context keys; everything else stays per-type.
+action type (they are receipt hashes — derived, non-secret, no PII).
+`action_id` and `external_ref` (reconcile-v1 §1 correlation) join them:
+`action_id` is an opaque identifier created BEFORE execution and reused
+across every retry; `external_ref` is the source's returned reference.
+Both are opaque IDs and NEVER business data — capture surfaces carry them
+untouched and never validate or interpret them. These four are the only
+universal context keys; everything else stays per-type.
 
 ## 2. Bands (normative)
 
