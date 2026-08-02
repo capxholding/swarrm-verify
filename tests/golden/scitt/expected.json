@@ -1,0 +1,32 @@
+{
+  "certificate_id": "31fe61315cb982edebf815a133eb89629814fff638d424008fa42efbe110caa6",
+  "families": {
+    "forged_receipt": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "forked_tree": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "registered_valid": {
+      "full_certificate": {
+        "mark": "VERIFIED_CORROBORATED",
+        "registration_status": "REGISTERED"
+      },
+      "scitt_receipt_valid": true
+    },
+    "stale_checkpoint": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "statement_substitution": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "wrong_policy": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    }
+  }
+}

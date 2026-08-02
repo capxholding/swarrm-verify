@@ -9,8 +9,11 @@ pub mod action;
 #[allow(dead_code)] // canonical_from_json: golden-phase seam; tests use #[path]
 mod cbor;
 pub mod certificate; // B24.3 — verify_certificate_cbor doubles as the wasm export
+#[allow(dead_code)] // B25 W1 COSE adapter: consumed by later SCITT weeks and the golden test
+mod cose;
 pub(crate) mod jcs;
 mod merkle;
+mod scitt;
 pub mod tsa;
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -699,7 +702,14 @@ fn check_seq_uniqueness(entries: &[Value]) -> bool {
 pub(crate) fn is_internal_agent(a: &str) -> bool {
     matches!(
         a,
-        "_system" | "_grants" | "_reports" | "_detect" | "_idem" | "_authority" | "_node"
+        "_system"
+            | "_grants"
+            | "_reports"
+            | "_detect"
+            | "_idem"
+            | "_authority"
+            | "_node"
+            | "_register"
     ) || a.starts_with("_rel_")
 }
 
