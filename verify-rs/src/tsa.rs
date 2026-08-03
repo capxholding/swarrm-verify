@@ -11,17 +11,17 @@
 //!   5. signer cert chains to a SELF-SIGNED root inside the pinned chain
 //!   6. genTime lies within the signer cert's validity window
 //!
-//! SCOPE LIMIT (weak claim, documented — not a hidden gap): signatures are
-//! verified with ECDSA P-256 ONLY. The owner sanction (A_BUILD §0.2·3,
-//! 2026-08-01) covers the RustCrypto crates `p256`/`der`/`x509-cert`/`cms`;
-//! the `rsa` crate is NOT sanctioned, so RSA-signed tokens or chains return
-//! false here — meaning "not verifiable within the sanctioned algorithm
-//! scope", never "verified". The current freeTSA signer certificate is ECDSA
-//! (A_BUILD §1) but uses a P-384 key with an RSA-signed chain, so the real
-//! freeTSA token verifies only in the Python verifier; extend the §0.2·3
-//! sanction with the `rsa` (and `p384`) crates to lift this. The shared
-//! fixtures pin the divergence per case (tests/golden/bundles/
-//! expected_tsa.json, `why_diverges`).
+//! ALGORITHM COVERAGE (owner sanctions A_BUILD §0.2·3, 2026-08-01 + 2026-08-03):
+//! signatures verify under ECDSA P-256 / P-384 (`p256`/`p384`) and RSASSA-
+//! PKCS1-v1_5 (`rsa`) — the same set pyca/cryptography accepts on the Python
+//! side, so the real freeTSA token (P-384 signer key, RSA-signed chain) and
+//! RSA-signed qualified tokens verify in BOTH engines. A curve, key type, or
+//! signature family outside this set returns false — "not verifiable within the
+//! sanctioned scope", never "verified". Exact pins + sha256 digests live in
+//! ci/architecture_policy.json (`approved_rust_crates`), enforced by
+//! scripts/check_architecture.py; transitives are witnessed by the committed
+//! Cargo.lock. (verify-only: no private-key operations, so the `rsa` crate's
+//! Marvin decryption advisory RUSTSEC-2023-0071 does not apply.)
 //!
 //! Total function: this input is attacker-controlled, so malformed or
 //! hostile bytes return false — no unwrap/expect on any parse path. The
@@ -33,8 +33,9 @@ use cms::content_info::ContentInfo;
 use cms::signed_data::{SignedData, SignerIdentifier, SignerInfo};
 use der::asn1::{AnyRef, GeneralizedTime, ObjectIdentifier, OctetStringRef};
 use der::{Decode, Encode, SliceReader, Tag, Tagged};
-use p256::ecdsa::signature::hazmat::PrehashVerifier;
-use p256::ecdsa::{Signature, VerifyingKey};
+use p256::ecdsa::signature::hazmat::PrehashVerifier; // shared trait; p384 keys implement it too
+use rsa::pkcs1::DecodeRsaPublicKey;
+use rsa::{Pkcs1v15Sign, RsaPublicKey};
 use sha2::{Digest, Sha256, Sha384, Sha512};
 use std::collections::BTreeSet;
 use x509_cert::attr::Attributes;
@@ -52,6 +53,11 @@ const OID_ECDSA_SHA384: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840
 const OID_ECDSA_SHA512: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.10045.4.3.4");
 const OID_EC_PUBLIC_KEY: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.10045.2.1");
 const OID_PRIME256V1: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.10045.3.1.7");
+const OID_SECP384R1: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.3.132.0.34");
+const OID_RSA_ENCRYPTION: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.1");
+const OID_SHA256_RSA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.11");
+const OID_SHA384_RSA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.12");
+const OID_SHA512_RSA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.13");
 
 /// The TSTInfo fields the checks need; trailing optional fields (accuracy,
 /// ordering, nonce, tsa, extensions) are skipped like the Python parser
@@ -74,29 +80,52 @@ fn hash_bytes(oid: &ObjectIdentifier, data: &[u8]) -> Option<Vec<u8>> {
     }
 }
 
-/// Signature-algorithm OID -> hash OID. ECDSA only — RSA (and every other
-/// family) is None: the `rsa` crate is outside the §0.2·3 sanction.
-fn ecdsa_hash_oid(sig_alg: &ObjectIdentifier) -> Option<ObjectIdentifier> {
-    if *sig_alg == OID_ECDSA_SHA256 {
+/// Signature-algorithm OID -> hash OID, for the sanctioned families: ECDSA
+/// (P-256 / P-384) and RSASSA-PKCS1-v1_5. Any other family is None.
+fn sig_hash_oid(sig_alg: &ObjectIdentifier) -> Option<ObjectIdentifier> {
+    if *sig_alg == OID_ECDSA_SHA256 || *sig_alg == OID_SHA256_RSA {
         Some(OID_SHA256)
-    } else if *sig_alg == OID_ECDSA_SHA384 {
+    } else if *sig_alg == OID_ECDSA_SHA384 || *sig_alg == OID_SHA384_RSA {
         Some(OID_SHA384)
-    } else if *sig_alg == OID_ECDSA_SHA512 {
+    } else if *sig_alg == OID_ECDSA_SHA512 || *sig_alg == OID_SHA512_RSA {
         Some(OID_SHA512)
     } else {
         None
     }
 }
 
-/// ECDSA P-256 over the named hash; any other key type or curve is false
-/// (module-level scope limit — the Python side also accepts RSA and other
-/// curves via pyca/cryptography).
-fn verify_sig_p256(
+/// Verify `sig` over `data` with the signer's SPKI. The FAMILY is chosen by the
+/// public KEY type (RSA vs ECDSA) — exactly like pyca on the Python side — so a
+/// signature under the BARE `rsaEncryption` OID (the AlfaSign / qtsa.eu
+/// qualified-TSP pattern, which carries no hash in the sig alg) still resolves
+/// to RSASSA-PKCS1-v1_5. The hash is the sig-alg's own when it carries one
+/// (ecdsa-with-shaXXX, shaXXXWithRSA), else `digest_hint` (the separate digest
+/// algorithm). ECDSA backends truncate an over-long prehash to the field size
+/// (bits2field) as pyca does. Any unsupported key / curve / hash is false.
+fn verify_sig(
     spki: &SubjectPublicKeyInfoOwned,
-    sig_der: &[u8],
+    sig_alg: &ObjectIdentifier,
+    digest_hint: &ObjectIdentifier,
+    sig: &[u8],
     data: &[u8],
-    hash_oid: &ObjectIdentifier,
 ) -> bool {
+    let hash_oid = sig_hash_oid(sig_alg).unwrap_or(*digest_hint);
+    let digest = match hash_bytes(&hash_oid, data) {
+        Some(d) => d,
+        None => return false,
+    };
+    if spki.algorithm.oid == OID_RSA_ENCRYPTION {
+        verify_rsa(spki, sig, &digest, &hash_oid)
+    } else if spki.algorithm.oid == OID_EC_PUBLIC_KEY {
+        verify_ecdsa(spki, sig, &digest)
+    } else {
+        false
+    }
+}
+
+/// ECDSA over the SPKI's named curve (P-256 or P-384). `sig` is a DER
+/// ECDSA-Sig-Value; `digest` is the prehash.
+fn verify_ecdsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8]) -> bool {
     if spki.algorithm.oid != OID_EC_PUBLIC_KEY {
         return false;
     }
@@ -105,26 +134,69 @@ fn verify_sig_p256(
         .parameters
         .as_ref()
         .and_then(|p| p.decode_as::<ObjectIdentifier>().ok());
-    if curve != Some(OID_PRIME256V1) {
+    let key_bytes = match spki.subject_public_key.as_bytes() {
+        Some(b) => b,
+        None => return false,
+    };
+    match curve {
+        Some(c) if c == OID_PRIME256V1 => verify_p256(key_bytes, sig, digest),
+        Some(c) if c == OID_SECP384R1 => verify_p384(key_bytes, sig, digest),
+        _ => false,
+    }
+}
+
+fn verify_p256(key_bytes: &[u8], sig_der: &[u8], digest: &[u8]) -> bool {
+    let vk = match p256::ecdsa::VerifyingKey::from_sec1_bytes(key_bytes) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+    let sig = match p256::ecdsa::Signature::from_der(sig_der) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    vk.verify_prehash(digest, &sig).is_ok()
+}
+
+fn verify_p384(key_bytes: &[u8], sig_der: &[u8], digest: &[u8]) -> bool {
+    let vk = match p384::ecdsa::VerifyingKey::from_sec1_bytes(key_bytes) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+    let sig = match p384::ecdsa::Signature::from_der(sig_der) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    vk.verify_prehash(digest, &sig).is_ok()
+}
+
+/// RSASSA-PKCS1-v1_5 with the SPKI's RSA key over the prehash `digest`.
+fn verify_rsa(
+    spki: &SubjectPublicKeyInfoOwned,
+    sig: &[u8],
+    digest: &[u8],
+    hash_oid: &ObjectIdentifier,
+) -> bool {
+    if spki.algorithm.oid != OID_RSA_ENCRYPTION {
         return false;
     }
     let key_bytes = match spki.subject_public_key.as_bytes() {
         Some(b) => b,
         None => return false,
     };
-    let vk = match VerifyingKey::from_sec1_bytes(key_bytes) {
-        Ok(v) => v,
+    let key = match RsaPublicKey::from_pkcs1_der(key_bytes) {
+        Ok(k) => k,
         Err(_) => return false,
     };
-    let sig = match Signature::from_der(sig_der) {
-        Ok(s) => s,
-        Err(_) => return false,
+    let scheme = if *hash_oid == OID_SHA256 {
+        Pkcs1v15Sign::new::<Sha256>()
+    } else if *hash_oid == OID_SHA384 {
+        Pkcs1v15Sign::new::<Sha384>()
+    } else if *hash_oid == OID_SHA512 {
+        Pkcs1v15Sign::new::<Sha512>()
+    } else {
+        return false;
     };
-    let digest = match hash_bytes(hash_oid, data) {
-        Some(d) => d,
-        None => return false,
-    };
-    vk.verify_prehash(&digest, &sig).is_ok()
+    key.verify(scheme, digest, sig).is_ok()
 }
 
 /// messageImprint ::= SEQUENCE { hashAlgorithm, hashedMessage }
@@ -197,12 +269,10 @@ fn message_digest_matches(signed_attrs: &Attributes, want: &[u8]) -> bool {
     }
 }
 
-/// Returns the single SignerInfo plus the hash OID for its signature after
-/// the RFC 3161 structural checks (mirror of `_check_signer_info`).
-fn check_signer_info<'a>(
-    sd: &'a SignedData,
-    tst_der: &[u8],
-) -> Option<(&'a SignerInfo, ObjectIdentifier)> {
+/// Returns the single SignerInfo after the RFC 3161 structural checks (mirror
+/// of `_check_signer_info`). The signature hash is resolved in verify_sig (from
+/// the sig alg, or the digest algorithm for the bare rsaEncryption OID).
+fn check_signer_info<'a>(sd: &'a SignedData, tst_der: &[u8]) -> Option<&'a SignerInfo> {
     let mut infos = sd.signer_infos.0.iter();
     let si = match (infos.next(), infos.next()) {
         (Some(si), None) => si, // exactly 1 SignerInfo
@@ -216,8 +286,7 @@ fn check_signer_info<'a>(
     if !message_digest_matches(signed_attrs, &want) {
         return None;
     }
-    let hash_oid = ecdsa_hash_oid(&si.signature_algorithm.oid)?;
-    Some((si, hash_oid))
+    Some(si)
 }
 
 fn find_signer_cert<'a>(sd: &'a SignedData, si: &SignerInfo) -> Option<&'a Certificate> {
@@ -239,19 +308,16 @@ fn find_signer_cert<'a>(sd: &'a SignedData, si: &SignerInfo) -> Option<&'a Certi
 }
 
 fn cert_sig_valid(current: &Certificate, issuer: &Certificate, tbs_der: &[u8]) -> bool {
-    let hash_oid = match ecdsa_hash_oid(&current.signature_algorithm.oid) {
-        Some(h) => h,
-        None => return false, // RSA-signed chain — outside the sanction scope
-    };
     let sig = match current.signature.as_bytes() {
         Some(s) => s,
         None => return false,
     };
-    verify_sig_p256(
+    verify_sig(
         &issuer.tbs_certificate.subject_public_key_info,
+        &current.signature_algorithm.oid,
+        &current.signature_algorithm.oid,
         sig,
         tbs_der,
-        &hash_oid,
     )
 }
 
@@ -297,8 +363,9 @@ fn gen_time_in_validity(gen_time: &GeneralizedTime, cert: &Certificate) -> bool 
 /// Verify an RFC 3161 TimeStampToken (DER) against an expected SHA-256
 /// digest (lowercase hex) and a pinned PEM certificate chain. Boolean-only
 /// mirror of `verify/tsa.py::verify_tst` (detail strings and genTime
-/// extraction are a Python-report concern) under the module-level ECDSA
-/// P-256 scope limit. Malformed or hostile input is false, never a panic.
+/// extraction are a Python-report concern). Signatures verify under ECDSA
+/// P-256/P-384 and RSASSA-PKCS1-v1_5. Malformed or hostile input is false,
+/// never a panic.
 pub fn verify_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> bool {
     let (sd, tst_der, tst) = match parse_token(token_der) {
         Some(t) => t,
@@ -310,7 +377,7 @@ pub fn verify_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &
         return false;
     }
     // 3. signer info + message-digest attribute
-    let (si, hash_oid) = match check_signer_info(&sd, &tst_der) {
+    let si = match check_signer_info(&sd, &tst_der) {
         Some(t) => t,
         None => return false,
     };
@@ -325,7 +392,13 @@ pub fn verify_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &
         None => return false,
     };
     let spki = &signer.tbs_certificate.subject_public_key_info;
-    if !verify_sig_p256(spki, si.signature.as_bytes(), &attrs_der, &hash_oid) {
+    if !verify_sig(
+        spki,
+        &si.signature_algorithm.oid,
+        &si.digest_alg.oid,
+        si.signature.as_bytes(),
+        &attrs_der,
+    ) {
         return false;
     }
     // 5. chain to a pinned self-signed root
