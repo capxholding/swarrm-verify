@@ -576,11 +576,23 @@ fn mark(te: &str, reg: &str, v: &Value) -> &'static str {
         (_, "UNREGISTERED") => "UNMARKED_UNREGISTERED",
         ("INELIGIBLE", _) => "UNMARKED_TECHNICAL",
         _ => {
+            // THE MARK IS WITHDRAWN (owner audit 2026-08-03, containment step 1):
+            // both paths read DECLARATION-derived dimensions (source_signature
+            // reaches ASYMMETRIC from a `verified: true` boolean + key-NAME
+            // equality, never signature bytes; control_domain reaches INDEPENDENT
+            // from truthy strings), so a subject could award itself the top mark.
+            // Explicit withdrawal, never a silent absence. Mirrors verify/action.py.
             let corroborated = s(v, "source_signature") == Some("ASYMMETRIC")
                 && s(v, "control_domain") == Some("INDEPENDENT");
             let observed = s(v, "node_observation") == Some("OBSERVED")
                 && s(v, "node_integrity_basis") == Some("HARDWARE_ATTESTED");
-            tri(corroborated, "VERIFIED_CORROBORATED", observed, "VERIFIED_OBSERVED", "UNMARKED_TECHNICAL")
+            tri(
+                corroborated,
+                "UNMARKED_ASSURANCE_WITHDRAWN",
+                observed,
+                "UNMARKED_ASSURANCE_WITHDRAWN",
+                "UNMARKED_TECHNICAL",
+            )
         }
     }
 }
