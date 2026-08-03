@@ -645,7 +645,7 @@
       "upper": "2026-01-01T01:00:00Z"
     },
     "linkage": "DIRECT",
-    "mark": "VERIFIED_CORROBORATED",
+    "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
     "node_integrity_basis": "LOG_WITNESSED_SOFTWARE",
     "node_observation": "OBSERVED",
     "out_of_scope_surfaces": [],
@@ -970,7 +970,7 @@
       "upper": "2026-01-01T01:00:00Z"
     },
     "linkage": "DIRECT",
-    "mark": "VERIFIED_OBSERVED",
+    "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
     "node_integrity_basis": "HARDWARE_ATTESTED",
     "node_observation": "OBSERVED",
     "out_of_scope_surfaces": [],
