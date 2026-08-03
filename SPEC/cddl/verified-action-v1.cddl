@@ -36,7 +36,18 @@ history-state         = "CLOSED_SINCE_BIRTH" / "NO_EVIDENCED_HISTORY_IN_PRESENTE
 authority-proof       = "ACTION_SPECIFIC_AUTHORIZATION" / "DISCLOSED_LIMIT" / "NONE"
 technical-eligibility = "ELIGIBLE" / "INELIGIBLE" / "NOT_RECOMPUTED"
 registration-status   = "REGISTERED" / "PENDING" / "UNREGISTERED"
-mark-render           = "VERIFIED_CORROBORATED" / "VERIFIED_OBSERVED" / "UNMARKED_TECHNICAL"
+; MARK WITHDRAWN (owner audit 2026-08-03). "VERIFIED_CORROBORATED" and
+; "VERIFIED_OBSERVED" are REMOVED from the wire format, not merely left
+; unemitted: both were derivable from a subject's own declarations
+; (source_signature reached ASYMMETRIC from a `verified: true` boolean plus
+; key-NAME equality, with no signature bytes checked; control_domain reached
+; INDEPENDENT from truthy strings), so a subject could award itself the top
+; mark. A format that still ADMITS an unsafe value invites a producer to emit
+; it. Both paths now render "UNMARKED_ASSURANCE_WITHDRAWN" — explicit, so a
+; reader distinguishes "not proven yet" from "proven not to hold". Restoring
+; the two values requires verifying their inputs against independently
+; supplied trust roots, and is a wire-format change in its own right.
+mark-render           = "UNMARKED_ASSURANCE_WITHDRAWN" / "UNMARKED_TECHNICAL"
                       / "UNMARKED_UNREGISTERED" / "PENDING_REGISTRATION" / "NOT_RECOMPUTED"
 
 ; ---------- lifecycle enums ----------
