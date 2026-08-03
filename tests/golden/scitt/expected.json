@@ -11,7 +11,7 @@
     },
     "registered_valid": {
       "full_certificate": {
-        "mark": "VERIFIED_CORROBORATED",
+        "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
         "registration_status": "REGISTERED"
       },
       "scitt_receipt_valid": true
