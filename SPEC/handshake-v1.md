@@ -31,17 +31,31 @@ schemas, and `tests/test_handshake.py` over `handshake/`).
 
 A commitment cannot prove a predicate over its own preimage. Exactly two
 admissible constructions, both rendered:
-- **`ACTION_SPECIFIC_AUTHORIZATION`** (default) — root-signed authorization for
+- **`ACTION_SPECIFIC_AUTHORIZATION`** (default) — a root-signed authorization for
   THIS action, binding ALL of: `action_id`, action class, exact value +
   currency, the challenge nonce, authorising + subject parties, `grant_id` AND
-  `grant_version`, issue time, expiry, and a unique replay id. Missing any
-  binding renders authority `NOT_VERIFIED`. It proves the root authorised this
-  exact action — a different and sufficient claim, and it discloses no limit.
+  `grant_version`, issue time, expiry, a unique replay id, and the root signature
+  (`root_sig`) over exactly that set. Missing any binding renders authority
+  `NOT_VERIFIED`. When cryptographically verified it shows the root authorised
+  this exact action — a different and sufficient claim, and it discloses no limit.
 - **`DISCLOSED_LIMIT`** — B discloses the relevant limit and the verifier
   compares directly (leaks the limit to that counterparty).
 
 A bare boolean or a commitment-plus-assertion is `NOT_VERIFIED`. A range proof
 over a hidden limit is explicitly NOT permitted (ZK stays roadmap-only).
+
+**Scope of the `handshake/` module (claims ≤ mechanism).** The module verifies
+what is local and self-contained: that every binding is present, that the
+authorization is bound to THIS challenge (nonce + action class), and the
+freshness / revocation / continuity guards below. It does **not** itself
+cryptographically verify `root_sig` or `key_proof` — that check belongs to the
+relying party, against the authorising root's key **it already trusts** (there is
+no such thing as verifying a signature against a key the presentation hands you).
+Until a relying party supplies that trust anchor, `root_sig` is checked for
+presence and binding only; the cryptographic verification is that party's step,
+landing with the first relying-party integration (`P·D`, pull-gated). A `PASS`
+from this module therefore means "structurally complete, bound, fresh and
+non-revoked" — not "signature verified"; the two compose, they do not substitute.
 
 ## 3. The failure modes this prevents (all test-proven)
 
