@@ -44,18 +44,30 @@ admissible constructions, both rendered:
 A bare boolean or a commitment-plus-assertion is `NOT_VERIFIED`. A range proof
 over a hidden limit is explicitly NOT permitted (ZK stays roadmap-only).
 
-**Scope of the `handshake/` module (claims ≤ mechanism).** The module verifies
-what is local and self-contained: that every binding is present, that the
-authorization is bound to THIS challenge (nonce + action class), and the
-freshness / revocation / continuity guards below. It does **not** itself
-cryptographically verify `root_sig` or `key_proof` — that check belongs to the
-relying party, against the authorising root's key **it already trusts** (there is
-no such thing as verifying a signature against a key the presentation hands you).
-Until a relying party supplies that trust anchor, `root_sig` is checked for
-presence and binding only; the cryptographic verification is that party's step,
-landing with the first relying-party integration (`P·D`, pull-gated). A `PASS`
-from this module therefore means "structurally complete, bound, fresh and
-non-revoked" — not "signature verified"; the two compose, they do not substitute.
+**The root signature is CRYPTOGRAPHICALLY verified, against a trust anchor the
+relying party holds (claims ≤ mechanism).** `verify_presentation` takes a
+REQUIRED `trusted_roots` argument mapping authorising-party id → the root's
+Ed25519 public key. There is no such thing as verifying a signature against a key
+the presentation hands you, so the anchor is the relying party's, supplied at the
+call. `root_sig` is a real detached Ed25519 signature over the domain-separated,
+JCS-canonical binding set; the four outcomes are exhaustive and the bad state is
+unrepresentable in the API, not disclaimed in prose:
+
+| trust anchor | root known? | signature | verdict |
+|---|---|---|---|
+| absent / empty | — | — | `INDETERMINATE` (`NO_TRUST_ANCHOR_SUPPLIED`) |
+| supplied | no | — | `INDETERMINATE` (`UNKNOWN_ROOT`) |
+| supplied | yes | fails | `FAIL` (forged / tampered authorization) |
+| supplied | yes | verifies | `PASS` reachable |
+
+A present-but-unverified `root_sig` is a **declared** input; it can never yield an
+independent `PASS` (B28.2 "never a favourable default" + the grounding rule that a
+declared input cannot produce an independent verdict). `PASS` means the signature
+actually verified — never merely "structurally complete". `key_proof` (that B's
+key controls the Birthtag) is verified the same way once B's lineage anchor is
+supplied; the two compose. This is the mechanism that lands with the first
+relying-party integration (`P·D`), and the API already refuses to pretend
+otherwise: without an anchor you get `INDETERMINATE`, never `PASS`.
 
 ## 3. The failure modes this prevents (all test-proven)
 
