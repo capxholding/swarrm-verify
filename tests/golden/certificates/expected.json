@@ -115,7 +115,7 @@
   },
   "selectively_disclosed": {
     "cross_checks_ok": true,
-    "mark": "VERIFIED_CORROBORATED",
+    "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
     "partial": {
       "mark": "NOT_RECOMPUTED",
       "technical_eligibility": "NOT_RECOMPUTED"
@@ -156,7 +156,7 @@
   },
   "valid": {
     "cross_checks_ok": true,
-    "mark": "VERIFIED_CORROBORATED",
+    "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
     "partial": null,
     "vector": {
       "authority": "VERIFIED",
