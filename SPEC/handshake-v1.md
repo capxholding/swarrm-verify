@@ -2,7 +2,29 @@
 
 # SPEC: handshake-v1 — Counterparty Assurance (B28)
 
-**Status: NORMATIVE (v1).** Before transacting, Agent A asks Agent B to prove
+> ## ⛔ DISABLED 2026-08-03 — THIS MODULE CANNOT RETURN `PASS`
+>
+> An owner security audit found unauthenticated `PASS` routes. Do not rely on
+> this for counterparty assurance; do not integrate it. `verify_presentation`
+> now collapses every favourable outcome to `INDETERMINATE`. Adverse findings
+> (a signed refusal, revocation, replay, broken continuity) remain
+> authoritative — disabling assurance must not suppress a bad finding.
+>
+> What was wrong:
+> - **`DISCLOSED_LIMIT` was a bare `{covers: true}` boolean** — no *signed*
+>   limit was ever compared against the challenged value and currency, so
+>   authority could be asserted rather than proven.
+> - **`key_proof`** (that B's key controls the Birthtag), the
+>   **status-snapshot signature**, its **as-of checkpoint**, the **challenge
+>   expiry** and the **grant validity window** were never verified.
+> - **A policy could turn silence into `PASS`** via `on_indeterminate`.
+>
+> Re-enabling requires each of these to be verified against trust roots
+> supplied **independently of the presentation** (§2 already states this for
+> the ASA `root_sig`, which IS cryptographically verified). The design below
+> stands; it is not yet safely implemented.
+
+**Status: NORMATIVE (v1) — DISABLED, see the banner above.** Before transacting, Agent A asks Agent B to prove
 present state **against A's own policy** — not to reveal a score. The contracts
 (`AgentTrustChallengeV1`, `AgentTrustPresentationV1`, `StatusSnapshotV1`,
 `TrustPolicyV1`) are frozen in SPEC/cddl/verified-action-v1.cddl (the B28 seams,
