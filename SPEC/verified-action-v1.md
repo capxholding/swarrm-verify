@@ -53,7 +53,7 @@ proves who said it, never that it is so.
 | authority_proof (handshake seam) | ACTION_SPECIFIC_AUTHORIZATION · DISCLOSED_LIMIT · *NONE* |
 | technical_eligibility | ELIGIBLE · INELIGIBLE · *NOT_RECOMPUTED* |
 | registration_status | REGISTERED · PENDING · *UNREGISTERED* |
-| mark (render) | VERIFIED_CORROBORATED · VERIFIED_OBSERVED · UNMARKED_TECHNICAL · UNMARKED_UNREGISTERED · PENDING_REGISTRATION · *NOT_RECOMPUTED* |
+| mark (render) | UNMARKED_ASSURANCE_WITHDRAWN · UNMARKED_TECHNICAL · UNMARKED_UNREGISTERED · PENDING_REGISTRATION · *NOT_RECOMPUTED* — **no value awards assurance; see §2.15** |
 
 `assurance_linkage` is NEVER merged with `linkage`: one binds a counterparty
 handshake to this action, the other binds an authoritative source event to it.
@@ -211,16 +211,30 @@ else `UNREGISTERED`.
 verifier must not choose): 1. `NOT_RECOMPUTED` (evaluated first — without
 inputs no other state is knowable) · 2. `PENDING_REGISTRATION` ·
 3. `UNMARKED_UNREGISTERED` · 4. `UNMARKED_TECHNICAL` · 5. mark shown.
-Mark shown: `VERIFIED_CORROBORATED` iff ELIGIBLE ∧ REGISTERED ∧
-source_signature `ASYMMETRIC` ∧ control_domain `INDEPENDENT`;
-`VERIFIED_OBSERVED` iff ELIGIBLE ∧ REGISTERED ∧ node_observation `OBSERVED` ∧
-node_integrity_basis `HARDWARE_ATTESTED`. ELIGIBLE ∧ REGISTERED with neither
-mark path satisfied renders `UNMARKED_TECHNICAL` (the evidence did not
-qualify for any mark). A `SHARED_SECRET` signature can reach
-`VERIFIED_OBSERVED` only through genuine Node observation and can never reach
-`VERIFIED_CORROBORATED`. `client_attestation` alone reaches no mark. The two
-dimensions are always rendered alongside the projection; the five render
-states are never a substitute for the pair.
+**THE MARK IS WITHDRAWN (owner audit 2026-08-03). NO INPUT AWARDS A MARK.**
+Both former award paths — `VERIFIED_CORROBORATED` (ELIGIBLE ∧ REGISTERED ∧
+source_signature `ASYMMETRIC` ∧ control_domain `INDEPENDENT`) and
+`VERIFIED_OBSERVED` (ELIGIBLE ∧ REGISTERED ∧ node_observation `OBSERVED` ∧
+node_integrity_basis `HARDWARE_ATTESTED`) — now render
+`UNMARKED_ASSURANCE_WITHDRAWN`, and both values are REMOVED from the
+`mark-render` enum in the CDDL. This is a **wire-format change**, made
+deliberately: a format that still admits an unsafe value invites a producer to
+emit it.
+
+The reason: those conditions were satisfiable from a subject's own
+declarations. `source_signature` reached `ASYMMETRIC` from a `verified: true`
+boolean plus key-**name** equality, with **no signature bytes verified against
+a pre-bound source key**; `control_domain` reached `INDEPENDENT` from truthy
+strings in `control_evidence`. A subject could therefore award itself the top
+mark, which is precisely the deception this document exists to prevent.
+
+Restoring either value requires its inputs to be verified proof bytes checked
+against trust roots supplied **independently of the subject's own submission**,
+and is itself a wire-format change. Until then: ELIGIBLE ∧ REGISTERED with
+neither path satisfied still renders `UNMARKED_TECHNICAL` (the evidence did
+not qualify), `client_attestation` alone reaches no mark, and the two
+dimensions are always rendered alongside the projection — the render states
+are never a substitute for the pair.
 
 ## 3. Claim/threat matrix (what each deception renders as)
 
