@@ -15,7 +15,7 @@ visible, never silent. Per-export cap: 500 receipts.
 | `gen_ai.operation.name` ∈ {chat, text_completion, generate_content} | `action_type: llm.chat` |
 | `gen_ai.operation.name` = execute_tool | `action_type: tool.call` |
 | resource `service.name` | `agent_id` |
-| span_id | `idempotency_key` (`otlp-<span_id>` — natural dedup on retry) |
+| full span + resource `service.name` | `idempotency_key = otlp-<sha256(JCS({service, span}))>` — an exact exporter retry is free and atomic; a changed statement or a same-ID span in another trace remains distinct evidence |
 | startTimeUnixNano | `ts_client`; end−start → `latency_ms`/`duration_ms` |
 | `gen_ai.request.model` / `gen_ai.response.model` | context.model (response wins) |
 | `gen_ai.usage.input_tokens` / `output_tokens` | context tokens (only if present — never guessed) |
