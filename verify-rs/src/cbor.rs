@@ -160,7 +160,7 @@ fn read_head(data: &[u8], i: usize) -> Option<(u8, u64, usize)> {
         return None; // tag
     }
     if major == 7 {
-        return matches!(info, 20 | 21 | 22).then_some((major, 0, i)); // false/true/null only
+        return matches!(info, 20..=22).then_some((major, 0, i)); // false/true/null only
     }
     if info < 24 {
         return Some((major, u64::from(info), i));

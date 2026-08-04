@@ -15,6 +15,21 @@
       "upper": "2026-01-01T01:00:00Z"
     }
   },
+  "batch": {
+    "cursor_end": "1",
+    "cursor_start": "0",
+    "declared_count": 1,
+    "event_key_root": "1111111111111111111111111111111111111111111111111111111111111111",
+    "exclusions": [],
+    "filter_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "finality_watermark": "",
+    "gaps": [],
+    "mapping_version": "fixture-1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "fixture-source/acct-1"
+  },
   "claim": {
     "action_class": "payment.execute",
     "action_id": "act-1",
@@ -73,10 +88,13 @@
   },
   "scan": {
     "authenticated_read": true,
+    "batch_digest": "88a6acaf693278671bc0b2713bf702c4ddf39cecd1611da7953ed568ddd33943",
     "complete": true,
     "cursor_gap_free": false,
+    "node_id": "node-1",
     "node_signed": true,
-    "performed": true
+    "performed": true,
+    "signature": "TyTfGvQ7vqjeKpCKGfAtqRQeUtshZDKQDFGqAFIkL/Sc+y3Mg5Qec+InffZDny25i5yTocNcuN0HeAl0QThzBQ=="
   },
   "schema": "evd/verdict-input/v1"
 }

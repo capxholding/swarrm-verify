@@ -1,6 +1,10 @@
 {
-  "certificate_id": "31fe61315cb982edebf815a133eb89629814fff638d424008fa42efbe110caa6",
+  "certificate_id": "6b7b4bc9b8f97c0db2979b13f45479f4568b4f0bf9408abcae91d28a666b0663",
   "families": {
+    "empty_statement_issuer": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
     "forged_receipt": {
       "full_certificate": null,
       "scitt_receipt_valid": false
@@ -16,7 +20,15 @@
       },
       "scitt_receipt_valid": true
     },
+    "short_statement_payload": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
     "stale_checkpoint": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "statement_subject_mismatch": {
       "full_certificate": null,
       "scitt_receipt_valid": false
     },
@@ -25,6 +37,10 @@
       "scitt_receipt_valid": false
     },
     "wrong_policy": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "wrong_statement_alg": {
       "full_certificate": null,
       "scitt_receipt_valid": false
     }

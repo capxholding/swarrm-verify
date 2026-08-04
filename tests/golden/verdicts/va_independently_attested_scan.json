@@ -15,6 +15,21 @@
       "upper": "2026-01-01T01:00:00Z"
     }
   },
+  "batch": {
+    "cursor_end": "1",
+    "cursor_start": "0",
+    "declared_count": 1,
+    "event_key_root": "1111111111111111111111111111111111111111111111111111111111111111",
+    "exclusions": [],
+    "filter_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "finality_watermark": "",
+    "gaps": [],
+    "mapping_version": "fixture-1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "fixture-source/acct-1"
+  },
   "claim": {
     "action_class": "payment.execute",
     "action_id": "act-1",
@@ -50,12 +65,13 @@
   "node_attestation": {
     "attester_control_domain": "INDEPENDENT",
     "attester_identity": "Attester Corp",
+    "attestor": "attestor-1",
     "deployment_id": "node-dep-1",
     "measured_digest": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
     "method": "INDEPENDENTLY_ATTESTED",
     "node_public_key": "bm9kZS1rZXk=",
     "schema": "evd/node-attestation/v1",
-    "signature": "c2lnLW5vZGU=",
+    "signature": "RHxX2HpY/6rU4lMcofkf0+M3efq/URwncXew51GRI1jtd7JEiun83lo4rh+VMC2GHqqJIM+J04xlCew3H02ABg==",
     "state": "ISSUED",
     "valid_from": "2025-12-01T00:00:00Z",
     "valid_to": "2026-02-01T00:00:00Z"
@@ -78,22 +94,29 @@
         "term_end": "2027-01-01T00:00:00Z",
         "term_start": "2026-01-01T00:00:00Z"
       },
-      "term_valid": true
+      "signature": "E0VR4FiEY60zttDHi1K+69PR6hAMBrwP2Pj+sRXXn3brkJTkrubozScwnaz+IczxwS/Zt5PW+mAGOxS8ZQBnDQ==",
+      "term_valid": true,
+      "transparency_service": "ts-1"
     }
   },
   "scan": {
     "authenticated_read": true,
+    "batch_digest": "88a6acaf693278671bc0b2713bf702c4ddf39cecd1611da7953ed568ddd33943",
     "complete": true,
     "cursor_gap_free": true,
+    "node_id": "node-1",
     "node_signed": true,
-    "performed": true
+    "performed": true,
+    "signature": "BcV+ESMpdBGwg52MJOgpkei1rSJT4mXs+UQgrZqcY1ATKIezY8nAZpEfee+Uc1MaBQ4PPO1tDvF2apXS/s73AA=="
   },
   "schema": "evd/verdict-input/v1",
   "temporal": {
     "echo": {
       "echoed_action_id": true,
       "echoed_intent_digest": false,
-      "echoed_nonce": false
+      "echoed_nonce": false,
+      "signature": "LSEnYEbFmqkwX4tBRSS8z+vSzL3YSfAcCfqYiNHSb7JPRfxf9xafr16ckmkwb0ZLmjwRVfz8KckFYDzteRM7Bw==",
+      "source_id": "source-1"
     },
     "source_clock_sync_declared": false
   }

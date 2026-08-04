@@ -258,7 +258,9 @@ fn kid_of(protected: &Value) -> Option<String> {
     None
 }
 
-fn unpack(array: Value) -> Option<(Vec<u8>, Value, Option<Vec<u8>>, Vec<u8>)> {
+type Sign1Parts = (Vec<u8>, Value, Option<Vec<u8>>, Vec<u8>); // (protected bytes, unprotected, payload, signature)
+
+fn unpack(array: Value) -> Option<Sign1Parts> {
     let Value::Array(mut items) = array else { return None };
     if items.len() != 4 {
         return None;

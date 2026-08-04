@@ -1,0 +1,30 @@
+{
+  "evaluator_keys": {
+    "Evaluator SA": "4e7446a5c7cf5797ac864de8edfa494dbcd5da57040101ba9be31f7432b6e2c9"
+  },
+  "log_keys": {},
+  "mac_keys": {
+    "shared-key-1": "73776172726d2d666978747572652d6d61632f7368617265642d6b65792d3100"
+  },
+  "node_keys": {
+    "node-1": "b18de69d3d20f0dfefcd606ecaa2af068cc415559d538f14cc80802e2edf5e23"
+  },
+  "node_roots": {
+    "attestor-1": "8d957f3dc5989cbb57b4986a05baa4c344bffb1cadc5de2a55c3f99987698274"
+  },
+  "population_keys": {
+    "source-1": "25a5471468a9f6ea95e015c0b4888fe98ad238241b2674de66f0850cb7303613"
+  },
+  "schema": "evd/trust-context/v1",
+  "scitt_ts_keys": {
+    "ts-1": "6b6864d3c466efde9c1fe4d4bbaeabe648d9990bb844f1a3de78fcf5b0bd58c8"
+  },
+  "source_keys": {
+    "source-1": "113a46eb339287ed0e75560559cff280eefa8eb3257f7c8cc16b7bc95c9cb5c2",
+    "src-key-1": "113a46eb339287ed0e75560559cff280eefa8eb3257f7c8cc16b7bc95c9cb5c2"
+  },
+  "temporal_keys": {
+    "attester-event_bounds": "7da74a410cda8e446803e69525b1de612cff3d827e252923e1dfe34f909cc2b9",
+    "attester-intent_bounds": "7da74a410cda8e446803e69525b1de612cff3d827e252923e1dfe34f909cc2b9"
+  }
+}

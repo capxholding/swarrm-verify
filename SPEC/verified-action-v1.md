@@ -36,7 +36,7 @@ proves who said it, never that it is so.
 | linkage | DIRECT · DETERMINISTIC · AMBIGUOUS · *NONE* |
 | coverage | CLOSED · GAPPED · *UNKNOWN* |
 | integrity | VALID · *INVALID* |
-| source_signature | ASYMMETRIC · SHARED_SECRET · *NONE* |
+| source_signature | ASYMMETRIC · SHARED_SECRET · NOT_RECOMPUTED (per-view) · *NONE* |
 | control_domain | INDEPENDENT · OVERLAPPING · *UNKNOWN* |
 | node_observation | OBSERVED · *NOT_OBSERVED* |
 | client_attestation | ATTESTED · *NONE* |
@@ -69,11 +69,28 @@ anchor referenced by the disclosed view verifies; any single failure yields
 identity/authority/intent render their weak defaults.
 
 ### 2.2 source_signature
-`ASYMMETRIC` iff a `SourceProof` of type `asymmetric_signature` verifies under
-a key pre-bound in `SourceIdentity`. `SHARED_SECRET` iff a MAC verifies under
-a shared secret — possession by *some* holder; it cannot attribute the event
-to the source rather than the operator and never becomes `ASYMMETRIC` at any
-volume. Else `NONE`.
+`ASYMMETRIC` iff a `SourceProof` of type `asymmetric_signature` carries a
+signature that VERIFIES under a key this relying party named in its trust
+context (verify/trust.py) AND that key is pre-bound in `SourceIdentity`. The
+producer's `verified: true` flag is IGNORED — it is a declaration, and a
+subject could set it. `SHARED_SECRET` iff a MAC verifies under a shared secret
+the relying party named — possession by *some* holder; it cannot attribute the
+event to the source rather than the operator and never becomes `ASYMMETRIC` at
+any volume.
+
+`NOT_RECOMPUTED` iff THIS view withholds the proof material (`source_proofs` in
+`view.withheld_fields`). This is per-view exactly like `mark`, and it exists
+because `NONE` means *the source did not sign* — a materially different fact
+about a counterparty from *the source signed and this view cannot check it*.
+Rendering the second as the first understates evidence that genuinely exists,
+and records a bank that signs its webhooks identically to one that does not.
+The common case is a connector that verifies a webhook signature at intake over
+the RAW delivery: B22.9 retains that material digest-addressed, so it never
+travels to a relying party by default — and a fuller disclosure view carrying
+the signed bytes lets the recipient recompute and earn `ASYMMETRIC`.
+`NOT_RECOMPUTED` is NOT favourable: every mark path requires `ASYMMETRIC`.
+
+Else `NONE`.
 
 ### 2.3 control_domain
 `INDEPENDENT` iff a complete `ControlDomainEvidence` grounds it externally:
@@ -87,7 +104,16 @@ controller. Declarations alone, or any element absent/ungrounded → `UNKNOWN`.
 
 ### 2.4 node_observation · client_attestation · node_integrity_basis
 `OBSERVED` iff the Node actually performed an authenticated read and signed
-what it saw; never inferred from a signature it did not witness.
+what it saw; never inferred from a signature it did not witness. The scan
+statement MUST NAME WHAT IT SAW: `scan.batch_digest` is the SHA-256 of the JCS
+bytes of the `batch` in the same verdict input, and the verifier recomputes it.
+For an observed Node scan, that batch MUST carry valid `period_start` and
+`period_end`; the digest therefore binds the source batch and its coverage
+period, not only its cursor frame.
+A scan block carrying only its booleans is byte-identical for every clean scan
+one Node ever performs, so a genuine signature over it would verify beside any
+source, period or cursor range — a signature that binds no material. A missing
+or mismatched `batch_digest` is `NOT_OBSERVED`.
 `ATTESTED` iff a client co-attested batch/export is present (rendered as the
 client's own statement). `node_integrity_basis` from a valid, in-window,
 unrevoked `NodeAttestation.method`; absent/invalid/expired/revoked/lapsed →
@@ -101,7 +127,11 @@ source-signed count over an operator-supplied filter does NOT qualify).
 by a `HARDWARE_ATTESTED` Node — an `INDEPENDENTLY_ATTESTED` Node is a
 validated starting state, not a witness, and a `LOG_WITNESSED_SOFTWARE` Node
 that could be silently replaced cannot be the sole proof nothing was omitted:
-both yield `INSUFFICIENT`. Coverage: any cursor gap/rollback/reuse, batch gap
+both yield `INSUFFICIENT`. `complete` and `cursor_gap_free` are the subject's
+own booleans, so this basis additionally requires `node_observation` to be
+`OBSERVED` (§2.4): attestation proves a Node's INTEGRITY BASIS, never that some
+particular scan was complete, and reading those flags outside a signed, bound
+scan statement let an attested deployment declare a scan that never ran. Coverage: any cursor gap/rollback/reuse, batch gap
 or open fork finding → `GAPPED`; complete gap-free scope with basis ≠
 `INSUFFICIENT` → `CLOSED`; else `UNKNOWN`. Coverage may only be `CLOSED` when
 the basis is not `INSUFFICIENT`.

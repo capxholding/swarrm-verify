@@ -39,7 +39,7 @@ CertificateCore = {
 CertificateView = {
   schema: "evd/certificate-view/v1",
   certificate_id: hex32,                          ; sha256 over core CBOR bytes
-  ? core: bstr,                                   ; the core's exact CBOR bytes
+  ? core: bstr,                                   ; exact core; MUST be absent when any field is withheld
   ? disclosures: [* { * text => text }],          ; evd/disclosure/v1 packages
   manifest: VerificationViewManifest,             ; names disclosed/withheld
   signature: b64,                                 ; issuer, over view minus signature

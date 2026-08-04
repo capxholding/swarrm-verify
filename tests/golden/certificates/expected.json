@@ -117,8 +117,12 @@
     "cross_checks_ok": true,
     "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
     "partial": {
-      "mark": "NOT_RECOMPUTED",
-      "technical_eligibility": "NOT_RECOMPUTED"
+      "core_present": false,
+      "errors": [
+        "VIEW_SIGNATURE_UNVERIFIED"
+      ],
+      "mark": null,
+      "technical_eligibility": null
     },
     "vector": {
       "authority": "VERIFIED",
