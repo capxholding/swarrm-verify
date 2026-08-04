@@ -7,11 +7,21 @@
  */
 export function verify_bundle_json(json: string): string;
 
+/**
+ * Verify certificate bytes (bare core or view envelope) and return the JSON
+ * result dict `{parse_ok, layers, certificate_id, core_present,
+ * cross_checks_ok, vector, mark, errors}` — same shape as Python's
+ * `verify_certificate`. Total on hostile input: never panics. With the
+ * `wasm` feature this same symbol is the wasm export for the static page.
+ */
+export function verify_certificate_cbor(bytes: Uint8Array): string;
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly verify_bundle_json: (a: number, b: number) => [number, number];
+    readonly verify_certificate_cbor: (a: number, b: number) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;

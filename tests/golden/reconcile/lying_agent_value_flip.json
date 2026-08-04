@@ -25,6 +25,8 @@
     "finality_watermark": "2026-01-01T00:07:00Z",
     "gaps": [],
     "mapping_version": "emu-map-1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
     "schema": "evd/source-batch/v1",
     "source_identity_ref": "emu-ledger/acct-23"
   },
@@ -47,13 +49,33 @@
       "unique_field_match": false
     }
   ],
+  "events": [
+    {
+      "counterparty": "acme-1369",
+      "currency": "EUR",
+      "event_key": "evt-000000",
+      "finality": "final",
+      "outcome": "succeeded",
+      "proof_digests": [
+        "3c0c8f3bb43162f16ed776f5db6a91402ecef308b38aafc5975f1d213958e276"
+      ],
+      "reference": "act-23-0000",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T00:00:00Z",
+      "source_identity_ref": "emu-ledger/acct-23",
+      "value": "380.99"
+    }
+  ],
   "fork_findings_open": false,
   "scan": {
     "authenticated_read": true,
+    "batch_digest": "c584b283d8c6db9f56b0d59d4efa487f650b8ba83f377a69d93a2bc51638ca29",
     "complete": true,
     "cursor_gap_free": true,
+    "node_id": "s3YkkeLhSDposbKe",
     "node_signed": true,
-    "performed": true
+    "performed": true,
+    "signature": "gHOoTaLf+MZE++WHEHN+fietFJPNmhpOe7um2A2v2rjItxPXmeoyAX2kWJd16jfRjfbSYVzNfoD0BUBP+HrnCg=="
   },
   "schema": "evd/verdict-input/v1"
 }

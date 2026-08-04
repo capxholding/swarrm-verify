@@ -15,9 +15,9 @@ cargo test                 # runs ../tests/golden/ — must agree with expected.
 ## Browser (WASM) verifier
 
 ```bash
-cargo install wasm-pack     # one-time (not present in the build env yet — OPEN)
+cargo install wasm-pack     # one-time; release artifact uses 0.15.0
 wasm-pack build --target web --features wasm
-python3 -m http.server -d web      # then open http://localhost:8000
+python3 -m http.server      # from verify-rs/; open http://localhost:8000/web/
 ```
 
 `web/index.html` is a static, client-side-only file-drop page: the bundle
@@ -30,7 +30,8 @@ and CI stay lean.
 Implements: key-log replay (genesis self-sig, rotation continuity,
 revocation, dense `_system` sequence), JWKS-vs-log agreement, DSSE/PAE +
 Ed25519, RFC 8785 (JCS) for checkpoint bodies and JWKs, RFC 9162 inclusion
-+ consistency, revocation-time checks, anchor-record binding. Not yet ported
-(the Python verifier's superset): `--live` chain reads, RFC 3161 token
-verification, disclosure packages — these are additive and E2/E3 upgrades,
-not part of the offline E1 trust core the golden suite pins.
++ consistency, revocation-time checks, and anchor/timestamp-record binding. The
+library also verifies RFC 3161 tokens offline against a caller-supplied
+certificate chain and verifies `evd/disclosure/v1` packages against an
+already-verified bundle. Networked `--live` chain reads remain outside this
+Rust/WASM verifier; externally grounded trust must be supplied out of band.

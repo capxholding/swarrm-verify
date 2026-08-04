@@ -22,7 +22,13 @@ StatementProtected = {
   1: -8,                                        ; alg = EdDSA
   3: "application/vnd.swarrm.action-certificate+cbor",  ; content type
   4: bstr,                                      ; kid = ascii bytes of the 16-char kid
-  15: { 1: text, 2: text },                     ; CWT_Claims { iss, sub=certificate_id hex }
+  15: StatementClaims,
+}
+
+StatementClaims = {
+  1: text,                                      ; non-empty iss (profile rule)
+  2: hex32,                                     ; sub = certificate_id hex
+  ? "evd_scope_digest": hex32,                 ; required by managed admission
 }
 
 ReceiptProtected = {

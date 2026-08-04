@@ -23,7 +23,7 @@ customer's action; missing evidence becomes an explicit gap.
   identity and the bound sources:
   `{ "deployment_id", "hosted_url"?, "sources": [ {"name", "kind":
   "https_feed"|"signed_webhook"|"emulator", "base_url"?, "auth": {"mode":
-  "env"|"token_cmd", "ref"}, "cursor_param"?, "page_size"?,
+  "env"|"token_cmd", "ref", "stdin_ref"?}, "cursor_param"?, "page_size"?,
   "event_key_field", "mapping_version", "correlation_field"?,
   "material_fields": [..], "identity": SourceIdentity } ] }`.
   Config profile `node` (core/config.py) adds: `EVD_NODE_CONFIG` (required),
@@ -51,25 +51,41 @@ non-production:
   `SourceEvent.proof_digests` resolve here; proof material is retained
   through certificate generation and export (action-fact-v1 §7). Credentials
   are NEVER stored in either layer (§6).
+- **Normalized state is encrypted too.** `node_state.db` is an index and
+  recovery journal only: canonical `SourceBatch` and `SourceEvent` documents
+  are stored in the Evidence Store and SQLite carries only `evdref1:<digest>`
+  references. Plaintext normalized financial/source fields exist only in Node
+  memory while mapping/reconciliation runs. A legacy plaintext row is moved
+  into the encrypted store and SQLite is securely compacted on open; a
+  file-backed NodeState has no plaintext-write fallback.
 
 ## 3. Durable intake (B22.3)
 
 Per source batch, strictly in this order — crash anywhere earlier repeats
 safely (at-least-once, idempotent):
 1. **validate** the batch (schema, declared_count vs events, event-key root);
-2. **persist**: raw encrypted bytes → evidence store; canonical
-   `SourceEvent`s + `SourceBatch` → the Node store; one
-   `source.batch.recorded` receipt (context: source name,
+2. **prepare**: raw encrypted bytes, canonical `SourceEvent`s,
+   `SourceBatch`, and an encrypted recovery plan → evidence store; their
+   digest references + one PREPARED intake-journal row → the Node store in
+   one transaction. Prepared facts are not visible to coverage/reconciliation;
+3. **receipt**: one `source.batch.recorded` receipt (context: source name,
    cursor_start/cursor_end, mapping_version, declared_count, event_key_root,
    finality_watermark, gaps, exclusions; commitments: the canonical batch
-   document) under the `_node` agent;
-3. **fsync**: the Node store commits with `PRAGMA synchronous=FULL` and the
-   evidence-store blob file is fsynced before step 4;
-4. **advance cursor**: `cursors` table (source → last_cursor, wall time),
-   monotonic; a cursor may only advance after step 3 completes.
-Cursor rollback, reuse, or an inter-range gap at read time is a FINDING (§8)
-and forces coverage `GAPPED`; cursors are never reconstructed. Agent-side
+   document) under the `_node` agent, then every deterministic finding receipt
+   for that batch. Receipt/finding retries are idempotent and replay from the
+   encrypted plan;
+4. **complete**: after every evidence blob and SQLite transaction is fsynced,
+   advance `cursors` (source → last_cursor, wall time) and change the journal
+   to COMPLETE in one `PRAGMA synchronous=FULL` transaction. That transaction
+   is the point at which facts become visible.
+Cursor rollback, conflicting reuse, or an inter-range gap at read time is a
+FINDING (§8) and forces coverage `GAPPED`; cursors are never reconstructed.
+A crash/failure before COMPLETE may leave only encrypted content-addressed
+orphans or a PREPARED row, and the identical batch resumes safely. Agent-side
 receipts arrive via the recorder's existing spool/ingest path unchanged.
+Coverage receipts are revisioned: an exact source/period/document retry
+deduplicates, while changed coverage for the same source/period appends a new
+`coverage_revision`, names `prev_coverage_receipt`, and links it as a parent.
 
 ## 4. Connectors (B22.5) and emulator (B22.7)
 
@@ -87,15 +103,26 @@ reconciliation and verification contain no vendor branch.
   `SourceProof.proof_type` is `asymmetric_signature` or `mac` accordingly (a
   MAC is possession, never origin — verdict semantics per
   verified-action-v1 §2.2); raw delivery retained encrypted.
+  The hostile-input ceilings are fixed and enforced before signature work,
+  normalization, evidence writes, or receipt signing: source path 128 bytes;
+  request headers 64 / 16 KiB total; body 1 MiB; JSON depth 16; event 64
+  fields; any string field 16 KiB; container 1,024 items; pending queue 512
+  events / 16 MiB; one intake batch 128 events / 8 MiB. Duplicate JSON keys,
+  floats, malformed envelopes, and over-cap input are rejected. Request bodies
+  are streamed up to the cap, never buffered unbounded. Every known-source
+  refusal raises `webhook_capture_failed`, degrades health and gaps coverage;
+  capture failure is never swallowed as merely `verified=false`.
 - **Emulator** (`node/emulator.py`) — ships WITH the Node: an in-process
   deterministic fake source (fixed seed; cursor pages; Ed25519-signed or MAC
   modes; injectable gaps/rollbacks/duplicates) so the whole loop runs before
   any real credential exists, and so chaos tests are reproducible.
 - **Autodiscovery**: `swarrm node discover <base_url>` probes known feed
   shapes and emits a DRAFT SourceManifest for the reviewer to correct.
-  **Pre-flight**: `swarrm node preflight` checks the four readiness facts
+  **Pre-flight**: `swarrm node preflight` checks five readiness facts
   (dedicated service identity declared · signing source · cursor-capable
-  feed · writable correlation field) and prints an honest report.
+  feed · writable correlation field · no configured secret value detected in
+  token argv) and prints an honest report. The fifth check cannot detect a
+  hard-coded secret value that the config does not name (§6).
 - **Read-only law**: connector config declaring any write/execute
   credential scope fails configuration (mechanical check at load).
 
@@ -118,6 +145,35 @@ time, never written to disk, receipts, logs, config or support bundles.
 token per scan. The Node data dir and config contain no credential bytes
 (test-proven with a credential sentinel). Lost credentials degrade
 `ConnectorHealth` (which degrades COVERAGE); they never block execution.
+
+**A token command's argv is world-readable.** The command runs with
+`shell=False` and a list argv — that stops shell metacharacters in a config
+value being interpreted and removes the extra `sh -c` process, but it does NOT
+hide the arguments: every process's arguments are readable by any local user
+through `ps auxww` and `/proc/<pid>/cmdline`, and the argv is what process
+accounting and container runtimes record. A secret written inline in the
+command (`vault-helper --token=hvs.CAESIJ…`) is therefore disclosed on every
+scan. Secret material reaches a token command by exactly two channels:
+
+- **environment** — the command inherits the Node's environment and reads its
+  own `$VAULT_TOKEN`/`$AWS_*`; nothing extra to configure;
+- **stdin** — `auth.stdin_ref` names an env var whose VALUE is written to the
+  command's stdin and closed.
+
+Neither appears in argv. A token command whose argv contains the value of a
+secret the config names is refused at load, mechanically, like the read-only
+credential scope; `swarrm node preflight` reports it as a readiness fact. A
+hard-coded literal the config never names is not mechanically detectable, so
+the rule above is normative and not merely checked.
+
+`SourceProof.key_identity` names the credential a read ran under. For
+`mode: "env"` it is `env:<VAR_NAME>` — a name, already in the config. For
+`mode: "token_cmd"` it is the full
+`token_cmd:<sha256(JCS({argv, env_ref, stdin_ref}))>`: this binds the executed
+argv and both named secret channels without storing their values. Command lines
+can carry secrets, and these proofs are retained in the evidence vault and the
+encrypted recovery plan, so neither the command text nor a truncated identity
+is stored.
 
 ## 7. Node identity, heartbeats, fork detection (B22.10–B22.11)
 
@@ -153,9 +209,13 @@ token per scan. The Node data dir and config contain no credential bytes
   deterministic rules only, never by a person: `rule_id ∈ {cursor_gap,
   cursor_rollback, cursor_reuse, count_mismatch, event_root_mismatch,
   fork_divergence, continuity_gap, algorithm_family_mismatch,
-  credential_expired, vault_unreadable, mapping_substituted}` (the last added
-  with B23: a scan under a mapping_version differing from the bound
-  SourceManifest, reconcile-v1 §2), scope (source, period), evidence
+  credential_expired, source_scan_failed, vault_unreadable, mapping_substituted,
+  webhook_capture_failed}` (`mapping_substituted`: a scan under a mapping
+  version differing from the bound SourceManifest; `source_scan_failed`: a
+  no-advance scan with a retained transport/parser/source gap;
+  `webhook_capture_failed`:
+  a known-source delivery crossed a published capture bound or capture failed
+  before durable intake), scope (source, period), evidence
   digests. `finding_id` = the receipt hash (derived, never declared).
 - **`evd.finding.triaged`** — a practitioner's SIGNED factual statement:
   finding_id, new state ∈ `RESOLVED_FACTUAL` | `ACCEPTED_LIMITATION`, the

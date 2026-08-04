@@ -13,9 +13,11 @@ Reproduce and check:
 
 Expected sha256 of swarrm_verify_bg.wasm (built from this source tree):
 
-    d7b65af823cc8bdbfe38d0d07e290c8ad24459c2a1358035e82ff66960959fbe
+    224aea639f852cf657bb89bf4f7a32141137cf44af0de968f9c3f22bf184f4f8
 
-The build is deterministic from the pinned crate versions in Cargo.toml.
+This artifact was rebuilt with wasm-pack 0.15.0 and Rust 1.90.0 from the
+Cargo.lock-pinned dependency graph; use the same toolchain for an exact-byte
+reproduction.
 The page displays the sha256 of the module it actually loaded; compare it to
 the value above. The verifier is client-side only — it never uploads your
 bundle — so trusting it reduces to trusting this hash, which you can rebuild.

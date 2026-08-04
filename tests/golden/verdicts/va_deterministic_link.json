@@ -65,7 +65,9 @@
         "term_end": "2027-01-01T00:00:00Z",
         "term_start": "2026-01-01T00:00:00Z"
       },
-      "term_valid": true
+      "signature": "E0VR4FiEY60zttDHi1K+69PR6hAMBrwP2Pj+sRXXn3brkJTkrubozScwnaz+IczxwS/Zt5PW+mAGOxS8ZQBnDQ==",
+      "term_valid": true,
+      "transparency_service": "ts-1"
     }
   },
   "schema": "evd/verdict-input/v1",
@@ -89,6 +91,7 @@
       "material_digest": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
       "proof_type": "asymmetric_signature",
       "schema": "evd/source-proof/v1",
+      "signature": "66RJz2ZPxZbB1J4ZAuu7yuBO2IxtSSfGsAoL3ZCflYL97+UuEv0kDCpQ6i+23M9J1+xqTeNbnZnrRnEXY7CrAw==",
       "verified": true
     }
   ]

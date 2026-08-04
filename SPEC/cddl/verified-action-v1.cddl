@@ -18,7 +18,13 @@ outcome-result        = "CORROBORATED" / "CLAIM_ONLY" / "CONTRADICTED" / "ORPHAN
 linkage-result        = "DIRECT" / "DETERMINISTIC" / "AMBIGUOUS" / "NONE"
 coverage-result       = "CLOSED" / "GAPPED" / "UNKNOWN"
 integrity-result      = "VALID" / "INVALID"
-source-signature      = "ASYMMETRIC" / "SHARED_SECRET" / "NONE"
+; NOT_RECOMPUTED: the source DID sign, and THIS view cannot recompute it —
+; materially different from NONE ("the source did not sign"). Recording a bank
+; that signs its webhooks identically to one that does not understates evidence
+; that genuinely exists. Per-view, exactly like mark-render (owner ruling
+; 2026-08-04); B22.9 retains the proof material digest-addressed, so a fuller
+; disclosure view lets a recipient recompute and earn ASYMMETRIC.
+source-signature      = "ASYMMETRIC" / "SHARED_SECRET" / "NOT_RECOMPUTED" / "NONE"
 control-domain        = "INDEPENDENT" / "OVERLAPPING" / "UNKNOWN"
 node-observation      = "OBSERVED" / "NOT_OBSERVED"
 client-attestation    = "ATTESTED" / "NONE"
@@ -98,6 +104,7 @@ SourceIdentity = {
 
 SourceBatch = {
   schema: "evd/source-batch/v1", source_identity_ref: text,
+  ? period_start: ts, ? period_end: ts,                       ; required for a bound Node scan
   cursor_start: text, cursor_end: text, filter_digest: hex32,
   mapping_version: text, declared_count: uint, event_key_root: hex32,
   finality_watermark: text, exclusions: [* text], gaps: [* text],
@@ -242,8 +249,12 @@ VerdictInput = {
   ? control_evidence: ControlDomainEvidence,
   ? control_declarations: [* { declarer: text, claims_overlap: bool }],
   ? batch: SourceBatch,
+  ; batch_digest = sha256(JCS(batch)) — the scan statement NAMES WHAT IT SAW.
+  ; Without it the signed bytes are identical for every clean scan and the
+  ; signature replays onto any batch; absent/mismatched => NOT_OBSERVED (§2.4).
   ? scan: { performed: bool, complete: bool, cursor_gap_free: bool,
-      authenticated_read: bool, node_signed: bool },
+      authenticated_read: bool, node_signed: bool,
+      ? batch_digest: hex32, ? node_id: text, ? signature: text },
   ? node_attestation: NodeAttestation,
   fork_findings_open: bool,
   ? population_index: PopulationIndex,

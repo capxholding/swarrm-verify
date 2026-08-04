@@ -7,9 +7,11 @@ open-source verifier for [Swarrm](https://swarrm.ai) evidence bundles
 
 A Swarrm evidence bundle is a self-contained file: signed receipts of AI-agent
 actions, an RFC 6962 Merkle log with inclusion/consistency proofs, signed
-checkpoints, the public-key history, and (at evidence level E2) a public
-blockchain anchor plus an RFC 3161 timestamp. This verifier checks all of it
-**offline** — zero network, zero accounts, zero trust in Swarrm.
+checkpoints, and the public-key history. The verifier checks the base E1
+integrity core **offline** — zero network and zero accounts. When a bundle also
+carries anchor or timestamp material, it verifies the supplied records and
+their cryptographic binding; it does not independently establish public-chain
+inclusion or timestamp-authority trust without external evidence.
 
 ## Why this exists
 
@@ -46,7 +48,7 @@ rejected with the right error, not just "invalid".
 
 ```bash
 cd verify-rs
-wasm-pack build --release --target web --features wasm
+wasm-pack build --target web --features wasm
 shasum -a 256 pkg/swarrm_verify_bg.wasm
 ```
 
@@ -58,11 +60,12 @@ page at swarrm.ai/verify loads no external code and never uploads your file.
 ## What verification proves (and doesn't)
 
 See `SPEC/log-v1.md` for evidence levels E0–E3 and `SPEC/bundle-v1.md` for
-exact verdict semantics. In short: VERIFIED means the receipts are signed by
-the keys witnessed in the log, the log is internally consistent, and (E2) its
-checkpoint existed no later than the anchored/timestamped instant. It does not
-prove the *payloads* are true — it proves the record of actions has not been
-altered since it was written.
+exact verdict semantics. In short: the offline E1 result means the receipts are
+signed by keys witnessed in the log and the log is internally consistent.
+Anchor and timestamp records can strengthen that result only when their
+external trust assumptions are supplied and validated. Verification does not
+prove the *payloads* are true — it proves the recorded actions have not been
+altered since they were written.
 
 ## License
 

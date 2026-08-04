@@ -14,16 +14,11 @@ use serde_json::Value;
 /// Same cap as MAX_JCS_DEPTH in core/canonical.py — the two verifiers must
 /// reject identically.
 pub(crate) const MAX_DEPTH: i64 = 64;
+const MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
 
-/// Infallible wrapper for legacy call sites: a value that cannot be
-/// canonicalized yields empty bytes, which no honest signature or pinned
-/// digest ever covers — every downstream check fails closed.
-pub fn canonical(v: &Value) -> Vec<u8> {
-    canonical_checked(v).unwrap_or_default()
-}
-
-/// Fallible canonicalization: None on over-deep nesting or a non-integer
-/// number. Verification callers must treat None as "does not verify".
+/// Fallible canonicalization: None on over-deep nesting, a float, or an
+/// integer outside RFC 8785's interoperable IEEE-754 domain. Verification
+/// callers must treat None as "does not verify".
 pub(crate) fn canonical_checked(v: &Value) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     if write_value(v, &mut out, MAX_DEPTH) {
@@ -41,11 +36,13 @@ fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
         Value::Null => out.extend_from_slice(b"null"),
         Value::Bool(b) => out.extend_from_slice(if *b { b"true" } else { b"false" }),
         Value::Number(n) => {
-            // Only integers occur in canonicalized structures here.
-            match n.as_i64().or_else(|| n.as_u64().map(|u| u as i64)) {
-                Some(i) => out.extend_from_slice(i.to_string().as_bytes()),
-                None => return false,
-            }
+            let Some(i) = n
+                .as_i64()
+                .filter(|i| (-MAX_SAFE_INTEGER..=MAX_SAFE_INTEGER).contains(i))
+            else {
+                return false;
+            };
+            out.extend_from_slice(i.to_string().as_bytes());
         }
         Value::String(s) => write_string(s, out),
         Value::Array(a) => {

@@ -63,6 +63,18 @@ universal context keys; everything else stays per-type.
   (bytes for results, rows for record counts).
 - `latency_band` ∈ {`<1s`, `<1m`, `<1h`, `≥1h`}.
 
+## 2a. Managed-edge value types (normative)
+
+The managed recorder accepts no recursively structured plaintext values.
+Universal IDs and ordinary dial fields are strings; `requested_tool_names`
+and `arg_keys` are arrays containing only strings; `stream`, `is_error`,
+`mandate_present`, and `bilateral` are booleans; token counts, durations,
+`waited_ms`, and `rel_seq` are nonnegative signed-64-bit integers (a JSON
+boolean is not an integer). `status` is either a string or such an integer.
+The three band fields above and `result_kind` (`text|json|binary|none`) use
+their exact enums. Nested objects, nested arrays, and arrays on scalar fields
+are forbidden at this boundary even when the field name itself is declared.
+
 ## 3. Sessions (normative algorithm — implemented in Build 7)
 
 1. `x-evd-session` header present → use it, `session_inferred=false`.

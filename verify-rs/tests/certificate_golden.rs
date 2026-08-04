@@ -4,15 +4,15 @@
 //! certificates/) and must reproduce the hand-authored load-bearing fields in
 //! expected.json. It also replays the committed certfuzz corpus and the §4.1
 //! over-cap synthetics fail-closed. Two independent implementations agreeing
-//! on VERIFIED_CORROBORATED / CLAIM_ONLY / CONTRADICTED / ORPHAN / GAPPED /
-//! authority NOT_VERIFIED and the selectively-disclosed NOT_RECOMPUTED — and
-//! never panicking on hostile bytes — is the B24 conformance contract.
+//! on UNMARKED_ASSURANCE_WITHDRAWN / CLAIM_ONLY / CONTRADICTED / ORPHAN / GAPPED /
+//! authority NOT_VERIFIED and a selectively-disclosed coreless view with no
+//! recomputed vector or mark — and never panicking on hostile bytes — is the
+//! B24 conformance contract.
 
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
 
-use swarrm_verify::certificate::verify_certificate_cbor;
 
 fn certs_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -28,8 +28,19 @@ fn fuzz_dir() -> PathBuf {
         .join("tests/golden/certfuzz")
 }
 
+/// The relying-party anchors these goldens were generated under — the SAME
+/// file the Python runner loads, so both engines verify identically.
+fn trust() -> Value {
+    serde_json::from_str(&fs::read_to_string(certs_dir().join("trust_context.json")).unwrap())
+        .unwrap()
+}
+
 fn verify(bytes: &[u8]) -> Value {
-    serde_json::from_str(&verify_certificate_cbor(bytes)).expect("result is valid JSON")
+    serde_json::from_str(&swarrm_verify::certificate::verify_certificate_cbor_with_trust(
+        bytes,
+        Some(&trust()),
+    ))
+    .expect("result is valid JSON")
 }
 
 #[test]
@@ -55,10 +66,15 @@ fn certificate_suite_agrees_with_expected() {
             let gp = verify(&partial);
             assert_eq!(gp["mark"], exp["partial"]["mark"], "fixture {name}: partial mark");
             assert_eq!(
+                gp["core_present"], exp["partial"]["core_present"],
+                "fixture {name}: partial core privacy"
+            );
+            assert_eq!(
                 gp["vector"]["technical_eligibility"],
                 exp["partial"]["technical_eligibility"],
                 "fixture {name}: partial technical_eligibility"
             );
+            assert_eq!(gp["errors"], exp["partial"]["errors"], "fixture {name}: partial errors");
         }
         checked += 1;
     }
@@ -75,7 +91,7 @@ fn certfuzz_corpus_replays_crash_free() {
         }
         let res = verify(&fs::read(&path).unwrap());
         assert!(res.get("parse_ok").is_some(), "{:?}: shape", path);
-        assert_ne!(res["mark"], Value::from("VERIFIED_CORROBORATED"), "{:?}: headline pass", path);
+        assert_ne!(res["mark"], Value::from("UNMARKED_ASSURANCE_WITHDRAWN"), "{:?}: headline pass", path);
         count += 1;
     }
     assert!(count >= 30, "expected at least 30 certfuzz cases, ran {count}");
@@ -91,6 +107,6 @@ fn over_cap_synthetics_fail_closed() {
         let res = verify(&input);
         assert_eq!(res["parse_ok"], Value::Bool(false));
         assert_eq!(res["errors"][0], Value::from("PARSE"));
-        assert_ne!(res["mark"], Value::from("VERIFIED_CORROBORATED"));
+        assert_ne!(res["mark"], Value::from("UNMARKED_ASSURANCE_WITHDRAWN"));
     }
 }

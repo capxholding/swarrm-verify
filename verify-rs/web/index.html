@@ -44,7 +44,7 @@
   <script type="module">
     // NOTE: INTEGRITY.txt re-pins the wasm sha256 on every `make wasm`
     // (wasm-pack) build — a page/wasm change without a re-pin is a red flag.
-    import init, { verify_bundle_json, verify_certificate_cbor } from "./pkg/swarrm_verify.js";
+    import init, { verify_bundle_json, verify_certificate_cbor } from "../pkg/swarrm_verify.js";
 
     const KNOWN_SCHEMA = "evd/bundle/v1";
     const drop = document.getElementById("drop");
@@ -57,12 +57,17 @@
     let currentText = null;
 
     // load + hash the wasm ourselves so the page can display what it ran
-    const wasmUrl = new URL("./pkg/swarrm_verify_bg.wasm", import.meta.url);
-    const wasmBytes = await fetch(wasmUrl).then((r) => r.arrayBuffer());
+    const wasmUrl = new URL("../pkg/swarrm_verify_bg.wasm", import.meta.url);
+    const wasmBytes = await fetch(wasmUrl).then((r) => {
+      if (!r.ok) throw new Error(`WASM fetch failed: ${r.status}`);
+      return r.arrayBuffer();
+    });
     const digest = await crypto.subtle.digest("SHA-256", wasmBytes);
     document.getElementById("buildhash").textContent =
       [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-    const ready = init();
+    // Execute exactly the bytes whose digest is displayed. Passing no input
+    // would make wasm-bindgen fetch the mutable URL a second time.
+    const ready = init({ module_or_path: wasmBytes });
 
     function show(text) {
       let bundle;
@@ -97,11 +102,9 @@
 
     function certHeadline(r) {
       if (!r.parse_ok) return ["not a certificate (CBOR parse failed)", "bad"];
-      // neutral, not red: a view that cannot recompute did not FAIL (§4.5)
-      if (!r.core_present && r.errors.length === 0) return ["VIEW ONLY — nothing recomputed", "mid"];
       if (r.mark === null) return ["NOT VERIFIED", "bad"];
       if (r.mark === "NOT_RECOMPUTED" && r.cross_checks_ok) return ["MARK: NOT_RECOMPUTED", "mid"];
-      const ok = r.cross_checks_ok && (r.mark === "VERIFIED_CORROBORATED" || r.mark === "VERIFIED_OBSERVED");
+      const ok = r.cross_checks_ok && (r.mark === "UNMARKED_ASSURANCE_WITHDRAWN" || r.mark === "UNMARKED_ASSURANCE_WITHDRAWN");
       return ["MARK: " + r.mark, ok ? "ok" : "bad"];
     }
 
@@ -111,10 +114,10 @@
       rows.push(`<b>certificate_id:</b> <code>${esc(r.certificate_id ?? "—")}</code>`);
       rows.push(`<b>cross-checks:</b> ${r.cross_checks_ok ? "all recomputations agree" : "NOT passed"}`);
       if (r.errors.length) rows.push(`<b>errors:</b> ${r.errors.map(esc).join(", ")}`);
-      if (r.mark === "NOT_RECOMPUTED" || (!r.core_present && r.errors.length === 0)) {
-        rows.push("<b>NOT_RECOMPUTED:</b> this view cannot recompute — <i>not a failure</i>. " +
-          "A gated field is withheld from this view (or the core is not attached), so the verdict is " +
-          "not re-derivable here; a fuller view may recompute more. Nothing is implied to pass.");
+      if (!r.core_present) {
+        rows.push("<b>CORE NOT DISCLOSED:</b> no verdict is recomputed. The issuer key log is " +
+          "inside that core, so this artifact's signature, manifest, certificate id and field labels " +
+          "are not authenticated here. A fuller view may verify; this one is NOT VERIFIED.");
       }
       if (r.vector) {
         const cells = Object.entries(r.vector)
@@ -136,8 +139,9 @@
       const [headline, cls] = certHeadline(r);
       verdict.textContent = headline;
       verdict.className = cls;
-      detail.textContent = "verified offline, in this browser — certificate core, embedded bundle, " +
-        "cross-recomputations and view manifest checked against the bytes you dropped.";
+      detail.textContent = r.cross_checks_ok
+        ? "verified offline in this browser — core, embedded bundle and view cross-checks passed."
+        : "not verified — see the explicit errors and held-layer limits below.";
       cert.innerHTML = certBody(r);
     }
 

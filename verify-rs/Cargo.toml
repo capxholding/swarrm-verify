@@ -4,6 +4,10 @@ name = "swarrm-verify"
 version = "0.1.0"
 edition = "2021"
 description = "Independent Rust verifier for evd/bundle/v1 — second implementation, spec-hardening"
+# Declared, not merely stated in the header comment above: wasm-pack reads these
+# and every published artifact carries the licence it is actually under.
+license = "Apache-2.0"
+repository = "https://github.com/capxholding/swarrm-verify"
 
 [lib]
 crate-type = ["rlib", "cdylib"]  # cdylib for future wasm-pack

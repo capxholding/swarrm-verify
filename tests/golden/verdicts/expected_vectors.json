@@ -1281,6 +1281,43 @@
     "technical_eligibility": "INELIGIBLE",
     "temporal_binding": "UNPROVEN"
   },
+  "va_source_proof_withheld": {
+    "accountability_basis": "UNKNOWN",
+    "assurance_linkage": "NONE",
+    "authority": "VERIFIED",
+    "authority_proof": null,
+    "boundary_breaches": [],
+    "client_attestation": "ATTESTED",
+    "control_domain": "INDEPENDENT",
+    "coverage": "CLOSED",
+    "coverage_basis": "SOURCE_PROVEN_POPULATION",
+    "history_state": null,
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "linkage": "DIRECT",
+    "mark": "UNMARKED_TECHNICAL",
+    "node_integrity_basis": "LOG_WITNESSED_SOFTWARE",
+    "node_observation": "OBSERVED",
+    "out_of_scope_surfaces": [],
+    "outcome": "CORROBORATED",
+    "population_status": null,
+    "registration_status": "REGISTERED",
+    "schema": "evd/verdict-vector/v1",
+    "scope_relation": null,
+    "source_signature": "NOT_RECOMPUTED",
+    "subject_ids": {
+      "grant_id": "9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b",
+      "org_id": "9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a"
+    },
+    "surfaces": [],
+    "technical_eligibility": "ELIGIBLE",
+    "temporal_binding": "PROVEN_SOURCE_ECHO"
+  },
   "va_surface_matrix": {
     "accountability_basis": "UNKNOWN",
     "assurance_linkage": "NONE",

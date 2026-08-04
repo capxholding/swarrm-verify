@@ -46,6 +46,12 @@ proofs, not the producer's budget.
 | `ts_server` | string | RFC 3339 UTC, log clock |
 | `idempotency_key` | string | client-chosen; the log deduplicates on `(tenant_id, idempotency_key)`, first write wins |
 
+Signed timestamps use exactly canonical extended UTC:
+`YYYY-MM-DDTHH:MM:SS[.1..6 fractional digits]Z`. Basic dates, ISO week dates,
+space separators, offsets, impossible calendar dates, leap seconds, and more
+than six fractional digits are invalid. This fixed form makes chronological
+comparison identical across verifier implementations.
+
 **`receipt_hash`** = SHA-256(canonical body), lowercase hex. This value is
 the Merkle leaf (see log-v1) and the value `parents` references.
 
@@ -79,24 +85,134 @@ An envelope carries 1..n signatures over the same PAE bytes:
 1. **Registration** — the recorder key is generated at the customer edge
    (file-based in v1; KMS is a post-gate increment) and enters the tenant
    log as a SPONSORED `evd.key.created` entry (log-v1 §5): the entry is
-   signed by the tenant ISSUER key. Until registered, the hosted side
-   rejects the recorder's uploads (HTTP 403) — they wait in the edge spool.
+   signed by the tenant ISSUER key and carries `context.role="recorder"`.
+   Registration requires the tenant's admin API credential; that credential
+   never runs in the recorder. Until registered, the hosted side rejects the
+   recorder's uploads (HTTP 403) — they wait in the edge spool.
 2. **Capture** — the recorder signs each receipt with the RECORDER key
    (primary signature) and spools locally. Payload bytes, nonces, and vault
    content NEVER leave the edge on the evidence plane; envelopes carry
    commitments only (the sentinel test enforces this).
-3. **Ingest** — `POST /evd/ingest`. The hosted side verifies that at least
-   one envelope signature is (a) cryptographically valid and (b) from a kid
-   the LOG has registered and not revoked. It then COUNTER-SIGNS with the
-   issuer key and appends. The appended envelope carries both signatures.
+3. **Ingest** — `POST /evd/ingest`. This is a narrow managed-recorder
+   admission boundary, never a generic receipt append API. The hosted side
+   applies the ordered law below and only then COUNTER-SIGNS with the tenant
+   issuer key and appends. The appended envelope carries the edge and issuer
+   signatures.
 4. **Verification rule** — E3 holds for a receipt iff
    `verify_envelope(env, log_keys, require_kids={issuer_kid, recorder_kid})`
    passes, with both kids drawn from the LOG's key history (log-v1 §5) and
    valid at the receipt's `ts_server`.
 
+**Legacy privileged-co-signature rule.** Offline verifiers MUST reject a
+multi-signed receipt when `agent_id` begins `_`, or when `action_type` begins
+`evd.key.`, `authority.`, `source.`, `action.`, `lineage.`, `node.`,
+`evd.finding.`, `evd.gap.`, `evd.coverage.`, or `registration.`. These
+namespaces drive key, authority, or other privileged replay and their
+legitimate builders are issuer-only; an edge+issuer shape proves exposure to
+the superseded generic managed-ingest path. This forensic rule deliberately
+does not invalidate historical multi-signed `x.*`/custom evidence. Such leaves
+remain evidence, while the managed upgrade audit may flag them as outside the
+current positive admission profile. `interaction.message` remains an admitted
+bilateral action.
+
 **Ordering** — the recorder assigns per-agent monotonic `seq` at the edge;
 the spool preserves capture order and `sync()` stops at the first failure,
-so hosted leaf order matches edge seq order with zero silent gaps.
+so hosted leaf order matches edge seq order with zero silent gaps. Concurrent
+sync calls serialize, and a receipt appended while a sync is awaiting ingest
+MUST remain after that sync removes its successfully delivered prefix.
+`ts_server` is the recorder-observed capture time (the server side of the
+customer's local relay), not managed-ingest arrival time; this preserves the
+truth of receipts that remain offline in the spool before upload.
+
+### 5.1 Managed ingest admission law
+
+The following checks occur in this order. A rejection is a 4xx response and
+MUST NOT add an issuer signature, append a leaf, or alter key, authority,
+registration, lineage, Node, finding, or coverage state.
+
+1. **Authenticate and stream-bound.** Resolve `x-api-key` to exactly one tenant
+   and require its exact `recorder` role before opening a tenant store. The
+   admin credential returned by signup is rejected here, and the recorder
+   credential is rejected by every admin/console/portal/OTel route. Stream the
+   HTTP request through a **16,384 byte** hard limit before JSON parsing; both
+   declared and chunked overflows return 413.
+2. **Parse the exact upload profile, before cryptography.** The request is
+   exactly `{ "envelope": ... }`; the DSSE envelope has exactly `payload`,
+   `payloadType`, and `signatures`; `payloadType` is the receipt/v1 media type;
+   base64 is canonical; duplicate JSON keys are forbidden; and the decoded
+   payload is at most **8192 bytes**. The payload MUST already be the RFC 8785
+   canonical bytes of one `evd/receipt/v1` body with the required §3 fields
+   and their declared types (plus only the additive `session_id` /
+   `session_inferred` pair). `seq` is in `1..2^63-1`. An upload carries **1..7
+   distinct 64-byte Ed25519 signatures**; the verifier-wide eighth slot is
+   reserved for the issuer counter-signature.
+3. **Bind tenant and constrain the edge role.** The signed `tenant_id` MUST
+   equal the tenant authenticated by the API key. `agent_id` MUST NOT begin
+   `_`. The managed edge action profile is a positive allow-list:
+   `llm.chat`, `tool.call`, `data.read`, `payment.execute`,
+   `interaction.message`, `policy.decision`, `guardrail.blocked`,
+   `human.approve`, `human.override`, `human.reject`,
+   `human.escalation_timeout`, `agent.deployed`, `agent.config_changed`,
+   `agent.tool_granted`, and `agent.revoked`. Every other
+   namespace is denied until explicitly admitted; in particular `evd.key.*`,
+   `authority.*`, `action.*`, `source.*`, `registration.*`, `lineage.*`,
+   `node.*`, and `passport.*` are internal producer paths and can never arrive
+   through an edge upload. Plaintext `context` keys MUST be a subset of the
+   selected action's `context-v1` dial plus the four universal lineage /
+   correlation keys; an undeclared key is rejected as payload smuggling.
+   Values are also schema-checked: universal IDs and ordinary declared fields
+   are strings; `requested_tool_names` / `arg_keys` are arrays of strings;
+   declared booleans are JSON booleans; counters/durations are nonnegative
+   int64 values (never booleans); `status` is a string or nonnegative int64.
+   The frozen bands and `result_kind` use the exact `context-v1` enums. Nested
+   objects and arrays on scalar fields are payload smuggling and are rejected.
+4. **Resolve idempotency under the tenant store lock.** Reusing an
+   `idempotency_key` for different payload bytes is 409. An exact retry is
+   acknowledged with the already-stored leaf index and payload hash only when
+   its edge signature list exactly matches the stored envelope before the
+   final issuer signature. It consumes no quota and is still acknowledged
+   after prospective recorder-key revocation: no new claim is being admitted.
+   A matching unfinalized quota reservation is reconciled best-effort; control
+   DB failure MUST NOT withhold the 200 for an already-durable tenant leaf.
+5. **Authenticate every signature for a new leaf.** Every uploaded signature
+   MUST be valid over the PAE bytes under a distinct, currently active key in
+   this authenticated tenant's key log whose signed key-creation event carries
+   `role="recorder"`. Unlabelled historical keys and issuer keys are not
+   recorders. One valid signature never masks an unknown, malformed, revoked,
+   unlabelled, issuer-role, or invalid extra signature.
+6. **Reserve and append once.** Before quota, reject an already-recorded
+   `(agent_id, seq)` with 409. Only a genuinely new, fully admitted leaf takes
+   one tenant receipt quota unit. The control plane atomically creates a
+   durable `(tenant_id, idempotency_key, receipt_hash)` reservation and debit;
+   an exact retry reuses it, a different hash is 409, and exhaustion is 429.
+   If quota remains, and only then, the hosted issuer counter-signs and appends
+   while the tenant store lock is held, then finalizes the reservation. A
+   signer/append failure or process loss can leave one conservative reservation
+   but can never double-debit its retry.
+
+These failures are fail-closed for evidence admission but remain fail-open for
+the business action: the recorder returns the upstream response, keeps the
+signed receipt in its durable ordered spool, and retries without fabricating a
+successful evidence write.
+
+**Managed migration.** A fresh signup returns `api_key` (admin) and
+`recorder_api_key` (ingest only). Existing recorder deployments MUST move the
+runtime `EVD_API_KEY` to the secret returned once by admin-authenticated
+`POST /evd/api-keys/recorder`; issuance atomically revokes that tenant's prior
+recorder API credentials. They MUST also register a NEW edge signing key
+through the admin-authenticated `/evd/keys/register` route. Historical
+unlabelled keys are intentionally not inferred to be recorders.
+
+`GET /evd/ingest/keys` accepts only that exact recorder credential and returns
+the authenticated tenant id, active public keys whose immutable key-log event
+explicitly grants `role="recorder"`, and known permanently ineligible kids.
+Recorder sync MUST validate the exact response schema, tenant binding, JWK kid
+derivation, and every spooled DSSE signature before using this view. This lets
+K1-signed spool entries drain after a local move to registered K2 while K1 is
+still active. Unknown kids remain spooled pending registration; a known
+unroled/revoked kid may be durably quarantined. Managed ingest MUST repeat all
+§5.1 tenant, role, profile, and cryptographic checks; discovery is a safe local
+replay decision, never admission authority.
 
 ## 6. Verification (normative for verifiers)
 
