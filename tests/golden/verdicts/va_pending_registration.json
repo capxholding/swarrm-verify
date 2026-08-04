@@ -27,6 +27,8 @@
     "mapping_version": "1",
     "population_proof": {
       "kind": "signed_period_manifest",
+      "signature": "X436qXhWb8Gw/gRN73A4Kh+fxb/7dtU+hdpTx8sSEL9f/IwNa8NFqYKkV8aSp/Xu79ZIDgg5v1imX2kGGEwEDw==",
+      "source_id": "source-1",
       "source_scope_defined": true,
       "verified": true
     },
@@ -94,7 +96,9 @@
     "echo": {
       "echoed_action_id": true,
       "echoed_intent_digest": false,
-      "echoed_nonce": false
+      "echoed_nonce": false,
+      "signature": "LSEnYEbFmqkwX4tBRSS8z+vSzL3YSfAcCfqYiNHSb7JPRfxf9xafr16ckmkwb0ZLmjwRVfz8KckFYDzteRM7Bw==",
+      "source_id": "source-1"
     },
     "source_clock_sync_declared": false
   }

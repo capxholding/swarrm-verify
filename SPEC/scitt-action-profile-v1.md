@@ -36,7 +36,10 @@ structure id, `396`=VDS proofs map.
 `application/vnd.swarrm.action-statement+cose` — a COSE_Sign1 signed by the
 certificate **issuer** key.
 - protected: `{1: -8, 3: "application/vnd.swarrm.action-certificate+cbor",
-  4: kid, 15: {1: <issuer id>, 2: <certificate_id hex>}}`.
+  4: kid, 15: {1: <issuer id>, 2: <certificate_id hex>,
+  "evd_scope_digest"?: <64 lowercase hex>}}`. The optional text claim is
+  mandatory on the managed endpoint and binds the HTTP entitlement scope into
+  the issuer-signed bytes; a header alone is never authorization.
 - payload: the **32-byte `certificate_id`** (the commitment — the ONLY thing
   the TS receives; the certificate itself never leaves the customer).
 - `statement_digest` = `SHA-256(signed_statement_bytes)`.
@@ -90,7 +93,10 @@ Given `signed_statement`, `receipt`, the TS trust keys, and the
 is `scitt_receipt_valid = false` (fail-closed, hostile input never crashes):
 1. Parse both as COSE_Sign1 (caps before crypto: ≤ 64 KiB each, depth ≤ 16).
 2. Issuer signature on `signed_statement` verifies under a key in the
-   certificate's own bundle key-log; its payload == `certificate_id`.
+   certificate's own bundle key-log; the protected profile is exact (`alg=-8`,
+   the frozen content type, non-empty CWT `iss`, CWT `sub` equal to the
+   lowercase-hex `certificate_id`, and an optional well-formed signed scope);
+   its payload is exactly the same 32-byte `certificate_id`.
 3. `statement_digest = SHA-256(signed_statement)`.
 4. TS signature on `receipt` verifies under a pinned TS key (by kid).
 5. From the receipt: recompute `body_hash = SHA-256(JCS(checkpoint body))`;
@@ -122,6 +128,24 @@ Receipt. Registration policy and TS trust roots are themselves published and
 versioned. **No second TS, HeadDeriver, continuity trustee, key-custody
 consortium or custom consensus is required for the first paid or production
 use** — one TS, the existing public anchor, and RFC 3161 time.
+
+**Managed admission is fail-closed and prospective.** `POST /scitt/register`
+requires a tenant API credential and `x-evd-scope-digest` (exactly 32 bytes as
+lowercase hex). The Signed Statement signature MUST verify under a currently
+active key in that tenant's append-only key log, and a NEW statement digest is
+appended only when an active service entitlement covers that exact
+tenant/scope at server time. Missing credentials, an unknown or revoked issuer
+key, missing scope, an unavailable entitlement store, wrong scope, expiry, or
+suspension MUST NOT append a leaf. The same already-registered statement may
+be retried after lapse to recover its existing receipt: that creates no new
+mark and keeps expiry prospective. Entitlement state is not embedded in the
+statement, Receipt, checkpoint, or trust pack and is never read by offline
+verification; historical receipt validity is therefore unchanged by later
+commercial state.
+For managed admission the header scope MUST equal the protected signed
+`evd_scope_digest` claim before the entitlement gate runs. The endpoint streams
+the body under the policy's 64 KiB ceiling; `Content-Length` and chunked bodies
+over that ceiling are rejected with 413 before COSE parsing or signature work.
 
 ## 9. Claim boundary
 

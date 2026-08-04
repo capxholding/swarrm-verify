@@ -14,6 +14,7 @@ mod cose;
 pub(crate) mod jcs;
 mod merkle;
 mod scitt;
+pub mod trust; // independently-supplied anchors: a subject may not supply its own
 pub mod tsa;
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -195,6 +196,38 @@ pub(crate) fn body_of(env: &Value) -> Option<Value> {
     serde_json::from_slice(&payload_of(env)?).ok()
 }
 
+fn decimal(bytes: &[u8]) -> Option<u32> {
+    bytes.iter().try_fold(0, |n, c| {
+        c.is_ascii_digit().then_some(n * 10 + u32::from(*c - b'0'))
+    })
+}
+
+fn canonical_utc(s: &str) -> bool {
+    let b = s.as_bytes();
+    if !(b.len() == 20 || (22..=27).contains(&b.len()))
+        || b[4] != b'-' || b[7] != b'-' || b[10] != b'T'
+        || b[13] != b':' || b[16] != b':' || *b.last().unwrap() != b'Z'
+        || (b.len() > 20 && (b[19] != b'.' || decimal(&b[20..b.len() - 1]).is_none()))
+    { return false; }
+    let (Some(y), Some(m), Some(d), Some(h), Some(n), Some(sec)) = (
+        decimal(&b[..4]), decimal(&b[5..7]), decimal(&b[8..10]),
+        decimal(&b[11..13]), decimal(&b[14..16]), decimal(&b[17..19]),
+    ) else { return false; };
+    let leap = y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
+    let days = [0, 31, 28 + u32::from(leap), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    y > 0 && (1..=12).contains(&m) && d > 0 && d <= days[m as usize]
+        && h < 24 && n < 60 && sec < 60
+}
+
+fn forbidden_managed_edge_cosign(body: &Value, env: &Value) -> bool {
+    let multi = env.get("signatures").and_then(Value::as_array).is_some_and(|s| s.len() > 1);
+    let agent = body.get("agent_id").and_then(Value::as_str).unwrap_or("");
+    let action = body.get("action_type").and_then(Value::as_str).unwrap_or("");
+    multi && (agent.starts_with('_') || ["evd.key.", "authority.", "source.", "action.",
+        "lineage.", "node.", "evd.finding.", "evd.gap.", "evd.coverage.", "registration."]
+        .iter().any(|prefix| action.starts_with(prefix)))
+}
+
 /// The trust root of the key-log replay: all keys (incl. revoked) + revoke ts.
 pub(crate) struct KeyLog {
     pub(crate) keys: BTreeMap<String, [u8; 32]>,
@@ -251,7 +284,7 @@ fn key_active(
     kid: &str,
     at: &str,
 ) -> bool {
-    keys.contains_key(kid) && revoked.get(kid).map(|r| at <= r.as_str()).unwrap_or(true)
+    keys.contains_key(kid) && kid_valid_at(kid, at, revoked)
 }
 
 fn signed_by_active_key(env: &Value, kl: &KeyLog, ts: &str) -> bool {
@@ -336,6 +369,9 @@ fn apply_key_revoked(kl: &mut KeyLog, env: &Value, ctx: &Value, ts: &str, kid: S
         .get("effective_ts")
         .and_then(|v| v.as_str())
         .unwrap_or("");
+    if !canonical_utc(eff) {
+        return false;
+    }
     kl.revoked_at.insert(kid, eff.to_string());
     true
 }
@@ -359,6 +395,11 @@ pub(crate) fn replay_key_log(entries: &[Value]) -> KeyLog {
         let ctx = body.get("context").cloned().unwrap_or(Value::Null);
         let jwk = ctx.get("jwk").cloned().unwrap_or(Value::Null);
         let ts = body.get("ts_server").and_then(|v| v.as_str()).unwrap_or("");
+        if !canonical_utc(ts)
+            || !ctx.get("effective_ts").and_then(Value::as_str).is_some_and(canonical_utc)
+        {
+            return kl;
+        }
         let (material, kid) = match key_from_jwk(&jwk) {
             Some(m) => m,
             None => return kl,
@@ -378,9 +419,9 @@ pub(crate) fn replay_key_log(entries: &[Value]) -> KeyLog {
 }
 
 pub(crate) fn kid_valid_at(kid: &str, at: &str, revoked_at: &BTreeMap<String, String>) -> bool {
-    revoked_at
+    canonical_utc(at) && revoked_at
         .get(kid)
-        .map(|r| at <= r.as_str())
+        .map(|r| canonical_utc(r) && at <= r.as_str())
         .unwrap_or(true)
 }
 
@@ -396,7 +437,7 @@ pub(crate) fn hex(b: &[u8]) -> String {
 fn hex_decode(s: &str) -> Option<Vec<u8>> {
     // is_ascii first: byte-slicing a multi-byte char boundary would panic,
     // and hex is ASCII by definition anyway (H5: no panic on hostile input)
-    if !s.is_ascii() || s.len() % 2 != 0 {
+    if !s.is_ascii() || !s.len().is_multiple_of(2) {
         return None;
     }
     (0..s.len())
@@ -570,13 +611,14 @@ fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog)
 }
 
 fn chain_head_matches(chain: &[Value], target: &Value) -> bool {
-    match (
+    // an unhashable checkpoint on EITHER side is a mismatch, never a pass
+    let (Some(head), Some(want)) = (
         checkpoint_body_hash(chain.last().unwrap()),
         checkpoint_body_hash(target),
-    ) {
-        (Some(a), Some(b)) if a == b => true,
-        _ => false,
-    }
+    ) else {
+        return false;
+    };
+    head == want
 }
 
 fn check_entry_sigs(env: &Value, sigs: &[Value], ts_server: &str, kl: &KeyLog) -> bool {
@@ -638,6 +680,10 @@ fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8]) -> bool {
     }
     // every signature valid + key valid at ts_server
     let ts_server = body.get("ts_server").and_then(|v| v.as_str()).unwrap_or("");
+    let ts_client = body.get("ts_client").and_then(|v| v.as_str()).unwrap_or("");
+    if !canonical_utc(ts_client) || !canonical_utc(ts_server) {
+        return false;
+    }
     let sigs = match env.get("signatures").and_then(|v| v.as_array()) {
         Some(s) if !s.is_empty() => s,
         _ => return false,
@@ -713,11 +759,11 @@ pub(crate) fn is_internal_agent(a: &str) -> bool {
     ) || a.starts_with("_rel_")
 }
 
-fn collect_lineage(
-    entries: &[Value],
-) -> Option<BTreeMap<String, Vec<(String, String, i64, Value)>>> {
-    // (action_type, receipt_hash, seq, context) per acting agent
-    let mut by_agent: BTreeMap<String, Vec<(String, String, i64, Value)>> = BTreeMap::new();
+type LineageItem = (String, String, i64, Value); // (action_type, receipt_hash, seq, context)
+
+fn collect_lineage(entries: &[Value]) -> Option<BTreeMap<String, Vec<LineageItem>>> {
+    // one Vec of the above per acting agent
+    let mut by_agent: BTreeMap<String, Vec<LineageItem>> = BTreeMap::new();
     for e in entries {
         if let Some(body) = e.get("envelope").and_then(body_of) {
             let agent = body.get("agent_id").and_then(|v| v.as_str()).unwrap_or("");
@@ -730,10 +776,7 @@ fn collect_lineage(
                 .unwrap_or("")
                 .to_string();
             let seq = body.get("seq").and_then(|v| v.as_i64()).unwrap_or(-1);
-            let rh = match e.get("envelope").and_then(receipt_hash_hex) {
-                Some(h) => h,
-                None => return None,
-            };
+            let rh = e.get("envelope").and_then(receipt_hash_hex)?;
             let ctx = body.get("context").cloned().unwrap_or(Value::Null);
             by_agent.entry(agent.to_string()).or_default().push((at, rh, seq, ctx));
         }
@@ -741,7 +784,7 @@ fn collect_lineage(
     Some(by_agent)
 }
 
-fn check_lineage_orphan(items: &[(String, String, i64, Value)], valid: &BTreeSet<String>) -> bool {
+fn check_lineage_orphan(items: &[LineageItem], valid: &BTreeSet<String>) -> bool {
     // no establishment: revision_id must still match a present revision
     for (_, _, _, ctx) in items {
         if let Some(rv) = ctx.get("revision_id").and_then(|v| v.as_str()) {
@@ -754,7 +797,7 @@ fn check_lineage_orphan(items: &[(String, String, i64, Value)], valid: &BTreeSet
 }
 
 fn check_lineage_established(
-    items: &[(String, String, i64, Value)],
+    items: &[LineageItem],
     valid: &BTreeSet<String>,
     birth_at: &str,
     birth_hash: &str,
@@ -946,9 +989,10 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
     Some(v.get(key)?.as_str()?.to_string())
 }
 
-fn disclosure_fields(pkg: &Value) -> Option<(String, String, String, Vec<u8>, Vec<u8>)> {
-    // (receipt_hash, field, domain, nonce, payload); any missing or
-    // undecodable member makes the whole package malformed.
+type DisclosureFields = (String, String, String, Vec<u8>, Vec<u8>); // (receipt_hash, field, domain, nonce, payload)
+
+fn disclosure_fields(pkg: &Value) -> Option<DisclosureFields> {
+    // any missing or undecodable member makes the whole package malformed
     if str_field(pkg, "schema")? != DISCLOSURE_SCHEMA {
         return None;
     }
@@ -1032,6 +1076,12 @@ pub fn verify_bundle(bundle: &Value) -> bool {
         .cloned()
         .unwrap_or_default();
     if entries.is_empty() {
+        return false;
+    }
+    if entries.iter().any(|e| {
+        let env = &e["envelope"];
+        body_of(env).is_some_and(|body| forbidden_managed_edge_cosign(&body, env))
+    }) {
         return false;
     }
 

@@ -60,6 +60,7 @@ Key lifecycle events are ordinary receipts with `agent_id="_system"` and
 
 ```json
 {"jwk": {…RFC 8037 OKP/Ed25519…}, "effective_ts": "<RFC 3339>",
+ "role": "<sponsored recorder creation only>",
  "prev_kid": "<rotations only>", "continuity_sig": "<rotations only, b64>"}
 ```
 
@@ -70,7 +71,9 @@ Rules (all normative):
    `/evd/health` and the verifier output). An empty store rejects any other
    first entry.
 2. **Sponsored creation** — later `evd.key.created` entries (e.g. an edge
-   recorder's key) must be signed by an already-active key.
+   recorder's key) must be signed by an already-active key. A managed edge key
+   is authorized for `/evd/ingest` only when this signed entry explicitly has
+   `role="recorder"`; absence of a role grants no recorder authority.
 3. **Rotation** — signed by the OLD key; `continuity_sig` is the old key's
    Ed25519 signature over the new JWK's RFC 8785 canonical bytes. Rotation
    ADDS the new key; the old key remains valid until revoked (in-flight
@@ -87,7 +90,9 @@ Rules (all normative):
    different key material, → NOT VERIFIED.
 6. **Time semantics** — checkpoints signed by a key revoked before their
    `ts`, and receipts signed by a key revoked before their `ts_server`,
-   → NOT VERIFIED.
+   → NOT VERIFIED. Receipt, key-event `effective_ts`, and checkpoint times use
+   receipt-v1's canonical extended UTC form; permissive ISO variants are not
+   comparable authority times and make the bundle NOT VERIFIED.
 
 **Documented limitation:** omission of the LATEST key event (tail
 truncation) is not detectable purely offline; mid-history omissions are

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "float",
+    "batch_value": 1.5,
+    "batch_digest": "9c72f391c5d70e5961ad6f102d832c0d812bf36b51637926bee5e96fced34ad5",
+    "scan_signature": "fwmbKu9+TsjdAqgU3RnSpauw+Lk+c1R5fjQDuC2zgsy7jcCZByBTUtr4G8wxh1hZHfUvGUhJyPucWgsd6GRRBQ=="
+  },
+  {
+    "name": "unsafe_integer",
+    "batch_value": 9007199254740992,
+    "batch_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scan_signature": "h92JJ2u+ud0V5ODkaGePhW0USY3ryGJGi09XOpSBj435wfiucoV9kYK0TwnqOhOXUmwg9W72yX3CaXIxSc3yBA=="
+  },
+  {
+    "name": "over_depth",
+    "depth": 65,
+    "batch_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scan_signature": "h92JJ2u+ud0V5ODkaGePhW0USY3ryGJGi09XOpSBj435wfiucoV9kYK0TwnqOhOXUmwg9W72yX3CaXIxSc3yBA=="
+  },
+  {
+    "name": "malformed_period",
+    "period_start": "2026-aa-01T00:00:00Z",
+    "period_end": "2026-01-02T00:00:00Z",
+    "batch_digest": "0198d4102e5b3e77502646dccbbe9d5280749d1e982aaedffb6cbc44ba803c4a",
+    "scan_signature": "45lqIijOXBgr0Tm3A80w9zsjE7sqzRATqF7XGfOjPrhQ4dufQJbjYREr2FmU/dTAkKRz2ipO97HVCgy9NYaRBg=="
+  },
+  {
+    "name": "inverted_period",
+    "period_start": "2026-01-03T00:00:00Z",
+    "period_end": "2026-01-02T00:00:00Z",
+    "batch_digest": "2a166bf0712dee5a4a5cd08dda2f4229ce3497d565d15f1fdfa4521a3e15e5ff",
+    "scan_signature": "5bjCfZ1JPgfRf782y6fFV+6qe1Hm6zNpbpg2AuHSyZHZM6uMnYZSoYuvhKI/A4L3trhY9r0OHprMFef5dIF7Aw=="
+  }
+]

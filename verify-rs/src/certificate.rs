@@ -26,7 +26,7 @@ use ciborium::Value as C;
 use serde_json::{json, Value as J};
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::action::{authority_facts, derive_vector};
+use crate::action::{authority_facts, derive_vector_with_trust};
 use crate::cbor::{canonical_cbor, decode_cbor, MAX_BYTES, MAX_DEPTH};
 use crate::scitt::{hex_to_bytes, verify_scitt_receipt};
 use crate::{ed25519_verify, hex, key_from_jwk, replay_key_log, sha256, verify_bundle};
@@ -94,11 +94,24 @@ fn text_or_empty(v: &J, key: &str) -> String {
     match v.get(key) { None | Some(J::Null) => String::new(), other => pystr(other) }
 }
 
-fn report(ok: bool, layers: &[&str], id: Option<&str>, core: bool, cross: bool, vector: J, mark: J, errors: &[&str]) -> J {
-    json!({
-        "parse_ok": ok, "layers": layers, "certificate_id": id, "core_present": core,
-        "cross_checks_ok": cross, "vector": vector, "mark": mark, "errors": errors,
-    })
+/// The result dict, assembled by NAME rather than by an eight-slot positional
+/// call: six of the eight members are bare booleans or JSON nulls, and every
+/// early-return site leaves most of them at the "nothing to report" value that
+/// `..Default::default()` supplies (false / `&[]` / None / `J::Null`).
+#[derive(Default)]
+struct Report<'a> {
+    parse_ok: bool, layers: &'a [&'a str], certificate_id: Option<&'a str>, core_present: bool,
+    cross_checks_ok: bool, vector: J, mark: J, errors: &'a [&'a str],
+}
+
+impl Report<'_> {
+    fn json(self) -> J {
+        json!({
+            "parse_ok": self.parse_ok, "layers": self.layers, "certificate_id": self.certificate_id,
+            "core_present": self.core_present, "cross_checks_ok": self.cross_checks_ok,
+            "vector": self.vector, "mark": self.mark, "errors": self.errors,
+        })
+    }
 }
 
 // ------------------------------------------------- cross-checks (§4.3–§4.4)
@@ -293,7 +306,9 @@ fn view_checks(view: &C, id: &str, bundle: &J, mark: &J, errors: &mut Vec<&'stat
     if !view_sig_ok(view, bundle) { errors.push("VIEW_SIGNATURE_INVALID") }
     let man = cget(view, "manifest");
     if man.and_then(|m| ctext(m, "certificate_id")) != Some(id) { errors.push("MANIFEST_MISMATCH") }
-    // §4.5: the claimed mark_result must equal the recomputed mark
+    // §4.5: the DISPLAYED mark must be what anyone recomputes from these bytes,
+    // compared against the ANCHOR-FREE derivation — a producer cannot know which
+    // roots a relying party supplies and must never mint the anchored verdict.
     if man.and_then(|m| ctext(m, "mark_result")) != mark.as_str() { errors.push("MARK_MISMATCH") }
 }
 
@@ -360,20 +375,31 @@ fn core_caps_ok(j: &J) -> bool {
         && len("open_findings") <= MAX_LIST && len("attachments") <= MAX_ATTACHMENTS
 }
 
-fn verify_core(id: &str, core: &C, view: Option<&C>) -> J {
+/// The §4.3-§4.4 cross-checks: every way the certificate can disagree with the
+/// bundle it embeds. Split out of `verify_core` to keep that function within
+/// the §0.2·3a complexity ceiling.
+fn cross_check_errors(j: &J, bundle: &J) -> Vec<&'static str> {
+    let mut errors: Vec<&'static str> = Vec::new();
+    if !verify_bundle(bundle) { errors.push("BUNDLE_INVALID") } // §4.3
+    if !check_authority(j, bundle) { errors.push("AUTHORITY_MISMATCH") }
+    if !check_input_echo(j) { errors.push("VERDICT_INPUT_MISMATCH") }
+    if !check_matches(j) { errors.push("EVENT_MATCHES_MISMATCH") }
+    if !check_coverage(j) { errors.push("COVERAGE_INCONSISTENT") }
+    errors
+}
+
+fn verify_core(id: &str, core: &C, view: Option<&C>, trust: Option<&J>) -> J {
     let layers: &[&str] = if view.is_some() { &["core", "view"] } else { &["core"] };
-    let held = |errs: &[&str]| report(true, layers, Some(id), true, false, J::Null, J::Null, errs);
+    let held = |errs: &[&str]| Report {
+        parse_ok: true, layers, certificate_id: Some(id), core_present: true, errors: errs,
+        ..Default::default()
+    }.json();
     let Some(j) = cbor_to_json(core, MAX_DEPTH).filter(core_shape_ok) else {
         return held(&["CORE_MALFORMED"]);
     };
     if !core_caps_ok(&j) { return held(&["OVER_CAP"]) }
     let bundle = j["bundle"].clone();
-    let mut errors: Vec<&'static str> = Vec::new();
-    if !verify_bundle(&bundle) { errors.push("BUNDLE_INVALID") } // §4.3
-    if !check_authority(&j, &bundle) { errors.push("AUTHORITY_MISMATCH") }
-    if !check_input_echo(&j) { errors.push("VERDICT_INPUT_MISMATCH") }
-    if !check_matches(&j) { errors.push("EVENT_MATCHES_MISMATCH") }
-    if !check_coverage(&j) { errors.push("COVERAGE_INCONSISTENT") }
+    let mut errors = cross_check_errors(&j, &bundle);
     let mut vi = j["verdict_input"].clone();
     if let Some(vw) = view {
         // §4.5: withheld fields come from THIS view's manifest, nowhere else
@@ -384,48 +410,73 @@ fn verify_core(id: &str, core: &C, view: Option<&C>) -> J {
         vi["authority"]["integrity"] = json!("INVALID"); // never a partial pass
     }
     apply_scitt_override(&mut vi, id, &bundle); // SPEC §6: DERIVE scitt_receipt_valid
-    let vector = derive_vector(&vi);
+    let vector = derive_vector_with_trust(&vi, trust);
+    // The DISPLAYED mark is cross-checked against the ANCHOR-FREE derivation:
+    // a producer cannot know which roots a relying party will supply, and must
+    // never be able to mint the anchored verdict (mirrors verify/certificate.py).
+    let baseline = if trust.is_some() { derive_vector_with_trust(&vi, None) } else { vector.clone() };
     let mark = vector["mark"].clone();
     if let Some(vw) = view {
-        view_checks(vw, id, &bundle, &mark, &mut errors);
+        view_checks(vw, id, &bundle, &baseline["mark"], &mut errors);
     }
     let cross = errors.is_empty();
-    report(true, layers, Some(id), true, cross, vector, mark, &errors)
+    Report {
+        parse_ok: true, layers, certificate_id: Some(id), core_present: true,
+        cross_checks_ok: cross, vector, mark, errors: &errors,
+    }.json()
 }
 
-fn run_view(view: &C) -> J {
-    let held = |id: Option<&str>, errs: &[&str]| report(true, &["view"], id, false, false, J::Null, J::Null, errs);
+fn run_view(view: &C, trust: Option<&J>) -> J {
+    let held = |id: Option<&str>, errs: &[&str]| Report {
+        parse_ok: true, layers: &["view"], certificate_id: id, errors: errs, ..Default::default()
+    }.json();
     let id = ctext(view, "certificate_id");
     if matches!(cget(view, "disclosures"), Some(C::Array(a)) if a.len() > MAX_DISCLOSURES) {
         return held(id, &["OVER_CAP"]);
     }
     let Some(id) = id else { return held(None, &["VIEW_MALFORMED"]) };
     let Some(core_b) = cbytes(view, "core") else {
-        // the view layer alone: held, rendered, nothing recomputed (§2)
-        return held(Some(id), &[]);
+        // The issuer key log is carried by the withheld core. Without it (or
+        // a future separately supplied view-key trust input), neither the
+        // detached signature nor manifest is authenticated. Shape is not a
+        // pass.
+        return held(Some(id), &["VIEW_SIGNATURE_UNVERIFIED"]);
     };
+    if withheld_fields(view).as_array().map(|v| !v.is_empty()).unwrap_or(false) {
+        // A manifest cannot label bytes withheld while carrying the complete
+        // core that contains them. Reject this leaky producer output before
+        // parsing or crypto; it is not selective disclosure.
+        return Report {
+            parse_ok: true, layers: &["core", "view"], certificate_id: Some(id), core_present: true,
+            errors: &["WITHHELD_CORE_PRESENT"], ..Default::default()
+        }.json();
+    }
     if core_b.len() > MAX_CORE_BYTES { return held(Some(id), &["OVER_CAP"]) }
     let Some(core) = decode_cbor(core_b, MAX_DEPTH as usize, MAX_CORE_BYTES) else {
         return held(Some(id), &["PARSE"]);
     };
-    let both = |errs: &[&str]| report(true, &["core", "view"], Some(id), true, false, J::Null, J::Null, errs);
+    let both = |errs: &[&str]| Report {
+        parse_ok: true, layers: &["core", "view"], certificate_id: Some(id), core_present: true,
+        errors: errs, ..Default::default()
+    }.json();
     if hex(&sha256(core_b)) != id { return both(&["CERTIFICATE_ID_MISMATCH"]) } // §4.2
     if ctext(&core, "schema") != Some(CORE_SCHEMA) { return both(&["CORE_MALFORMED"]) }
-    verify_core(id, &core, Some(view))
+    verify_core(id, &core, Some(view), trust)
 }
 
-fn run(bytes: &[u8]) -> J {
+fn run(bytes: &[u8], trust: Option<&J>) -> J {
     // §4.1 caps before crypto: byte/depth caps + canonical-profile decode
     let Some(top) = decode_cbor(bytes, MAX_DEPTH as usize, MAX_BYTES) else {
-        return report(false, &[], None, false, false, J::Null, J::Null, &["PARSE"]);
+        return Report { parse_ok: false, errors: &["PARSE"], ..Default::default() }.json();
     };
     match ctext(&top, "schema") {
-        Some(CORE_SCHEMA) if bytes.len() > MAX_CORE_BYTES => {
-            report(true, &["core"], None, true, false, J::Null, J::Null, &["OVER_CAP"])
-        }
-        Some(CORE_SCHEMA) => verify_core(&hex(&sha256(bytes)), &top, None),
-        Some(VIEW_SCHEMA) => run_view(&top),
-        _ => report(true, &[], None, false, false, J::Null, J::Null, &["SCHEMA"]),
+        Some(CORE_SCHEMA) if bytes.len() > MAX_CORE_BYTES => Report {
+            parse_ok: true, layers: &["core"], core_present: true, errors: &["OVER_CAP"],
+            ..Default::default()
+        }.json(),
+        Some(CORE_SCHEMA) => verify_core(&hex(&sha256(bytes)), &top, None, trust),
+        Some(VIEW_SCHEMA) => run_view(&top, trust),
+        _ => Report { parse_ok: true, errors: &["SCHEMA"], ..Default::default() }.json(),
     }
 }
 
@@ -436,7 +487,15 @@ fn run(bytes: &[u8]) -> J {
 /// `wasm` feature this same symbol is the wasm export for the static page.
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 pub fn verify_certificate_cbor(bytes: &[u8]) -> String {
-    serde_json::to_string(&run(bytes)).unwrap_or_else(|_| {
+    verify_certificate_cbor_with_trust(bytes, None)
+}
+
+/// As above, with an `evd/trust-context/v1` naming the roots THIS RELYING PARTY
+/// accepts. Passed separately from the certificate bytes so the subject cannot
+/// supply its own anchors; with `None` every externally-grounded dimension
+/// renders weak (mirror of `verify/certificate.py`).
+pub fn verify_certificate_cbor_with_trust(bytes: &[u8], trust: Option<&J>) -> String {
+    serde_json::to_string(&run(bytes, trust)).unwrap_or_else(|_| {
         // unreachable for this value shape; fail closed rather than panic
         r#"{"parse_ok":false,"layers":[],"certificate_id":null,"core_present":false,"cross_checks_ok":false,"vector":null,"mark":null,"errors":["PARSE"]}"#.into()
     })

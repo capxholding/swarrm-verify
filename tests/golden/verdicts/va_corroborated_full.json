@@ -29,8 +29,12 @@
     "finality_watermark": "2026-01-01T00:30:00Z",
     "gaps": [],
     "mapping_version": "1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
     "population_proof": {
       "kind": "signed_period_manifest",
+      "signature": "X436qXhWb8Gw/gRN73A4Kh+fxb/7dtU+hdpTx8sSEL9f/IwNa8NFqYKkV8aSp/Xu79ZIDgg5v1imX2kGGEwEDw==",
+      "source_id": "source-1",
       "source_scope_defined": true,
       "verified": true
     },
@@ -63,7 +67,7 @@
     },
     "operator_ultimate_controller": "Operator GmbH",
     "schema": "evd/control-evidence/v1",
-    "signature": "c2lnLWNvbnRyb2w=",
+    "signature": "JOpbjHmEChM67Krc9bX0hnAriMeExr1HbtfjW6qvR8GyzvQOMAWD3a0Gxr0siYC1lTnTw1DiNOcviKBOHzpjBg==",
     "subject_party": "Source AG"
   },
   "event_matches": [
@@ -108,15 +112,20 @@
         "term_end": "2027-01-01T00:00:00Z",
         "term_start": "2026-01-01T00:00:00Z"
       },
-      "term_valid": true
+      "signature": "E0VR4FiEY60zttDHi1K+69PR6hAMBrwP2Pj+sRXXn3brkJTkrubozScwnaz+IczxwS/Zt5PW+mAGOxS8ZQBnDQ==",
+      "term_valid": true,
+      "transparency_service": "ts-1"
     }
   },
   "scan": {
     "authenticated_read": true,
+    "batch_digest": "3746af5e9630d7af1cfa21d989eda28474e427401182458b7a60108272962944",
     "complete": true,
     "cursor_gap_free": true,
+    "node_id": "node-1",
     "node_signed": true,
-    "performed": true
+    "performed": true,
+    "signature": "fN5yf/oBOX623nTy3Qh7DCn+9yBUSwbvxxevyBqC5bkGzzWMWcAjyRINpVMlqd3D7q3DTtGuaYslVUHFT617Ag=="
   },
   "schema": "evd/verdict-input/v1",
   "source_identity": {
@@ -139,6 +148,7 @@
       "material_digest": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
       "proof_type": "asymmetric_signature",
       "schema": "evd/source-proof/v1",
+      "signature": "66RJz2ZPxZbB1J4ZAuu7yuBO2IxtSSfGsAoL3ZCflYL97+UuEv0kDCpQ6i+23M9J1+xqTeNbnZnrRnEXY7CrAw==",
       "verified": true
     }
   ],
@@ -146,7 +156,9 @@
     "echo": {
       "echoed_action_id": true,
       "echoed_intent_digest": false,
-      "echoed_nonce": false
+      "echoed_nonce": false,
+      "signature": "LSEnYEbFmqkwX4tBRSS8z+vSzL3YSfAcCfqYiNHSb7JPRfxf9xafr16ckmkwb0ZLmjwRVfz8KckFYDzteRM7Bw==",
+      "source_id": "source-1"
     },
     "source_clock_sync_declared": false
   }

@@ -39,7 +39,10 @@ no API access, no cooperation from the log operator, no network.
 4. **Head**: `target_checkpoint` is the chain head.
 5. **Entries**: per receipt — DSSE signature(s) verify; schema is
    `evd/receipt/v1`; `receipt_hash` recomputed from payload; inclusion
-   proof verifies `(recomputed hash, leaf_index)` under the target root.
+   proof verifies `(recomputed hash, leaf_index)` under the target root;
+   timestamps use receipt-v1's canonical extended UTC form; and the legacy
+   privileged-co-signature rule in receipt-v1 §5 is satisfied before replaying
+   key, authority, lineage, Node, finding, gap, coverage, or registration state.
 6. Verdict is the conjunction. Any single failure ⇒ NOT VERIFIED.
 
 ## 4. Trust model & known limits (honest by design)

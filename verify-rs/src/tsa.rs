@@ -279,7 +279,7 @@ fn check_signer_info<'a>(sd: &'a SignedData, tst_der: &[u8]) -> Option<&'a Signe
         _ => return None,
     };
     let signed_attrs = si.signed_attrs.as_ref()?;
-    if signed_attrs.len() == 0 {
+    if signed_attrs.is_empty() {
         return None; // RFC 3161 requires signed attributes
     }
     let want = hash_bytes(&si.digest_alg.oid, tst_der)?;

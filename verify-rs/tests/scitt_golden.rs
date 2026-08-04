@@ -2,7 +2,7 @@
 //! B25 W4 — the Rust engine runs the SAME SCITT golden bytes the Python engine
 //! compiled (scripts/gen_scitt_golden.py, tests/golden/scitt/) and must
 //! reproduce the hand-authored `scitt_receipt_valid` in expected.json for every
-//! family. Two independent implementations agreeing on the six §6 outcomes —
+//! family. Two independent implementations agreeing on the ten §6 outcomes —
 //! and never panicking on hostile bytes (H5) — is the B25 conformance contract.
 //!
 //! `scitt` (and its `cose` / `cbor` / `jcs` / `merkle` dependencies) are
@@ -110,7 +110,7 @@ fn scitt_suite_agrees_with_expected() {
         assert_eq!(got, want, "family {name}: scitt_receipt_valid");
         checked += 1;
     }
-    assert!(checked >= 6, "expected at least 6 SCITT families, ran {checked}");
+    assert!(checked >= 10, "expected at least 10 SCITT families, ran {checked}");
 }
 
 #[test]

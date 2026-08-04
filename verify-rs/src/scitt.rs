@@ -22,11 +22,13 @@ const MAX_DEPTH: usize = 16; // §6.1: CBOR depth <= 16
 const MAX_AUDIT_PATH: usize = 64; // scitt-v1.cddl caps trailer
 
 const CHECKPOINT_SCHEMA: &str = "evd/checkpoint/v1";
+const STATEMENT_CTY: &str = "application/vnd.swarrm.action-certificate+cbor";
+const SCOPE_DIGEST_CLAIM: &str = "evd_scope_digest";
 
 /// Hex string → bytes; None on non-ASCII, odd length, or a bad nibble. Shared
 /// with the certificate layer's pack decode (H5: no panic on hostile input).
 pub(crate) fn hex_to_bytes(s: &str) -> Option<Vec<u8>> {
-    if !s.is_ascii() || s.len() % 2 != 0 {
+    if !s.is_ascii() || !s.len().is_multiple_of(2) {
         return None;
     }
     (0..s.len())
@@ -35,7 +37,7 @@ pub(crate) fn hex_to_bytes(s: &str) -> Option<Vec<u8>> {
         .collect()
 }
 
-fn imap<'a>(v: &'a Value, key: i128) -> Option<&'a Value> {
+fn imap(v: &Value, key: i128) -> Option<&Value> {
     let Value::Map(m) = v else { return None };
     m.iter()
         .find(|(k, _)| matches!(k, Value::Integer(i) if i128::from(*i) == key))
@@ -59,6 +61,59 @@ fn as_uint(v: &Value) -> Option<u64> {
         Value::Integer(i) => u64::try_from(i128::from(*i)).ok(),
         _ => None,
     }
+}
+
+fn as_int(v: &Value) -> Option<i128> {
+    match v {
+        Value::Integer(i) => Some(i128::from(*i)),
+        _ => None,
+    }
+}
+
+fn as_text(v: &Value) -> Option<&str> {
+    match v {
+        Value::Text(t) => Some(t),
+        _ => None,
+    }
+}
+
+fn map_len(v: &Value) -> Option<usize> {
+    match v {
+        Value::Map(m) => Some(m.len()),
+        _ => None,
+    }
+}
+
+fn hex32(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
+fn statement_profile(stmt: &crate::cose::Sign1, cid: &[u8], certificate_id: &str) -> bool {
+    if stmt.payload.as_deref() != Some(cid) || cid.len() != 32 || !hex32(certificate_id) {
+        return false;
+    }
+    if map_len(&stmt.unprotected) != Some(0) || map_len(&stmt.protected) != Some(4) {
+        return false;
+    }
+    if imap(&stmt.protected, 1).and_then(as_int) != Some(-8)
+        || imap(&stmt.protected, 3).and_then(as_text) != Some(STATEMENT_CTY)
+    {
+        return false;
+    }
+    let Some(claims) = imap(&stmt.protected, 15) else { return false };
+    let scope = tmap(claims, SCOPE_DIGEST_CLAIM).and_then(as_text);
+    let expected_claims = if scope.is_some() { 3 } else { 2 };
+    map_len(claims) == Some(expected_claims)
+        && imap(claims, 1).and_then(as_text).is_some_and(|s| !s.is_empty())
+        && imap(claims, 2).and_then(as_text) == Some(certificate_id)
+        && scope.is_none_or(hex32)
+}
+
+fn receipt_profile(receipt: &crate::cose::Sign1) -> bool {
+    map_len(&receipt.protected) == Some(3)
+        && imap(&receipt.protected, 1).and_then(as_int) == Some(-8)
+        && imap(&receipt.protected, 395).and_then(as_int) == Some(1)
+        && receipt.payload.as_ref().is_some_and(|p| p.len() == 32)
 }
 
 /// §6.5: recompute the checkpoint body_hash from unprotected -2 exactly as
@@ -112,13 +167,16 @@ pub fn verify_scitt_receipt(
     issuer_keys: &BTreeMap<String, [u8; 32]>,
     certificate_id: &str,
 ) -> bool {
+    if !hex32(certificate_id) {
+        return false;
+    }
     let Some(cid) = hex_to_bytes(certificate_id) else { return false };
     // §6.2 issuer signature; the payload is exactly the 32-byte certificate_id
     let Some(stmt) = crate::cose::verify_sign1(signed_statement, issuer_keys, MAX_BYTES, MAX_DEPTH)
     else {
         return false;
     };
-    if stmt.payload.as_deref() != Some(cid.as_slice()) {
+    if !statement_profile(&stmt, &cid, certificate_id) {
         return false;
     }
     // §6.3 statement digest → §6.4 TS signature over the receipt
@@ -126,6 +184,9 @@ pub fn verify_scitt_receipt(
     let Some(rcpt) = crate::cose::verify_sign1(receipt, ts_keys, MAX_BYTES, MAX_DEPTH) else {
         return false;
     };
+    if !receipt_profile(&rcpt) {
+        return false;
+    }
     // §6.5 recompute checkpoint body_hash; it must equal the receipt payload
     let Some((body_hash, root)) = checkpoint(&rcpt.unprotected) else { return false };
     if rcpt.payload.as_deref().map(crate::hex) != Some(body_hash) {

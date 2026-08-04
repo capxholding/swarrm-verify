@@ -25,6 +25,8 @@
     "finality_watermark": "2026-01-01T00:08:00Z",
     "gaps": [],
     "mapping_version": "emu-map-1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
     "schema": "evd/source-batch/v1",
     "source_identity_ref": "emu-ledger/acct-23"
   },
@@ -50,10 +52,13 @@
   "fork_findings_open": false,
   "scan": {
     "authenticated_read": true,
+    "batch_digest": "ca81a1b0376d89104e868a5194cf8fdf58b43afd041de48bbb9a2aad329778f7",
     "complete": true,
     "cursor_gap_free": true,
+    "node_id": "s3YkkeLhSDposbKe",
     "node_signed": true,
-    "performed": true
+    "performed": true,
+    "signature": "D7v77q18ETt6CuUk0lVD3ysTR9vjTGvjtXWl8AOlSc6E+h4nfYdnleZ4Yrp1qZAAQteDOXPKV2lCNZir9RrjBQ=="
   },
   "schema": "evd/verdict-input/v1"
 }

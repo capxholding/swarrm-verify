@@ -32,8 +32,10 @@ vector, `cbor2` bytes == Rust emitter bytes, byte-identical.
    registration-specific material. `certificate_id` = SHA-256 hex over the
    core's deterministic-CBOR bytes.
 2. **View envelope** (`evd/certificate-view/v1`) — per recipient; carries
-   the `VerificationViewManifest`, optionally the core bytes, and optional
-   disclosure packages; signed separately. Many envelopes wrap one core.
+   the `VerificationViewManifest`, optional disclosure packages, and the core
+   bytes **only for a full view**; signed separately. A view naming any
+   withheld field MUST omit `core`, otherwise the supposedly hidden bytes are
+   still trivially decodable. Many envelopes commit to one core.
 3. **Registration artifacts** (`RegistrationIntent` / `RegistrationAttempt`
    / `ScopeRegistration`, action-fact-v1 §13) — reference `certificate_id`
    and therefore live OUTSIDE the core. Resolution order is core → envelope
@@ -82,11 +84,17 @@ external material — attachments can never change the verdict).
    `coverage_doc` counts/roots must be internally consistent with `events`
    and `batch`. Any mismatch → integrity `INVALID` (never a partial pass).
 5. The verdict vector derives ONLY via the B21 engine (`derive_vector`) from
-   the carried `verdict_input` with `view.withheld_fields` taken from the
-   envelope's manifest; the mark renders per view (`NOT_RECOMPUTED` when a
-   gated field is withheld — never a pass, never implied). The manifest's
-   claimed `mark_result` must equal the recomputed mark, else the envelope
-   is invalid.
+   a carried full core. A full view has an empty `withheld_field_set`; its
+   manifest's `mark_result` must equal the recomputed mark, else the envelope
+   is invalid. A selective view has a non-empty `withheld_field_set`, MUST NOT
+   carry `core`, and therefore renders view-only with no recomputed vector or
+   mark (never a pass, never implied). Because the view issuer's witnessed key
+   log is itself inside the omitted core, the current artifact-alone API also
+   cannot authenticate the selective manifest signature: it returns
+   `VIEW_SIGNATURE_UNVERIFIED`. A future verifier may clear that error only
+   from an independently supplied trusted view-issuer key, never from the
+   coreless artifact itself. A view that both names a withheld field and
+   embeds `core` is invalid with `WITHHELD_CORE_PRESENT`.
 6. Editing ANY carried field fails a check above or produces a correctly
    WEAKER recomputed result — never acceptance of the edited headline.
    Contradicted/gapped evidence still compiles into an honest certificate;
@@ -98,13 +106,17 @@ external material — attachments can never change the verdict).
 verification (`RefusesUnverifiedEvidence` otherwise), assembles the core,
 enforces every cap at compile time (an over-cap core is a compile error
 naming the offending member — e.g. a checkpoint chain too long for the
-budget; operators control cadence and scope), computes `certificate_id`,
-and mints view envelopes from a disclosed/withheld field split. Adverse
-verdicts are compiled verbatim.
+budget; operators control cadence and scope), and computes `certificate_id`.
+`mint_view` embeds that core only when the withheld set is empty; a selective
+view carries the digest commitment and manifest, never the hidden core bytes.
+Adverse verdicts are compiled verbatim.
 
 ## 6. Report rendering (B24.4)
 
-Human text derives exclusively from verified fields. A committed field whose
+Human text derives exclusively from verified fields. A coreless selective
+manifest's field labels are not rendered as facts because its signer cannot be
+authenticated from that artifact alone. When an authenticated view carries
+the required verification material, a committed field whose
 disclosure is absent renders exactly **"committed, not disclosed"** — never
 plaintext, never an implication of absence. Disclosed values recompute their
 commitments via `evd/disclosure/v1` before rendering. A partial view says in

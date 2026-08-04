@@ -55,13 +55,17 @@
       "echoed_nonce": false
     },
     "event_bounds": {
+      "attester": "attester-event_bounds",
       "attester_independent": true,
       "lower": "2026-01-01T00:45:00Z",
+      "signature": "rImHXBFXOdqbvNO/c20KviVpo9jtiKkWK6m7/EhRjHd7+RmmIy0ZWuij/lckz5z7H5G7wYGLctOY3V1akF/PCw==",
       "upper": "2026-01-01T00:50:00Z"
     },
     "intent_bounds": {
+      "attester": "attester-intent_bounds",
       "attester_independent": true,
       "lower": "2026-01-01T00:00:00Z",
+      "signature": "zphS37qHhnZzVIv/tdZ1oCjzia9tnXrg9+BED8n41EqhafauB32mXEjA77fAH81rZptppo5vLaK2vHqXZdJdBQ==",
       "upper": "2026-01-01T00:30:00Z"
     },
     "source_clock_sync_declared": false

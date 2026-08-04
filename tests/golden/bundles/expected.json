@@ -22,6 +22,8 @@
   "forged_anchor": "NOT_VERIFIED",
   "forged_duplicate_seq": "NOT_VERIFIED",
   "forged_tst": "NOT_VERIFIED",
+  "legacy_custom_cosign": "VERIFIED",
+  "legacy_edge_week_date": "NOT_VERIFIED",
   "lineage_adopted_midlife": "VERIFIED",
   "lineage_born_valid": "VERIFIED",
   "lineage_duplicate_establishment": "NOT_VERIFIED",

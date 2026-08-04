@@ -45,11 +45,11 @@ fn fuzz_corpus_rejected_without_panic() {
     assert_eq!(names.len(), 30, "committed fuzz corpus must hold 30 cases");
     for name in names {
         let raw = fs::read(dir.join(&name)).unwrap();
-        match serde_json::from_slice::<Value>(&raw) {
-            // parseable hostile JSON: must be NOT VERIFIED — and not panic
-            Ok(v) => assert!(!swarrm_verify::verify_bundle(&v), "{name} must NOT verify"),
-            // unparseable: rejected at the parse boundary, same outcome as Python
-            Err(_) => {}
+        // parseable hostile JSON: must be NOT VERIFIED — and not panic.
+        // Unparseable input is rejected at the parse boundary, the same
+        // outcome as Python, so that arm has nothing left to assert.
+        if let Ok(v) = serde_json::from_slice::<Value>(&raw) {
+            assert!(!swarrm_verify::verify_bundle(&v), "{name} must NOT verify");
         }
     }
 }

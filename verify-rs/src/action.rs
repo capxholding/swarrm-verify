@@ -92,7 +92,18 @@ fn nts(t: &Value) -> Option<String> {
     }
     let base = &t[..t.len() - 1];
     let (whole, frac) = base.split_once('.').unwrap_or((base, ""));
-    if whole.len() != 19 || !frac.bytes().all(|c| c.is_ascii_digit()) {
+    if whole.len() != 19 || frac.len() > 6 || !frac.bytes().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let b = whole.as_bytes();
+    if [b[4], b[7], b[10], b[13], b[16]] != [b'-', b'-', b'T', b':', b':']
+        || b.iter().enumerate().any(|(i, c)| ![4, 7, 10, 13, 16].contains(&i) && !c.is_ascii_digit())
+    {
+        return None;
+    }
+    let number = |a, z| whole[a..z].parse::<u32>().ok();
+    let (y, m, d, h, min, sec) = (number(0, 4)?, number(5, 7)?, number(8, 10)?, number(11, 13)?, number(14, 16)?, number(17, 19)?);
+    if y == 0 || !(1..=12).contains(&m) || !(1..=31).contains(&d) || h > 23 || min > 59 || sec > 59 {
         return None;
     }
     Some(format!("{}.{:0<6}Z", whole, frac))
@@ -200,17 +211,38 @@ fn asym_pre_bound(p: &Value, kids: &[Value]) -> Result<bool, Raise> {
     Ok(kids.contains(&ki))
 }
 
-fn source_signature(vi: &Value) -> Result<&'static str, Raise> {
+/// Is `field` named in THIS view's withheld set? Shared by the per-view
+/// renderings (source_signature, mark) so they agree on what "withheld" means.
+fn field_withheld(vi: &Value, field: &str) -> Result<bool, Raise> {
+    let view = g(vi, "view");
+    let withheld = iter_items(if view.is_object() { view.get("withheld_fields") } else { None })?;
+    Ok(withheld.iter().any(|w| py_str(Some(w), "") == field))
+}
+
+fn source_signature(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Raise> {
+    // The producer's `verified: true` is IGNORED — it is a declaration.
+    // ASYMMETRIC requires a signature verifying under a key THIS RELYING PARTY
+    // named, and the key must also be pre-bound in SourceIdentity.
+    // Per-view, like the mark: a view that WITHHOLDS the source proof cannot
+    // recompute it, and NONE there would claim the source did not sign.
+    if field_withheld(vi, "source_proofs")? {
+        return Ok("NOT_RECOMPUTED");
+    }
     let kids = bound_kids(&g(vi, "source_identity"))?;
     let mut has_mac = false;
     for p in iter_items(vi.get("source_proofs"))? {
-        if !p.is_object() || p.get("verified") != Some(&Value::Bool(true)) {
+        if !p.is_object() {
             continue;
         }
-        if asym_pre_bound(&p, &kids)? {
-            return Ok("ASYMMETRIC"); // verifies under a key pre-bound in SourceIdentity
+        let kid = s(&p, "key_identity");
+        if asym_pre_bound(&p, &kids)?
+            && crate::trust::verified(trust, "source_keys", kid, "source-proof", &p)
+        {
+            return Ok("ASYMMETRIC");
         }
-        has_mac = has_mac || s(&p, "proof_type") == Some("mac");
+        if s(&p, "proof_type") == Some("mac") {
+            has_mac = has_mac || crate::trust::mac_verified(trust, kid, "source-proof", &p);
+        }
     }
     Ok(tri(has_mac, "SHARED_SECRET", false, "", "NONE")) // possession by SOME holder
 }
@@ -228,7 +260,7 @@ fn grounded_controllers(ev: &Value) -> Option<(Value, Value)> {
     None
 }
 
-fn control_domain(vi: &Value) -> Result<&'static str, Raise> {
+fn control_domain(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Raise> {
     let ev = g(vi, "control_evidence");
     let decls = iter_items(vi.get("control_declarations"))?;
     let mut admits = decls.iter().any(|d| d.get("claims_overlap") == Some(&Value::Bool(true)));
@@ -239,16 +271,42 @@ fn control_domain(vi: &Value) -> Result<&'static str, Raise> {
         None
     };
     let shared = matches!(&grounded, Some((a, b)) if a == b);
-    Ok(tri(admits || shared, "OVERLAPPING", grounded.is_some(), "INDEPENDENT", "UNKNOWN"))
+    // An admission of overlap is against interest -> believed without proof.
+    // INDEPENDENT is favourable -> the evaluator signature must verify.
+    let evaluator_ok =
+        crate::trust::verified(trust, "evaluator_keys", s(&ev, "evaluator"), "control-evidence", &ev);
+    Ok(tri(
+        admits || shared,
+        "OVERLAPPING",
+        grounded.is_some() && evaluator_ok,
+        "INDEPENDENT",
+        "UNKNOWN",
+    ))
 }
 
-fn node_dims(vi: &Value) -> (&'static str, &'static str, &'static str) {
+/// True iff the signed scan statement is ABOUT this verdict input's batch.
+/// The digest binds source, cursor, event root, gaps and a valid ordered period;
+/// a missing/malformed digest binds nothing and therefore proves no observation.
+fn scan_binds_batch(vi: &Value, scan: &Value) -> bool {
+    let Some(declared) = s(scan, "batch_digest").filter(|d| !d.is_empty()) else { return false };
+    let Some(batch) = obj(vi, "batch") else { return false };
+    let (start, end) = (nts(&g(batch, "period_start")), nts(&g(batch, "period_end")));
+    if !matches!((start, end), (Some(start), Some(end)) if start < end) {
+        return false;
+    }
+    let Some(canon) = jcs::canonical_checked(batch) else { return false };
+    declared == hex(&sha256(&canon))
+}
+
+fn node_dims(vi: &Value, trust: Option<&Value>) -> (&'static str, &'static str, &'static str) {
     let scan = g(vi, "scan");
     let att = g(vi, "node_attestation");
     let observed = flag(&scan, "performed")
         && flag(&scan, "authenticated_read")
-        && flag(&scan, "node_signed");
-    let att_ok = s(&att, "state") == Some("ISSUED")
+        && scan_binds_batch(vi, &scan)
+        && crate::trust::verified(trust, "node_keys", s(&scan, "node_id"), "node-scan", &scan);
+    let att_ok = crate::trust::verified(trust, "node_roots", s(&att, "attestor"), "node-attestation", &att)
+        && s(&att, "state") == Some("ISSUED")
         && s(&att, "method").map(|m| NODE_BASES.contains(&m)).unwrap_or(false)
         && nts(&g(&att, "valid_from")).is_some()
         && nts(&g(&att, "valid_to")).is_some();
@@ -261,13 +319,21 @@ fn node_dims(vi: &Value) -> (&'static str, &'static str, &'static str) {
     (tri(observed, "OBSERVED", false, "", "NOT_OBSERVED"), client, basis)
 }
 
-fn coverage(vi: &Value, node_basis: &str) -> (&'static str, &'static str) {
+fn full_scan(scan: &Value, observed: bool) -> bool {
+    flag(scan, "performed") && flag(scan, "complete")
+        && flag(scan, "cursor_gap_free") && observed
+}
+
+fn coverage(
+    vi: &Value, node_basis: &str, node_observed: bool, trust: Option<&Value>,
+) -> (&'static str, &'static str) {
     let batch = g(vi, "batch");
     let scan = g(vi, "scan");
     let pp = g(&batch, "population_proof");
-    let full_scan =
-        flag(&scan, "performed") && flag(&scan, "complete") && flag(&scan, "cursor_gap_free");
-    let basis = if flag(&pp, "source_scope_defined") && flag(&pp, "verified") {
+    let full_scan = full_scan(&scan, node_observed);
+    let pp_ok = flag(&pp, "source_scope_defined")
+        && crate::trust::verified(trust, "population_keys", s(&pp, "source_id"), "population-proof", &pp);
+    let basis = if pp_ok {
         "SOURCE_PROVEN_POPULATION" // the source proves a scope IT defines
     } else if full_scan && node_basis == "HARDWARE_ATTESTED" {
         "ATTESTED_NODE_FULL_SCAN" // only a hardware Node is a witness (2.5)
@@ -277,6 +343,7 @@ fn coverage(vi: &Value, node_basis: &str) -> (&'static str, &'static str) {
     let mut gapped = nonempty(&batch, "gaps") || flag(vi, "fork_findings_open");
     gapped = gapped
         || (flag(&scan, "performed") && scan.get("cursor_gap_free") == Some(&Value::Bool(false)));
+    gapped = gapped || has_open_finding(vi); // an open finding contradicts CLOSED
     if gapped {
         return ("GAPPED", basis);
     }
@@ -289,6 +356,66 @@ fn match_candidates(vi: &Value) -> Result<Vec<Value>, Raise> {
         .into_iter()
         .filter(|m| m.is_object() && keys.iter().any(|k| flag(m, k)))
         .collect())
+}
+
+/// Any unresolved finding contradicts a claim of complete coverage.
+fn has_open_finding(vi: &Value) -> bool {
+    let Some(items) = vi.get("findings").and_then(|f| f.as_array()) else { return false };
+    items.iter().any(|f| {
+        f.is_object()
+            && !matches!(
+                s(f, "state").unwrap_or("OPEN").to_ascii_uppercase().as_str(),
+                "RESOLVED" | "CLOSED" | "DISMISSED"
+            )
+    })
+}
+
+/// Material fields compared claim-against-event. Named per action class in the
+/// SourceManifest; NEVER chosen at comparison time.
+const DEFAULT_MATERIAL_FIELDS: [&str; 3] = ["value", "currency", "counterparty"];
+
+fn material_fields(vi: &Value) -> Vec<String> {
+    match g(vi, "source_manifest").get("material_fields").and_then(|f| f.as_array()) {
+        Some(a) if !a.is_empty() => a
+            .iter()
+            .map(|f| f.as_str().map(str::to_string).unwrap_or_else(|| f.to_string()))
+            .collect(),
+        _ => DEFAULT_MATERIAL_FIELDS.iter().map(|f| f.to_string()).collect(),
+    }
+}
+
+fn field_text(v: &Value, f: &str) -> Option<String> {
+    match v.get(f) {
+        None | Some(Value::Null) => None,
+        Some(Value::String(t)) => Some(t.trim().to_string()),
+        Some(other) => Some(other.to_string()),
+    }
+}
+
+/// AGREE / MISMATCH / UNCOMPARABLE. `material_mismatch` is honoured only when
+/// TRUE (an adverse admission); a favourable `false` is not evidence.
+/// UNCOMPARABLE can never corroborate — you cannot confirm an amount you were
+/// never shown.
+fn material_agreement(vi: &Value, cand: &Value) -> &'static str {
+    if flag(cand, "material_mismatch") {
+        return "MISMATCH";
+    }
+    let claim = g(vi, "claim");
+    let key = s(cand, "event_key");
+    let events = vi.get("events").and_then(|e| e.as_array()).cloned().unwrap_or_default();
+    let Some(event) = events.iter().find(|e| e.is_object() && s(e, "event_key") == key) else {
+        return "UNCOMPARABLE";
+    };
+    let mut compared = 0;
+    for f in material_fields(vi) {
+        match (field_text(&claim, &f), field_text(event, &f)) {
+            (None, None) => continue, // not a field this action class carries
+            (Some(a), Some(b)) if a == b => compared += 1,
+            (Some(_), Some(_)) => return "MISMATCH",
+            _ => return "UNCOMPARABLE", // one side asserts what the other cannot confirm
+        }
+    }
+    if compared > 0 { "AGREE" } else { "UNCOMPARABLE" }
 }
 
 fn linkage_outcome(vi: &Value) -> Result<(&'static str, Value), Raise> {
@@ -305,26 +432,29 @@ fn linkage_outcome(vi: &Value) -> Result<(&'static str, Value), Raise> {
         return Ok((linkage, if orphan { json!("ORPHAN") } else { Value::Null }));
     }
     if linkage == "DIRECT" || linkage == "DETERMINISTIC" {
-        if flag(&cands[0], "material_mismatch") {
-            return Ok((linkage, json!("CONTRADICTED"))); // terminal; never softened
-        }
-        if flag(&cands[0], "final") {
-            return Ok((linkage, json!("CORROBORATED")));
+        match material_agreement(vi, &cands[0]) {
+            "MISMATCH" => return Ok((linkage, json!("CONTRADICTED"))), // terminal
+            "AGREE" if flag(&cands[0], "final") => return Ok((linkage, json!("CORROBORATED"))),
+            _ => {}
         }
     }
     Ok((linkage, json!("CLAIM_ONLY")))
 }
 
-fn temporal(vi: &Value) -> &'static str {
+fn temporal(vi: &Value, trust: Option<&Value>) -> &'static str {
     let Some(t) = obj(vi, "temporal") else { return "UNPROVEN" };
     let echo = g(t, "echo");
     let echoed = ["echoed_intent_digest", "echoed_action_id", "echoed_nonce"];
-    if echoed.iter().any(|k| flag(&echo, k)) {
+    if echoed.iter().any(|k| flag(&echo, k))
+        && crate::trust::verified(trust, "source_keys", s(&echo, "source_id"), "temporal-echo", &echo)
+    {
         return "PROVEN_SOURCE_ECHO"; // the effect causally embeds the intent
     }
     let ib = g(t, "intent_bounds");
     let eb = g(t, "event_bounds");
-    if flag(&ib, "attester_independent") && flag(&eb, "attester_independent") {
+    if crate::trust::verified(trust, "temporal_keys", s(&ib, "attester"), "temporal-bounds", &ib)
+        && crate::trust::verified(trust, "temporal_keys", s(&eb, "attester"), "temporal-bounds", &eb)
+    {
         if let (Some(iu), Some(el)) = (nts(&g(&ib, "upper")), nts(&g(&eb, "lower"))) {
             if iu < el {
                 return "PROVEN_INDEPENDENT";
@@ -350,7 +480,9 @@ fn surface_row(e: &Value) -> Value {
     json!({"surface_id": sid, "mechanism": mech, "control_domain": cd, "coverage": cov})
 }
 
-fn surfaces(vi: &Value) -> Result<(Vec<Value>, Vec<Value>, Vec<Value>), Raise> {
+type SurfaceSets = (Vec<Value>, Vec<Value>, Vec<Value>); // (rows, out-of-scope, breaches)
+
+fn surfaces(vi: &Value) -> Result<SurfaceSets, Raise> {
     let Some(sur) = obj(vi, "surfaces") else { return Ok((vec![], vec![], vec![])) };
     let manifest = g(sur, "manifest");
     let entries = iter_items(if manifest.is_object() { manifest.get("entries") } else { None })?;
@@ -556,11 +688,25 @@ fn eligibility(vi: &Value, v: &Value) -> Result<&'static str, Raise> {
     Ok(tri(checks.iter().all(|c| *c), "ELIGIBLE", false, "", "INELIGIBLE"))
 }
 
-fn registration_status(vi: &Value) -> &'static str {
+fn registration_status(vi: &Value, trust: Option<&Value>) -> &'static str {
     let reg = g(vi, "registration");
     let sr = g(&reg, "scope_registration");
+    // REGISTERED is what the commercial model sells, so it is exactly the value
+    // a subject most wants to assert: it needs a scope registration signed by a
+    // transparency service THIS relying party named, plus a receipt the verifier
+    // derived itself (never the producer's own scitt_receipt_valid flag).
     let covered = flag(&sr, "covers_scope") && flag(&sr, "term_valid");
-    if covered && sr.get("registration").map(|x| x.is_object()).unwrap_or(false) {
+    let registered = covered
+        && sr.get("registration").map(|x| x.is_object()).unwrap_or(false)
+        && flag(&reg, "scitt_receipt_valid")
+        && crate::trust::verified(
+            trust,
+            "scitt_ts_keys",
+            s(&sr, "transparency_service"),
+            "scope-registration",
+            &sr,
+        );
+    if registered {
         return "REGISTERED";
     }
     let signed_intent = reg.get("intent").map(|x| x.is_object()).unwrap_or(false);
@@ -597,10 +743,10 @@ fn mark(te: &str, reg: &str, v: &Value) -> &'static str {
     }
 }
 
-fn derive_inner(vi: &Value) -> Result<Value, Raise> {
+fn derive_inner(vi: &Value, trust: Option<&Value>) -> Result<Value, Raise> {
     let (ablock, derived) = authority_block(vi);
-    let (observed, client, node_basis) = node_dims(vi);
-    let (cov, basis) = coverage(vi, node_basis);
+    let (observed, client, node_basis) = node_dims(vi, trust);
+    let (cov, basis) = coverage(vi, node_basis, observed == "OBSERVED", trust);
     let (linkage, outcome) = linkage_outcome(vi)?;
     let (rows, oos, breaches) = surfaces(vi)?;
     let mut v = json!({
@@ -608,17 +754,17 @@ fn derive_inner(vi: &Value) -> Result<Value, Raise> {
         "identity": derived["identity"], "authority": derived["authority"],
         "intent": derived["intent"], "outcome": outcome, "linkage": linkage,
         "coverage": cov, "integrity": derived["integrity"],
-        "source_signature": source_signature(vi)?, "control_domain": control_domain(vi)?,
+        "source_signature": source_signature(vi, trust)?, "control_domain": control_domain(vi, trust)?,
         "node_observation": observed, "client_attestation": client,
         "coverage_basis": basis, "node_integrity_basis": node_basis,
-        "temporal_binding": temporal(vi), "intent_interval": derived["intent_interval"],
+        "temporal_binding": temporal(vi, trust), "intent_interval": derived["intent_interval"],
         "surfaces": rows, "out_of_scope_surfaces": oos, "boundary_breaches": breaches,
         "accountability_basis": accountability(vi)?, "assurance_linkage": assurance(vi),
         "scope_relation": scope_relation(vi)?, "population_status": population(vi),
         "history_state": history(vi)?, "authority_proof": authority_proof(vi),
     });
     v["technical_eligibility"] = json!(eligibility(vi, &v)?);
-    v["registration_status"] = json!(registration_status(vi));
+    v["registration_status"] = json!(registration_status(vi, trust));
     v["mark"] = json!(mark(
         s(&v, "technical_eligibility").unwrap_or(""),
         s(&v, "registration_status").unwrap_or(""),
@@ -632,9 +778,20 @@ fn derive_inner(vi: &Value) -> Result<Value, Raise> {
 
 /// Derive the complete evd/verdict-vector/v1 for a verdict-input document
 /// (SPEC/verified-action-v1.md §2). Total: malformed input yields weak values.
+/// Derive the verdict vector with NO trust anchors: every externally-grounded
+/// dimension renders its weak value, so an evidence document on its own can
+/// never produce a favourable verdict. This is the safe default.
 pub fn derive_vector(verdict_input: &Value) -> Value {
-    derive_inner(verdict_input)
-        .unwrap_or_else(|_| derive_inner(&json!({})).ok().expect("weak derivation is total"))
+    derive_vector_with_trust(verdict_input, None)
+}
+
+/// Derive with an `evd/trust-context/v1` naming the roots THIS RELYING PARTY
+/// accepts (see `crate::trust`). Passed separately from the evidence precisely
+/// so the subject cannot supply its own anchors.
+pub fn derive_vector_with_trust(verdict_input: &Value, trust: Option<&Value>) -> Value {
+    derive_inner(verdict_input, trust).unwrap_or_else(|_| {
+        derive_inner(&json!({}), None).ok().expect("weak derivation is total")
+    })
 }
 
 // ------------------------------------------ authority_facts (authority-v1)
@@ -680,15 +837,6 @@ fn dom(action_type: &str) -> Vec<u8> {
     d
 }
 
-fn has_float(v: &Value) -> bool {
-    match v {
-        Value::Number(n) => n.as_i64().is_none() && n.as_u64().is_none(),
-        Value::Array(a) => a.iter().any(has_float),
-        Value::Object(m) => m.values().any(has_float),
-        _ => false,
-    }
-}
-
 /// Detached-signature rule (§2): doc minus *_sig fields, JCS, domain prefix.
 fn dsig_ok(pub_: &[u8; 32], domain: &[u8], doc: &Value, sig: Option<&Value>) -> bool {
     let Some(sig_b64) = sig.and_then(|x| x.as_str()) else { return false };
@@ -696,12 +844,10 @@ fn dsig_ok(pub_: &[u8; 32], domain: &[u8], doc: &Value, sig: Option<&Value>) -> 
     let mut stripped = m.clone();
     stripped.retain(|k, _| !k.ends_with("_sig"));
     let stripped = Value::Object(stripped);
-    if has_float(&stripped) {
-        return false; // canonicalization is integer-only; a float is malformed
-    }
+    let Some(canon) = jcs::canonical_checked(&stripped) else { return false };
     let Ok(raw) = B64.decode(sig_b64) else { return false };
     let mut msg = domain.to_vec();
-    msg.extend_from_slice(&jcs::canonical(&stripped));
+    msg.extend_from_slice(&canon);
     ed25519_verify(pub_, &msg, &raw)
 }
 
@@ -927,10 +1073,7 @@ fn passport_bundle_ok(passport: &Value, imported: &str, timeline: &[RootEntry]) 
 fn passport_birthtag<'a>(bundle: &Value, est_ctx: &'a Value, timeline: &[RootEntry]) -> Option<&'a str> {
     let imported = s(est_ctx, "imported_birthtag_id").filter(|x| !x.is_empty())?;
     let passport = obj(bundle, "passport")?;
-    if has_float(passport) {
-        return None; // canonicalization is integer-only; a float is malformed
-    }
-    let digest = hex(&sha256(&jcs::canonical(passport))); // sha256(JCS(passport))
+    let digest = hex(&sha256(&jcs::canonical_checked(passport)?)); // sha256(JCS(passport))
     if s(est_ctx, "passport_digest") != Some(digest.as_str()) {
         return None;
     }
@@ -1221,6 +1364,4 @@ pub fn authority_facts(bundle: &Value, action_id: Option<&str>) -> Value {
     }
     facts(bundle, action_id)
 }
-
-
 

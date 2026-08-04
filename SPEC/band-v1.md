@@ -39,6 +39,8 @@ Every declared authority is exactly one of:
   `amount × count`.
 
 Overlapping grants sharing an evidenced pool count once; otherwise they sum.
+One shared pool contributes the **largest EUR-equivalent authority** of its
+member grants, so permuting the declaration list cannot change the band.
 Overlap asserted but unevidenced renders the aggregate `UNKNOWN`.
 
 ## 3. Currency / FX
@@ -48,6 +50,20 @@ reference rate published on the order date** (or the last publication day
 before it), **fixed for the whole term**. If the ECB does not publish the
 pair, the fallback is the customer's own audited reporting rate for that date,
 named in the order. Never a floating rate.
+
+The frozen input fields are `currency` (three uppercase ASCII letters) and,
+for every non-EUR declaration, `fx_rate_to_eur`, `fx_source`, and `fx_date`.
+`fx_rate_to_eur` is the positive decimal multiplier in EUR per one declared
+currency unit; `fx_source` is the non-empty source named in the order; and
+`fx_date` is an ISO `YYYY-MM-DD` publication/reporting date. EUR has an implicit
+multiplier of exactly 1; a contradictory supplied multiplier is invalid.
+Missing, zero, negative, non-finite, or malformed FX input yields
+`INDETERMINATE`. Implementations use decimal (not binary floating-point)
+arithmetic and compare the exact converted aggregate to the inclusive band
+ceilings. Each decimal input is bounded to 128 coefficient digits and an
+absolute base-10 exponent of 128; a larger representation is out of profile
+and yields `INDETERMINATE` rather than allocating input-sized arithmetic
+precision.
 
 ## 4. Criticality enum (PUBLISHED, derived, never judged)
 

@@ -192,7 +192,7 @@
     "registration_status": "UNREGISTERED",
     "schema": "evd/verdict-vector/v1",
     "scope_relation": null,
-    "source_signature": "ASYMMETRIC",
+    "source_signature": "NONE",
     "surfaces": [],
     "technical_eligibility": "INELIGIBLE",
     "temporal_binding": "UNPROVEN"

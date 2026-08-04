@@ -27,6 +27,8 @@
     "mapping_version": "1",
     "population_proof": {
       "kind": "signed_period_manifest",
+      "signature": "X436qXhWb8Gw/gRN73A4Kh+fxb/7dtU+hdpTx8sSEL9f/IwNa8NFqYKkV8aSp/Xu79ZIDgg5v1imX2kGGEwEDw==",
+      "source_id": "source-1",
       "source_scope_defined": true,
       "verified": true
     },
@@ -59,7 +61,7 @@
     },
     "operator_ultimate_controller": "Operator GmbH",
     "schema": "evd/control-evidence/v1",
-    "signature": "c2lnLWNvbnRyb2w=",
+    "signature": "JOpbjHmEChM67Krc9bX0hnAriMeExr1HbtfjW6qvR8GyzvQOMAWD3a0Gxr0siYC1lTnTw1DiNOcviKBOHzpjBg==",
     "subject_party": "Source AG"
   },
   "event_matches": [
@@ -104,7 +106,9 @@
         "term_end": "2027-01-01T00:00:00Z",
         "term_start": "2026-01-01T00:00:00Z"
       },
-      "term_valid": true
+      "signature": "E0VR4FiEY60zttDHi1K+69PR6hAMBrwP2Pj+sRXXn3brkJTkrubozScwnaz+IczxwS/Zt5PW+mAGOxS8ZQBnDQ==",
+      "term_valid": true,
+      "transparency_service": "ts-1"
     }
   },
   "schema": "evd/verdict-input/v1",
@@ -128,6 +132,7 @@
       "material_digest": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
       "proof_type": "asymmetric_signature",
       "schema": "evd/source-proof/v1",
+      "signature": "66RJz2ZPxZbB1J4ZAuu7yuBO2IxtSSfGsAoL3ZCflYL97+UuEv0kDCpQ6i+23M9J1+xqTeNbnZnrRnEXY7CrAw==",
       "verified": true
     }
   ],

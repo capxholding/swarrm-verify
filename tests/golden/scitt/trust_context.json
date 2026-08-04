@@ -1,0 +1,21 @@
+{
+  "evaluator_keys": {
+    "eval": "4e7446a5c7cf5797ac864de8edfa494dbcd5da57040101ba9be31f7432b6e2c9"
+  },
+  "log_keys": {},
+  "mac_keys": {},
+  "node_keys": {},
+  "node_roots": {},
+  "population_keys": {
+    "src-1": "25a5471468a9f6ea95e015c0b4888fe98ad238241b2674de66f0850cb7303613"
+  },
+  "schema": "evd/trust-context/v1",
+  "scitt_ts_keys": {
+    "ts-1": "6b6864d3c466efde9c1fe4d4bbaeabe648d9990bb844f1a3de78fcf5b0bd58c8"
+  },
+  "source_keys": {
+    "src-1": "113a46eb339287ed0e75560559cff280eefa8eb3257f7c8cc16b7bc95c9cb5c2",
+    "src-k1": "113a46eb339287ed0e75560559cff280eefa8eb3257f7c8cc16b7bc95c9cb5c2"
+  },
+  "temporal_keys": {}
+}
