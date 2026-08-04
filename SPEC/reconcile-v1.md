@@ -88,9 +88,22 @@ Engine inputs are built honestly from Node state:
 - `scan`/`node_attestation` fields per node-v1; the basis derivation is
   engine §2.5 unchanged (a software Node's complete scan stays
   `INSUFFICIENT`).
+- **The requested period must itself be observed and finalized.** A batch from
+  some other window never makes `scan.performed` or `scan.complete` true merely
+  because it exists in the source's chain. A normalized event with a
+  source-effect time inside the period proves a scan was performed there, but
+  one event cannot prove the negative population fact that nothing else
+  happened later in the window. `scan.complete` therefore additionally
+  requires an RFC 3339 `finality_watermark` reaching through the period end
+  (also the only way to attest a genuinely empty window). A cursor-shaped
+  watermark cannot be placed on a wall clock. If prior batches exist but the
+  period was never reached, the manifest names `period_not_scanned` and
+  coverage is `GAPPED`; if it was reached but not finalized, the signed scan is
+  performed but incomplete and coverage remains `UNKNOWN` absent another
+  sufficient population proof. No batch at all yields pending/`UNKNOWN`.
 Only a gap-free, replayed full scope with a sufficient basis derives
-`CLOSED`. A source outage yields pending/unknown evidence for the unscanned
-window and catches up deterministically from the persisted cursor.
+`CLOSED`. A source outage never closes the affected window and catches up
+deterministically from the persisted cursor.
 
 ## 7. Corrections (B23.7)
 
