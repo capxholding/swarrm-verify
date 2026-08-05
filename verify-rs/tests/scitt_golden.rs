@@ -137,12 +137,7 @@ fn wrong_ts_key_and_hostile_bytes_fail_closed() {
     // hostile bytes on either side are a clean false, not a panic
     let pack = read_json(dir.join("registered_valid.pack.json"));
     let ts_keys = keys_from_jwks(&pack["ts_jwks"]);
-    for (s, r) in [
-        (vec![], vec![]),
-        (vec![0xd2u8], vec![0xd2u8]),
-        (unhex("d2819f"), rcpt.clone()),
-        (stmt.clone(), vec![0xff; 8]),
-    ] {
+    for (s, r) in [(vec![], vec![]), (vec![0xd2u8], vec![0xd2u8]), (unhex("d2819f"), rcpt.clone()), (stmt.clone(), vec![0xff; 8])] {
         assert!(!scitt::verify_scitt_receipt(&s, &r, &ts_keys, &issuer_keys, &cid));
     }
     // a genuinely valid family still verifies True under its own pack keys

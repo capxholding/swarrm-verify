@@ -56,6 +56,24 @@
       "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
     }
   },
+  "b21_cross_binding_grant": {
+    "authority": "NOT_VERIFIED",
+    "identity": "VERIFIED",
+    "integrity": "VALID",
+    "intent": "RECORDED",
+    "intent_interval": {
+      "lower": "2026-01-01T00:00:00Z",
+      "upper": "2026-01-01T01:00:00Z"
+    },
+    "operator_entity": "Golden Org GmbH",
+    "subject_ids": {
+      "binding_id": "babb093feebdb86ada7da57cbbac3e37c7c07a8a71baa7767afa10d8f5d99347",
+      "birthtag_id": "4b28db5e217f340425079659cdaa2b635beb9aec3a90d9c568922419f0bf9a54",
+      "grant_id": "60b3373b80250091ab92bf7f9dfb43ef38206f66a704941a9c99e33d01ea99df",
+      "intent_id": "c6306ef47b27f9f35ae9a32bc76c278dcdd1c1c8d34a6a5140fbcb085851189d",
+      "org_id": "544ff698015f4b30ad87e96bdeba9dca53252f4cd820648df276b919f63fa2e0"
+    }
+  },
   "b21_forged_root_binding": {
     "authority": "VERIFIED",
     "identity": "NOT_VERIFIED",

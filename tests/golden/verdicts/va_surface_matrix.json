@@ -42,7 +42,7 @@
           "evidence_source_ref": "cfg://egress-policy/v3",
           "mechanism_declaration": "ENFORCED",
           "schema": "evd/surface/v1",
-          "signature": "c2lnLXNyZg==",
+          "signature": "djR+Q+K5u1IC4UFL6d1iuaGlhhpi3UKD2ouifUjvxzmGn3onG8twJGEbSt9ukQE4r/5Kx2wa9G/cYqMC80FUDw==",
           "surface_class": "tool_calls",
           "surface_id": "srf-1"
         },
@@ -57,7 +57,7 @@
           "evidence_source_ref": "node://scan/2026-01",
           "mechanism_declaration": "OBSERVED",
           "schema": "evd/surface/v1",
-          "signature": "c2lnLXNyZg==",
+          "signature": "KFFhIKSWyejbTNhA6lBsiiky+32JnKBxOITUuzn/JazOwzAPscfjeOZCTRt3vMPh+J7q34O3WS8jPEiScvkSDg==",
           "surface_class": "network_egress",
           "surface_id": "srf-2"
         },

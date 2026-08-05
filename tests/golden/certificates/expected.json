@@ -115,7 +115,7 @@
   },
   "selectively_disclosed": {
     "cross_checks_ok": true,
-    "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
+    "mark": "UNMARKED_UNREGISTERED",
     "partial": {
       "core_present": false,
       "errors": [
@@ -133,9 +133,9 @@
       "intent": "RECORDED",
       "linkage": "DETERMINISTIC",
       "outcome": "CORROBORATED",
-      "registration_status": "REGISTERED",
+      "registration_status": "UNREGISTERED",
       "source_signature": "ASYMMETRIC",
-      "technical_eligibility": "ELIGIBLE",
+      "technical_eligibility": "INELIGIBLE",
       "temporal_binding": "PROVEN_SOURCE_ECHO"
     }
   },
@@ -160,7 +160,7 @@
   },
   "valid": {
     "cross_checks_ok": true,
-    "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
+    "mark": "UNMARKED_UNREGISTERED",
     "partial": null,
     "vector": {
       "authority": "VERIFIED",
@@ -171,9 +171,9 @@
       "intent": "RECORDED",
       "linkage": "DETERMINISTIC",
       "outcome": "CORROBORATED",
-      "registration_status": "REGISTERED",
+      "registration_status": "UNREGISTERED",
       "source_signature": "ASYMMETRIC",
-      "technical_eligibility": "ELIGIBLE",
+      "technical_eligibility": "INELIGIBLE",
       "temporal_binding": "PROVEN_SOURCE_ECHO"
     }
   }

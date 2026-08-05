@@ -36,12 +36,7 @@ fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
         Value::Null => out.extend_from_slice(b"null"),
         Value::Bool(b) => out.extend_from_slice(if *b { b"true" } else { b"false" }),
         Value::Number(n) => {
-            let Some(i) = n
-                .as_i64()
-                .filter(|i| (-MAX_SAFE_INTEGER..=MAX_SAFE_INTEGER).contains(i))
-            else {
-                return false;
-            };
+            let Some(i) = n.as_i64().filter(|i| (-MAX_SAFE_INTEGER..=MAX_SAFE_INTEGER).contains(i)) else { return false };
             out.extend_from_slice(i.to_string().as_bytes());
         }
         Value::String(s) => write_string(s, out),
@@ -92,9 +87,7 @@ fn write_string(s: &str, out: &mut Vec<u8>) {
             '\n' => out.extend_from_slice(b"\\n"),
             '\r' => out.extend_from_slice(b"\\r"),
             '\t' => out.extend_from_slice(b"\\t"),
-            c if (c as u32) < 0x20 => {
-                out.extend_from_slice(format!("\\u{:04x}", c as u32).as_bytes())
-            }
+            c if (c as u32) < 0x20 => out.extend_from_slice(format!("\\u{:04x}", c as u32).as_bytes()),
             c => {
                 let mut buf = [0u8; 4];
                 out.extend_from_slice(c.encode_utf8(&mut buf).as_bytes())

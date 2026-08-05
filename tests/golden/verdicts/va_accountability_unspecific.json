@@ -6,6 +6,8 @@
         "externally_grounded": false,
         "kind": "SPONSOR",
         "mandate_specific": true,
+        "party": "party-SPONSOR",
+        "signature": "c2IHBtjBz7AL5JC+pZJOatDruCIZTripK3if73h70GMOBtt5BCTSMyWo491JwNK1bO11xK6FI2iFteqP24rMBw==",
         "signed": true,
         "time_bounded": true,
         "value_bounded": false

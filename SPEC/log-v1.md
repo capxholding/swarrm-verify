@@ -95,10 +95,21 @@ Rules (all normative):
    comparable authority times and make the bundle NOT VERIFIED.
 
 **Documented limitation:** omission of the LATEST key event (tail
-truncation) is not detectable purely offline; mid-history omissions are
-caught by the dense `_system` sequence. The customer's tail check is the
+truncation) is not detectable purely offline in general; mid-history omissions
+are caught by the dense `_system` sequence. The customer's tail check is the
 out-of-band trust root plus checkpoint freshness (and, at E2, the anchored
 checkpoint chain).
+
+One case IS refutable from the bytes, and it is the case that mattered most.
+The JWKS is derived from ACTIVE keys, so a bundle whose `evd.key.revoked` entry
+has been deleted says two contradictory things about the same key: the replayed
+log calls it live, and the bundle's own JWKS omits it. The verifier now checks
+both directions of that agreement, so a key revoked for cause cannot be made
+valid again by a list filter. Note what the stated mitigation does NOT cover
+here: the target checkpoint remains the genuine, freshest, byte-identical signed
+head whose root commits to the deleted leaf, and the trust root is unchanged —
+so both freshness and the pinned root pass on the tampered bundle. An attacker
+who also edits the JWKS to match is still bounded only by the out-of-band root.
 
 ## 6. Scaling note (non-normative)
 

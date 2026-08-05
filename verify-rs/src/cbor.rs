@@ -26,7 +26,10 @@ pub(crate) const MAX_DEPTH: i64 = 64;
 /// Callers verifying a bare core pass the tighter 1 MiB cap explicitly.
 pub(crate) const MAX_BYTES: usize = 16 * 1024 * 1024;
 
-fn write_head(out: &mut Vec<u8>, major: u8, arg: u64) {
+/// Emit a minimal CBOR item head.  COSE reuses this exact primitive for its
+/// integer-labelled headers, so envelope and certificate encodings cannot
+/// drift on width selection.
+pub(crate) fn write_head(out: &mut Vec<u8>, major: u8, arg: u64) {
     match arg {
         0..=23 => out.push((major << 5) | arg as u8),
         24..=0xff => out.extend_from_slice(&[(major << 5) | 24, arg as u8]),
@@ -45,12 +48,12 @@ fn write_head(out: &mut Vec<u8>, major: u8, arg: u64) {
     }
 }
 
-fn write_text(out: &mut Vec<u8>, s: &str) {
+pub(crate) fn write_text(out: &mut Vec<u8>, s: &str) {
     write_head(out, 3, s.len() as u64);
     out.extend_from_slice(s.as_bytes());
 }
 
-fn write_int(out: &mut Vec<u8>, i: i128) -> bool {
+pub(crate) fn write_int(out: &mut Vec<u8>, i: i128) -> bool {
     // Restricted model: signed 64-bit only (rejects the u64 > i64::MAX range).
     if i < i64::MIN as i128 || i > i64::MAX as i128 {
         return false;
@@ -136,11 +139,7 @@ fn json_to_cbor(v: &serde_json::Value, limit: i64) -> Option<Value> {
             let items: Option<Vec<Value>> = a.iter().map(|x| json_to_cbor(x, limit - 1)).collect();
             Value::Array(items?)
         }
-        serde_json::Value::Object(m) => Value::Map(
-            m.iter()
-                .map(|(k, x)| Some((Value::Text(k.clone()), json_to_cbor(x, limit - 1)?)))
-                .collect::<Option<Vec<_>>>()?,
-        ),
+        serde_json::Value::Object(m) => Value::Map(m.iter().map(|(k, x)| Some((Value::Text(k.clone()), json_to_cbor(x, limit - 1)?))).collect::<Option<Vec<_>>>()?),
     })
 }
 
@@ -152,7 +151,7 @@ pub(crate) fn canonical_from_json(v: &serde_json::Value) -> Option<Vec<u8>> {
 
 /// Parse one item head at `i` → (major, argument, next offset). Rejects tags,
 /// floats, simple values other than false/true/null, indefinite/reserved info.
-fn read_head(data: &[u8], i: usize) -> Option<(u8, u64, usize)> {
+pub(crate) fn read_head(data: &[u8], i: usize) -> Option<(u8, u64, usize)> {
     let byte = *data.get(i)?;
     let (major, info) = (byte >> 5, byte & 0x1f);
     let i = i + 1;

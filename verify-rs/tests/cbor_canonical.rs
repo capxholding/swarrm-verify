@@ -20,10 +20,7 @@ use std::fs;
 use std::path::PathBuf;
 
 fn golden_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("tests/golden/cbor")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/cbor")
 }
 
 fn read_bin(name: &str) -> Vec<u8> {
@@ -31,10 +28,7 @@ fn read_bin(name: &str) -> Vec<u8> {
 }
 
 fn unhex(s: &str) -> Vec<u8> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
+    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
 }
 
 fn decode(data: &[u8]) -> Option<Value> {
@@ -51,38 +45,9 @@ fn code_cases() -> Vec<(&'static str, Value)> {
     vec![
         ("bytes_empty", Value::Bytes(vec![])),
         ("bytes_short", Value::Bytes(vec![1, 2, 3])),
-        (
-            "bytes_len23_24",
-            Value::Map(vec![
-                (text("a"), Value::Bytes((0..23u8).collect())),
-                (text("b"), Value::Bytes((0..24u8).collect())),
-            ]),
-        ),
-        (
-            "bytes_digest_map",
-            Value::Map(vec![
-                (text("digest"), Value::Bytes((0..32u8).collect())),
-                (
-                    text("proofs"),
-                    Value::Array(vec![Value::Bytes(vec![0x00]), Value::Bytes(vec![0xff])]),
-                ),
-            ]),
-        ),
-        (
-            "bytes_mixed",
-            Value::Map(vec![
-                (text(""), Value::Bytes(vec![])),
-                (
-                    text("k"),
-                    Value::Array(vec![
-                        Value::Bytes(b"ab".to_vec()),
-                        text("text"),
-                        Value::Integer(Integer::from(7)),
-                    ]),
-                ),
-                (text("z"), Value::Null),
-            ]),
-        ),
+        ("bytes_len23_24", Value::Map(vec![(text("a"), Value::Bytes((0..23u8).collect())), (text("b"), Value::Bytes((0..24u8).collect()))])),
+        ("bytes_digest_map", Value::Map(vec![(text("digest"), Value::Bytes((0..32u8).collect())), (text("proofs"), Value::Array(vec![Value::Bytes(vec![0x00]), Value::Bytes(vec![0xff])]))])),
+        ("bytes_mixed", Value::Map(vec![(text(""), Value::Bytes(vec![])), (text("k"), Value::Array(vec![Value::Bytes(b"ab".to_vec()), text("text"), Value::Integer(Integer::from(7))])), (text("z"), Value::Null)])),
     ]
 }
 
@@ -95,10 +60,8 @@ fn json_sourced_vectors_emit_python_bytes() {
             continue;
         }
         let name = path.file_stem().unwrap().to_str().unwrap().to_owned();
-        let source: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-        let got = canonical_from_json(&source)
-            .unwrap_or_else(|| panic!("emitter refused JSON vector {name}"));
+        let source: serde_json::Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let got = canonical_from_json(&source).unwrap_or_else(|| panic!("emitter refused JSON vector {name}"));
         assert_eq!(got, read_bin(&name), "byte mismatch on vector {name}");
         checked += 1;
     }
@@ -124,8 +87,7 @@ fn every_golden_bin_decodes_and_reencodes_identically() {
             continue;
         }
         let bytes = fs::read(&path).unwrap();
-        let value = decode(&bytes)
-            .unwrap_or_else(|| panic!("decode refused golden {}", path.display()));
+        let value = decode(&bytes).unwrap_or_else(|| panic!("decode refused golden {}", path.display()));
         assert_eq!(canonical_cbor(&value).unwrap(), bytes);
         checked += 1;
     }
@@ -159,9 +121,9 @@ fn emitter_rejects_out_of_profile_values() {
     let bad = [
         Value::Float(2.5),
         Value::Tag(0, Box::new(text("1970-01-01T00:00:00Z"))),
-        Value::Map(vec![(Value::Integer(Integer::from(1)), Value::Null)]), // non-text key
-        Value::Map(vec![(Value::Bytes(vec![0x6b]), Value::Null)]),         // bstr key
-        Value::Integer(Integer::from(u64::MAX)), // outside signed 64-bit
+        Value::Map(vec![(Value::Integer(Integer::from(1)), Value::Null)]),    // non-text key
+        Value::Map(vec![(Value::Bytes(vec![0x6b]), Value::Null)]),            // bstr key
+        Value::Integer(Integer::from(u64::MAX)),                              // outside signed 64-bit
         Value::Map(vec![(text("a"), Value::Null), (text("a"), Value::Null)]), // duplicate
         Value::Array(vec![Value::Float(f64::NAN)]),
     ];
@@ -187,38 +149,38 @@ fn emitter_depth_cap() {
 fn decoder_rejects_hostile_bytes() {
     // SAME list as tests/test_cbor_canonical.py — both engines reject identically.
     for hex in [
-        "",                     // empty input
-        "18",                   // truncated head
-        "1a0000",               // truncated 4-byte argument
-        "62e2",                 // truncated text payload
-        "9b7fffffffffffffff",   // array claiming 2^63-1 members
-        "a1",                   // truncated map
+        "",                                             // empty input
+        "18",                                           // truncated head
+        "1a0000",                                       // truncated 4-byte argument
+        "62e2",                                         // truncated text payload
+        "9b7fffffffffffffff",                           // array claiming 2^63-1 members
+        "a1",                                           // truncated map
         "c074323032362d30312d30315430303a30303a30305a", // tag 0
-        "d81845",               // tag 24
-        "f97e00",               // float16 NaN
-        "fa47c35000",           // float32
-        "fb4029000000000000",   // float64
-        "f7",                   // simple value: undefined
-        "f0",                   // simple value 16
-        "f820",                 // simple value one-byte form
-        "5f42010243030405ff",   // indefinite bytes
-        "7f61616161ff",         // indefinite text
-        "9f01ff",               // indefinite array
-        "bf616101ff",           // indefinite map
-        "1c",                   // reserved additional info 28
-        "1e",                   // reserved additional info 30
-        "ff",                   // lone break
-        "1805",                 // non-minimal int head (5 as one-byte argument)
-        "1900ff",               // non-minimal int head (255 as two-byte argument)
-        "a2616101616102",       // duplicate map keys
-        "a2616202616101",       // unsorted map keys
-        "a2616261016102",       // truncated map: three items for two pairs
-        "a1010a",               // integer map key
-        "a1400a",               // byte-string map key
-        "0001",                 // trailing bytes after a complete item
-        "1b8000000000000000",   // 2^63: outside signed 64-bit
-        "3b8000000000000000",   // -2^63-1: outside signed 64-bit
-        "61ff",                 // invalid UTF-8 in text
+        "d81845",                                       // tag 24
+        "f97e00",                                       // float16 NaN
+        "fa47c35000",                                   // float32
+        "fb4029000000000000",                           // float64
+        "f7",                                           // simple value: undefined
+        "f0",                                           // simple value 16
+        "f820",                                         // simple value one-byte form
+        "5f42010243030405ff",                           // indefinite bytes
+        "7f61616161ff",                                 // indefinite text
+        "9f01ff",                                       // indefinite array
+        "bf616101ff",                                   // indefinite map
+        "1c",                                           // reserved additional info 28
+        "1e",                                           // reserved additional info 30
+        "ff",                                           // lone break
+        "1805",                                         // non-minimal int head (5 as one-byte argument)
+        "1900ff",                                       // non-minimal int head (255 as two-byte argument)
+        "a2616101616102",                               // duplicate map keys
+        "a2616202616101",                               // unsorted map keys
+        "a2616261016102",                               // truncated map: three items for two pairs
+        "a1010a",                                       // integer map key
+        "a1400a",                                       // byte-string map key
+        "0001",                                         // trailing bytes after a complete item
+        "1b8000000000000000",                           // 2^63: outside signed 64-bit
+        "3b8000000000000000",                           // -2^63-1: outside signed 64-bit
+        "61ff",                                         // invalid UTF-8 in text
     ] {
         assert!(decode(&unhex(hex)).is_none(), "accepted hostile bytes {hex}");
     }

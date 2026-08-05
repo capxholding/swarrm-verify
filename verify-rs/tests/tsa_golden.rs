@@ -1,46 +1,31 @@
 // Apache-2.0 (public verifier repo)
 //! RFC 3161 golden fixtures (H6 remainder): the SAME files as
 //! tests/test_tsa_golden.py. Rust asserts its `rust` column in
-//! expected_tsa.json; a difference from the `python` column is legal ONLY
-//! where `why_diverges` documents the §0.2·3 sanction scope gap (no
-//! rsa/p384 crates on this side — see src/tsa.rs module docs).
+//! expected_tsa.json. The sanctioned verifier covers ECDSA P-256/P-384 and
+//! RSASSA-PKCS1-v1_5, so both columns agree on every stored token.
 
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
 
 fn golden_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("tests/golden/bundles")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/bundles")
 }
 
 #[test]
 fn tsa_golden_agrees_with_expected() {
-    let expected: Value =
-        serde_json::from_str(&fs::read_to_string(golden_dir().join("expected_tsa.json")).unwrap())
-            .unwrap();
+    let expected: Value = serde_json::from_str(&fs::read_to_string(golden_dir().join("expected_tsa.json")).unwrap()).unwrap();
     let mut checked = 0;
     for (name, case) in expected.as_object().unwrap() {
         if name.starts_with('_') {
             continue;
         }
         let token = fs::read(golden_dir().join(case["token"].as_str().unwrap())).unwrap();
-        let chain =
-            fs::read_to_string(golden_dir().join(case["chain"].as_str().unwrap())).unwrap();
+        let chain = fs::read_to_string(golden_dir().join(case["chain"].as_str().unwrap())).unwrap();
         let got = swarrm_verify::tsa::verify_tst(&token, case["digest"].as_str().unwrap(), &chain);
-        assert_eq!(
-            got,
-            case["rust"].as_bool().unwrap(),
-            "fixture {name}: Rust got {got}, expected {}",
-            case["rust"]
-        );
+        assert_eq!(got, case["rust"].as_bool().unwrap(), "fixture {name}: Rust got {got}, expected {}", case["rust"]);
         if case["python"] != case["rust"] {
-            assert!(
-                case["why_diverges"].is_string(),
-                "fixture {name}: undocumented python/rust divergence"
-            );
+            assert!(case["why_diverges"].is_string(), "fixture {name}: undocumented python/rust divergence");
         }
         checked += 1;
     }
@@ -62,10 +47,9 @@ fn tsa_malformed_input_is_false_never_a_panic() {
     assert!(!swarrm_verify::tsa::verify_tst(&token, &digest, ""));
     assert!(!swarrm_verify::tsa::verify_tst(&token, &digest, "no pem here"));
     // uppercase hex never matches — string compare, exactly like Python
-    let expected: Value =
-        serde_json::from_str(&fs::read_to_string(golden_dir().join("expected_tsa.json")).unwrap())
-            .unwrap();
+    let expected: Value = serde_json::from_str(&fs::read_to_string(golden_dir().join("expected_tsa.json")).unwrap()).unwrap();
     let real = expected["tsa_p256_valid"]["digest"].as_str().unwrap();
     assert!(swarrm_verify::tsa::verify_tst(&token, real, &chain));
+    assert_eq!(swarrm_verify::tsa::verify_tst_gen_time(&token, real, &chain).as_deref(), Some("2026-07-17T21:38:25Z"));
     assert!(!swarrm_verify::tsa::verify_tst(&token, &real.to_uppercase(), &chain));
 }

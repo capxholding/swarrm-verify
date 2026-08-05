@@ -1,5 +1,5 @@
 {
-  "certificate_id": "6b7b4bc9b8f97c0db2979b13f45479f4568b4f0bf9408abcae91d28a666b0663",
+  "certificate_id": "15db19a6324ef55963ceb75f1e30e8e5071b040d244704d86da9efa2e41193f8",
   "families": {
     "empty_statement_issuer": {
       "full_certificate": null,
@@ -15,8 +15,8 @@
     },
     "registered_valid": {
       "full_certificate": {
-        "mark": "UNMARKED_ASSURANCE_WITHDRAWN",
-        "registration_status": "REGISTERED"
+        "mark": "UNMARKED_UNREGISTERED",
+        "registration_status": "UNREGISTERED"
       },
       "scitt_receipt_valid": true
     },

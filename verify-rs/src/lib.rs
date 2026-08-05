@@ -19,12 +19,14 @@ pub mod tsa;
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use scitt::hex_to_bytes;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
 const RECEIPT_TYPE: &str = "application/vnd.evd.receipt.v1+json";
 const CHECKPOINT_TYPE: &str = "application/vnd.evd.checkpoint.v1+json";
+const EXPORT_MANIFEST_TYPE: &str = "application/vnd.evd.export-manifest.v1+json";
 const DISCLOSURE_SCHEMA: &str = "evd/disclosure/v1";
 const DOMAIN_PREFIX: &str = "evd/v1/";
 
@@ -58,10 +60,7 @@ fn entry_within_caps(e: &Value) -> bool {
             return false;
         }
     }
-    let sigs = e
-        .get("envelope")
-        .and_then(|v| v.get("signatures"))
-        .and_then(|v| v.as_array());
+    let sigs = e.get("envelope").and_then(|v| v.get("signatures")).and_then(|v| v.as_array());
     if let Some(sigs) = sigs {
         if sigs.len() > MAX_SIGNATURES_PER_ENVELOPE {
             return false;
@@ -109,9 +108,10 @@ fn pae(payload_type: &str, payload: &[u8]) -> Vec<u8> {
 }
 
 fn b64url_decode(s: &str) -> Option<Vec<u8>> {
-    let pad = (4 - s.len() % 4) % 4;
-    let s = format!("{}{}", s, "=".repeat(pad));
-    base64::engine::general_purpose::URL_SAFE.decode(s).ok()
+    if s.is_empty() || s.len() % 4 == 1 || !s.bytes().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_')) {
+        return None;
+    }
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(s).ok()
 }
 
 fn jwk_raw_key(jwk: &Value) -> Option<[u8; 32]> {
@@ -133,10 +133,18 @@ pub(crate) fn key_from_jwk(jwk: &Value) -> Option<([u8; 32], String)> {
     // kid = base64url(sha256(raw))[:16]
     let full = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(sha256(&k));
     let kid = full.chars().take(16).collect::<String>();
-    if let Some(claimed) = jwk.get("kid").and_then(|v| v.as_str()) {
-        if claimed != kid {
-            return None;
-        }
+    // SPEC/bundle-v1.md §3.1: every JWK's kid matches its key material, reject
+    // aliases. Guarding the comparison with `.as_str()` meant a kid that was
+    // PRESENT but not a string (false, 0, {}, []) skipped the check entirely
+    // and the alias was accepted — 10 of 672 type-confusion mutants verified
+    // here and were rejected by Python, all at jwks.keys[0].kid (owner audit
+    // 2026-08-05). A carried member that is not the shape it claims is
+    // MALFORMED, not absent; `null` alone stays equal to missing, which is the
+    // no-claim state the rest of this verifier reads through `.get()`.
+    match jwk.get("kid") {
+        None | Some(Value::Null) => {}
+        Some(Value::String(claimed)) if *claimed == kid => {}
+        Some(_) => return None,
     }
     Some((k, kid))
 }
@@ -155,10 +163,7 @@ pub(crate) fn ed25519_verify(pubkey: &[u8; 32], msg: &[u8], sig: &[u8]) -> bool 
 }
 
 pub(crate) fn env_signed_by(env: &Value, kid: &str, pubkey: &[u8; 32]) -> bool {
-    let ptype = match env.get("payloadType").and_then(|v| v.as_str()) {
-        Some(t) => t,
-        None => return false,
-    };
+    let Some(ptype) = env.get("payloadType").and_then(|v| v.as_str()) else { return false };
     let payload = match env.get("payload").and_then(|v| v.as_str()) {
         Some(p) => match B64.decode(p) {
             Ok(b) => b,
@@ -197,41 +202,32 @@ pub(crate) fn body_of(env: &Value) -> Option<Value> {
 }
 
 fn decimal(bytes: &[u8]) -> Option<u32> {
-    bytes.iter().try_fold(0, |n, c| {
-        c.is_ascii_digit().then_some(n * 10 + u32::from(*c - b'0'))
-    })
+    bytes.iter().try_fold(0, |n, c| c.is_ascii_digit().then_some(n * 10 + u32::from(*c - b'0')))
 }
 
 fn canonical_utc(s: &str) -> bool {
     let b = s.as_bytes();
-    if !(b.len() == 20 || (22..=27).contains(&b.len()))
-        || b[4] != b'-' || b[7] != b'-' || b[10] != b'T'
-        || b[13] != b':' || b[16] != b':' || *b.last().unwrap() != b'Z'
-        || (b.len() > 20 && (b[19] != b'.' || decimal(&b[20..b.len() - 1]).is_none()))
-    { return false; }
-    let (Some(y), Some(m), Some(d), Some(h), Some(n), Some(sec)) = (
-        decimal(&b[..4]), decimal(&b[5..7]), decimal(&b[8..10]),
-        decimal(&b[11..13]), decimal(&b[14..16]), decimal(&b[17..19]),
-    ) else { return false; };
+    if !(b.len() == 20 || (22..=27).contains(&b.len())) || b[4] != b'-' || b[7] != b'-' || b[10] != b'T' || b[13] != b':' || b[16] != b':' || *b.last().unwrap() != b'Z' || (b.len() > 20 && (b[19] != b'.' || decimal(&b[20..b.len() - 1]).is_none())) {
+        return false;
+    }
+    let (Some(y), Some(m), Some(d), Some(h), Some(n), Some(sec)) = (decimal(&b[..4]), decimal(&b[5..7]), decimal(&b[8..10]), decimal(&b[11..13]), decimal(&b[14..16]), decimal(&b[17..19])) else { return false };
     let leap = y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
     let days = [0, 31, 28 + u32::from(leap), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    y > 0 && (1..=12).contains(&m) && d > 0 && d <= days[m as usize]
-        && h < 24 && n < 60 && sec < 60
+    y > 0 && (1..=12).contains(&m) && d > 0 && d <= days[m as usize] && h < 24 && n < 60 && sec < 60
 }
 
 fn forbidden_managed_edge_cosign(body: &Value, env: &Value) -> bool {
     let multi = env.get("signatures").and_then(Value::as_array).is_some_and(|s| s.len() > 1);
     let agent = body.get("agent_id").and_then(Value::as_str).unwrap_or("");
     let action = body.get("action_type").and_then(Value::as_str).unwrap_or("");
-    multi && (agent.starts_with('_') || ["evd.key.", "authority.", "source.", "action.",
-        "lineage.", "node.", "evd.finding.", "evd.gap.", "evd.coverage.", "registration."]
-        .iter().any(|prefix| action.starts_with(prefix)))
+    multi && (agent.starts_with('_') || ["evd.key.", "authority.", "source.", "action.", "lineage.", "node.", "evd.finding.", "evd.gap.", "evd.coverage.", "registration."].iter().any(|prefix| action.starts_with(prefix)))
 }
 
 /// The trust root of the key-log replay: all keys (incl. revoked) + revoke ts.
 pub(crate) struct KeyLog {
     pub(crate) keys: BTreeMap<String, [u8; 32]>,
     pub(crate) revoked_at: BTreeMap<String, String>,
+    non_issuer: BTreeSet<String>,
     pub(crate) ok: bool,
 }
 
@@ -241,11 +237,7 @@ fn collect_key_entries(entries: &[Value]) -> Vec<(u64, &Value, Value)> {
     for e in entries {
         if let Some(body) = body_of(&e["envelope"]) {
             let is_sys = body.get("agent_id").and_then(|v| v.as_str()) == Some("_system");
-            let is_key = body
-                .get("action_type")
-                .and_then(|v| v.as_str())
-                .map(|a| a.starts_with("evd.key."))
-                .unwrap_or(false);
+            let is_key = body.get("action_type").and_then(|v| v.as_str()).map(|a| a.starts_with("evd.key.")).unwrap_or(false);
             if is_sys && is_key {
                 let idx = e.get("leaf_index").and_then(|v| v.as_u64()).unwrap_or(0);
                 key_entries.push((idx, &e["envelope"], body));
@@ -260,16 +252,11 @@ fn key_entries_well_formed(key_entries: &[(u64, &Value, Value)]) -> bool {
     if key_entries.is_empty() {
         return false;
     }
-    if key_entries[0].0 != 0
-        || key_entries[0].2.get("action_type").and_then(|v| v.as_str()) != Some("evd.key.created")
-    {
+    if key_entries[0].0 != 0 || key_entries[0].2.get("action_type").and_then(|v| v.as_str()) != Some("evd.key.created") {
         return false;
     }
     // dense _system sequence
-    let seqs: Vec<i64> = key_entries
-        .iter()
-        .map(|t| t.2.get("seq").and_then(|v| v.as_i64()).unwrap_or(-1))
-        .collect();
+    let seqs: Vec<i64> = key_entries.iter().map(|t| t.2.get("seq").and_then(|v| v.as_i64()).unwrap_or(-1)).collect();
     for (i, s) in seqs.iter().enumerate() {
         if *s != (i as i64) + 1 {
             return false;
@@ -278,59 +265,45 @@ fn key_entries_well_formed(key_entries: &[(u64, &Value, Value)]) -> bool {
     true
 }
 
-fn key_active(
-    keys: &BTreeMap<String, [u8; 32]>,
-    revoked: &BTreeMap<String, String>,
-    kid: &str,
-    at: &str,
-) -> bool {
+fn key_active(keys: &BTreeMap<String, [u8; 32]>, revoked: &BTreeMap<String, String>, kid: &str, at: &str) -> bool {
     keys.contains_key(kid) && kid_valid_at(kid, at, revoked)
 }
 
-fn signed_by_active_key(env: &Value, kl: &KeyLog, ts: &str) -> bool {
-    env.get("signatures")
-        .and_then(|v| v.as_array())
-        .map(|ss| {
-            ss.iter().any(|s| {
-                let sk = s.get("keyid").and_then(|v| v.as_str()).unwrap_or("");
-                key_active(&kl.keys, &kl.revoked_at, sk, ts)
-                    && env_signed_by(env, sk, &kl.keys[sk])
-            })
+/// Some envelope signature is by a key the log had active at `ts` AND that
+/// signature actually verifies. With `issuer_only`, keys the log has marked
+/// non-issuer are excluded — one predicate, so the "active key vouched" and
+/// "an ISSUER vouched" arms of the key-created sponsorship rule below can
+/// never drift apart on what "active and signed" means.
+fn signed_by_active_key(env: &Value, kl: &KeyLog, ts: &str, issuer_only: bool) -> bool {
+    env.get("signatures").and_then(Value::as_array).is_some_and(|ss| {
+        ss.iter().any(|s| {
+            let kid = s.get("keyid").and_then(Value::as_str).unwrap_or("");
+            (!issuer_only || !kl.non_issuer.contains(kid)) && key_active(&kl.keys, &kl.revoked_at, kid, ts) && env_signed_by(env, kid, &kl.keys[kid])
         })
-        .unwrap_or(false)
+    })
 }
 
-fn apply_key_created(
-    kl: &mut KeyLog,
-    pos: usize,
-    env: &Value,
-    ts: &str,
-    kid: String,
-    material: [u8; 32],
-) -> bool {
-    if pos == 0 {
+fn apply_key_created(kl: &mut KeyLog, pos: usize, env: &Value, ctx: &Value, ts: &str, kid: String, material: [u8; 32]) -> bool {
+    let issuer_sponsored = if pos == 0 {
         if !env_signed_by(env, &kid, &material) {
             return false;
         }
+        true
     } else {
         // sponsored: some active key signed it
-        if !signed_by_active_key(env, kl, ts) {
+        if !signed_by_active_key(env, kl, ts, false) {
             return false;
         }
+        signed_by_active_key(env, kl, ts, true)
+    };
+    kl.keys.insert(kid.clone(), material);
+    if ctx.get("role").is_some() || !issuer_sponsored {
+        kl.non_issuer.insert(kid);
     }
-    kl.keys.insert(kid, material);
     true
 }
 
-fn apply_key_rotated(
-    kl: &mut KeyLog,
-    env: &Value,
-    ctx: &Value,
-    jwk: &Value,
-    ts: &str,
-    kid: String,
-    material: [u8; 32],
-) -> bool {
+fn apply_key_rotated(kl: &mut KeyLog, env: &Value, ctx: &Value, jwk: &Value, ts: &str, kid: String, material: [u8; 32]) -> bool {
     let prev_kid = ctx.get("prev_kid").and_then(|v| v.as_str()).unwrap_or("");
     let continuity = ctx.get("continuity_sig").and_then(|v| v.as_str());
     if prev_kid.is_empty() || continuity.is_none() {
@@ -354,7 +327,10 @@ fn apply_key_rotated(
     if !ed25519_verify(&kl.keys[prev_kid], &jwk_canon, &cont) {
         return false;
     }
-    kl.keys.insert(kid, material);
+    kl.keys.insert(kid.clone(), material);
+    if kl.non_issuer.contains(prev_kid) || ctx.get("role").is_some() {
+        kl.non_issuer.insert(kid);
+    }
     true
 }
 
@@ -362,13 +338,10 @@ fn apply_key_revoked(kl: &mut KeyLog, env: &Value, ctx: &Value, ts: &str, kid: S
     if !kl.keys.contains_key(&kid) {
         return false;
     }
-    if !signed_by_active_key(env, kl, ts) {
+    if !signed_by_active_key(env, kl, ts, false) {
         return false;
     }
-    let eff = ctx
-        .get("effective_ts")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let eff = ctx.get("effective_ts").and_then(|v| v.as_str()).unwrap_or("");
     if !canonical_utc(eff) {
         return false;
     }
@@ -377,27 +350,18 @@ fn apply_key_revoked(kl: &mut KeyLog, env: &Value, ctx: &Value, ts: &str, kid: S
 }
 
 pub(crate) fn replay_key_log(entries: &[Value]) -> KeyLog {
-    let mut kl = KeyLog {
-        keys: BTreeMap::new(),
-        revoked_at: BTreeMap::new(),
-        ok: false,
-    };
+    let mut kl = KeyLog { keys: BTreeMap::new(), revoked_at: BTreeMap::new(), non_issuer: BTreeSet::new(), ok: false };
     let key_entries = collect_key_entries(entries);
     if !key_entries_well_formed(&key_entries) {
         return kl;
     }
 
     for (pos, (_idx, env, body)) in key_entries.iter().enumerate() {
-        let action = body
-            .get("action_type")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let action = body.get("action_type").and_then(|v| v.as_str()).unwrap_or("");
         let ctx = body.get("context").cloned().unwrap_or(Value::Null);
         let jwk = ctx.get("jwk").cloned().unwrap_or(Value::Null);
         let ts = body.get("ts_server").and_then(|v| v.as_str()).unwrap_or("");
-        if !canonical_utc(ts)
-            || !ctx.get("effective_ts").and_then(Value::as_str).is_some_and(canonical_utc)
-        {
+        if !canonical_utc(ts) || !ctx.get("effective_ts").and_then(Value::as_str).is_some_and(canonical_utc) {
             return kl;
         }
         let (material, kid) = match key_from_jwk(&jwk) {
@@ -405,7 +369,7 @@ pub(crate) fn replay_key_log(entries: &[Value]) -> KeyLog {
             None => return kl,
         };
         let applied = match action {
-            "evd.key.created" => apply_key_created(&mut kl, pos, env, ts, kid, material),
+            "evd.key.created" => apply_key_created(&mut kl, pos, env, &ctx, ts, kid, material),
             "evd.key.rotated" => apply_key_rotated(&mut kl, env, &ctx, &jwk, ts, kid, material),
             "evd.key.revoked" => apply_key_revoked(&mut kl, env, &ctx, ts, kid),
             _ => return kl,
@@ -419,10 +383,7 @@ pub(crate) fn replay_key_log(entries: &[Value]) -> KeyLog {
 }
 
 pub(crate) fn kid_valid_at(kid: &str, at: &str, revoked_at: &BTreeMap<String, String>) -> bool {
-    canonical_utc(at) && revoked_at
-        .get(kid)
-        .map(|r| canonical_utc(r) && at <= r.as_str())
-        .unwrap_or(true)
+    canonical_utc(at) && revoked_at.get(kid).map(|r| canonical_utc(r) && at <= r.as_str()).unwrap_or(true)
 }
 
 pub(crate) fn checkpoint_body_hash(cp: &Value) -> Option<String> {
@@ -434,35 +395,29 @@ pub(crate) fn hex(b: &[u8]) -> String {
     b.iter().map(|x| format!("{:02x}", x)).collect()
 }
 
-fn hex_decode(s: &str) -> Option<Vec<u8>> {
-    // is_ascii first: byte-slicing a multi-byte char boundary would panic,
-    // and hex is ASCII by definition anyway (H5: no panic on hostile input)
-    if !s.is_ascii() || !s.len().is_multiple_of(2) {
-        return None;
+/// A Merkle proof is a sequence of 32-byte hashes or it is not a proof.
+///
+/// `filter_map` over the hex decode DROPPED every element it could not decode,
+/// so a proof with junk spliced into it was evaluated as a SHORTER proof
+/// instead of being rejected: the audit lengthened a valid inclusion proof with
+/// `"zz"` and verify-rs answered on the remaining siblings while Python's
+/// `bytes.fromhex` raised and the bundle was NOT VERIFIED (owner audit
+/// 2026-08-05). ABSENT (or null) still means an empty proof — the no-claim
+/// shape, which only ever verifies a one-leaf tree — but a carried member that
+/// is not a list of 32-byte hex hashes is MALFORMED and rejects the proof.
+fn proof_hashes(v: Option<&Value>) -> Option<Vec<[u8; 32]>> {
+    match v {
+        None | Some(Value::Null) => Some(Vec::new()),
+        Some(Value::Array(items)) => items.iter().map(|x| x.as_str().and_then(hex_to_bytes).and_then(|b| b.try_into().ok())).collect(),
+        Some(_) => None,
     }
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).ok())
-        .collect()
 }
 
 fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool {
-    let kid = match cp.get("kid").and_then(|v| v.as_str()) {
-        Some(k) => k,
-        None => return false,
-    };
-    let pubkey = match keys.get(kid) {
-        Some(p) => p,
-        None => return false,
-    };
-    let body = match cp.get("body") {
-        Some(b) => b,
-        None => return false,
-    };
-    let sig_b64 = match cp.get("sig").and_then(|v| v.as_str()) {
-        Some(s) => s,
-        None => return false,
-    };
+    let Some(kid) = cp.get("kid").and_then(|v| v.as_str()) else { return false };
+    let Some(pubkey) = keys.get(kid) else { return false };
+    let Some(body) = cp.get("body") else { return false };
+    let Some(sig_b64) = cp.get("sig").and_then(|v| v.as_str()) else { return false };
     let sig = match B64.decode(sig_b64) {
         Ok(s) => s,
         Err(_) => return false,
@@ -475,19 +430,28 @@ fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool 
     ed25519_verify(pubkey, &msg, &sig)
 }
 
+/// Both directions. Every JWKS kid must be witnessed by the log — and every key
+/// the log says is ACTIVE must be in the JWKS.
+///
+/// The second half catches key-log TAIL TRUNCATION. The JWKS is derived from
+/// active keys, so a bundle whose `evd.key.revoked` entry has been deleted
+/// carries a log saying the key is live beside a JWKS that omits it. Entry
+/// density is computed over the key entries PRESENT, so [1, 2] reads dense once
+/// entry 3 is gone: dropping `evd.key.rotated` or `evd.key.created` was caught,
+/// dropping `evd.key.revoked` was not, and the golden `post_revocation_forgery`
+/// fixture flipped to VERIFIED in both engines (owner audit 2026-08-05).
 fn check_jwks_match_log(bundle: &Value, kl: &KeyLog) -> bool {
-    let jwks = match bundle
-        .get("jwks")
-        .and_then(|v| v.get("keys"))
-        .and_then(|v| v.as_array())
-    {
+    let jwks = match bundle.get("jwks").and_then(|v| v.get("keys")).and_then(|v| v.as_array()) {
         Some(k) if !k.is_empty() => k,
         _ => return false,
     };
+    let mut listed: BTreeSet<String> = BTreeSet::new();
     for jwk in jwks {
         match key_from_jwk(jwk) {
             Some((mat, kid)) => match kl.keys.get(&kid) {
-                Some(logmat) if *logmat == mat => {}
+                Some(logmat) if *logmat == mat => {
+                    listed.insert(kid);
+                }
                 _ => {
                     return false;
                 }
@@ -497,48 +461,23 @@ fn check_jwks_match_log(bundle: &Value, kl: &KeyLog) -> bool {
             }
         }
     }
-    true
+    kl.keys.keys().all(|kid| kl.revoked_at.contains_key(kid) || listed.contains(kid))
 }
 
 fn check_target_checkpoint(target: &Value, kl: &KeyLog) -> bool {
     if !verify_checkpoint_sig(target, &kl.keys) {
         return false;
     }
-    let target_ts = target
-        .get("body")
-        .and_then(|b| b.get("ts"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let target_ts = target.get("body").and_then(|b| b.get("ts")).and_then(|v| v.as_str()).unwrap_or("");
     let target_kid = target.get("kid").and_then(|v| v.as_str()).unwrap_or("");
     kid_valid_at(target_kid, target_ts, &kl.revoked_at)
 }
 
 fn check_chain_consistency(prev: &Value, cp: &Value, entry: &Value, prev_size: u64, cur_size: u64) -> bool {
-    let proof_hex: Vec<String> = entry
-        .get("consistency_from_prev")
-        .and_then(|v| v.as_array())
-        .map(|a| {
-            a.iter()
-                .filter_map(|x| x.as_str().map(String::from))
-                .collect()
-        })
-        .unwrap_or_default();
-    let proof: Vec<[u8; 32]> = proof_hex
-        .iter()
-        .filter_map(|h| hex_decode(h))
-        .filter_map(|b| b.try_into().ok())
-        .collect();
-    let prev_root = prev
-        .get("body")
-        .and_then(|b| b.get("root_hash"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let cur_root = cp
-        .get("body")
-        .and_then(|b| b.get("root_hash"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let (pr, cr) = match (hex_decode(prev_root), hex_decode(cur_root)) {
+    let Some(proof) = proof_hashes(entry.get("consistency_from_prev")) else { return false };
+    let prev_root = prev.get("body").and_then(|b| b.get("root_hash")).and_then(|v| v.as_str()).unwrap_or("");
+    let cur_root = cp.get("body").and_then(|b| b.get("root_hash")).and_then(|v| v.as_str()).unwrap_or("");
+    let (pr, cr) = match (hex_to_bytes(prev_root), hex_to_bytes(cur_root)) {
         (Some(a), Some(b)) => (a, b),
         _ => return false,
     };
@@ -546,39 +485,18 @@ fn check_chain_consistency(prev: &Value, cp: &Value, entry: &Value, prev_size: u
 }
 
 fn check_chain_link(prev: &Value, cp: &Value, entry: &Value) -> bool {
-    let prev_bh = match checkpoint_body_hash(prev) {
-        Some(h) => h,
-        None => return false,
-    };
-    let cur_prev = cp
-        .get("body")
-        .and_then(|b| b.get("prev_hash"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let Some(prev_bh) = checkpoint_body_hash(prev) else { return false };
+    let cur_prev = cp.get("body").and_then(|b| b.get("prev_hash")).and_then(|v| v.as_str()).unwrap_or("");
     if cur_prev != prev_bh {
         return false;
     }
-    let prev_size = prev
-        .get("body")
-        .and_then(|b| b.get("tree_size"))
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0);
-    let cur_size = cp
-        .get("body")
-        .and_then(|b| b.get("tree_size"))
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0);
+    let prev_size = prev.get("body").and_then(|b| b.get("tree_size")).and_then(|v| v.as_u64()).unwrap_or(0);
+    let cur_size = cp.get("body").and_then(|b| b.get("tree_size")).and_then(|v| v.as_u64()).unwrap_or(0);
     if cur_size < prev_size {
         return false;
     }
-    let prev_origin = prev
-        .get("body")
-        .and_then(|b| b.get("origin"))
-        .and_then(|v| v.as_str());
-    let cur_origin = cp
-        .get("body")
-        .and_then(|b| b.get("origin"))
-        .and_then(|v| v.as_str());
+    let prev_origin = prev.get("body").and_then(|b| b.get("origin")).and_then(|v| v.as_str());
+    let cur_origin = cp.get("body").and_then(|b| b.get("origin")).and_then(|v| v.as_str());
     if prev_origin != cur_origin {
         return false;
     }
@@ -590,15 +508,16 @@ fn check_chain_link(prev: &Value, cp: &Value, entry: &Value) -> bool {
 }
 
 fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog) -> bool {
+    // A presented chain is the complete history, never an arbitrary suffix.
+    // Its first signed checkpoint must therefore be the genesis checkpoint.
+    if chain.first().and_then(|cp| cp.get("body")).and_then(|body| body.get("prev_hash")).and_then(|v| v.as_str()) != Some("") {
+        return false;
+    }
     for (i, cp) in chain.iter().enumerate() {
         if !verify_checkpoint_sig(cp, &kl.keys) {
             return false;
         }
-        let ts = cp
-            .get("body")
-            .and_then(|b| b.get("ts"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let ts = cp.get("body").and_then(|b| b.get("ts")).and_then(|v| v.as_str()).unwrap_or("");
         let kid = cp.get("kid").and_then(|v| v.as_str()).unwrap_or("");
         if !kid_valid_at(kid, ts, &kl.revoked_at) {
             return false;
@@ -610,32 +529,31 @@ fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog)
     true
 }
 
+fn check_bundle_origin(bundle: &Value, target: &Value, chain: &[Value]) -> bool {
+    // `bundle.origin` is outside every checkpoint signature but is consumed by
+    // reports, certificates, and relying-party trust lookup. It must exactly
+    // name the signed target and the complete signed checkpoint history.
+    let Some(origin) = bundle.get("origin").and_then(|v| v.as_str()) else { return false };
+    let target_origin = target.get("body").and_then(|body| body.get("origin")).and_then(|v| v.as_str());
+    target_origin == Some(origin) && chain.iter().all(|cp| cp.get("body").and_then(|body| body.get("origin")).and_then(|v| v.as_str()) == Some(origin))
+}
+
 fn chain_head_matches(chain: &[Value], target: &Value) -> bool {
     // an unhashable checkpoint on EITHER side is a mismatch, never a pass
-    let (Some(head), Some(want)) = (
-        checkpoint_body_hash(chain.last().unwrap()),
-        checkpoint_body_hash(target),
-    ) else {
-        return false;
-    };
+    let (Some(head), Some(want)) = (checkpoint_body_hash(chain.last().unwrap()), checkpoint_body_hash(target)) else { return false };
     head == want
 }
 
 fn check_entry_sigs(env: &Value, sigs: &[Value], ts_server: &str, kl: &KeyLog) -> bool {
-    let mut seen: BTreeSet<String> = BTreeSet::new();
     for s in sigs {
         let kid = s.get("keyid").and_then(|v| v.as_str()).unwrap_or("");
-        let pubkey = match kl.keys.get(kid) {
-            Some(p) => p,
-            None => return false,
-        };
+        let Some(pubkey) = kl.keys.get(kid) else { return false };
         if !env_signed_by(env, kid, pubkey) {
             return false;
         }
         if !kid_valid_at(kid, ts_server, &kl.revoked_at) {
             return false;
         }
-        seen.insert(kid.to_string());
     }
     true
 }
@@ -646,30 +564,14 @@ fn check_entry_inclusion(e: &Value, payload: &[u8], size: u64, root: &[u8]) -> b
     let mut leaf_data = vec![0x00u8];
     leaf_data.extend_from_slice(&rh);
     let leaf_hash = sha256(&leaf_data);
-    let leaf_index = e
-        .get("leaf_index")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(u64::MAX);
-    let proof: Vec<[u8; 32]> = e
-        .get("inclusion_proof")
-        .and_then(|v| v.as_array())
-        .map(|a| {
-            a.iter()
-                .filter_map(|x| x.as_str())
-                .filter_map(hex_decode)
-                .filter_map(|b| b.try_into().ok())
-                .collect()
-        })
-        .unwrap_or_default();
+    let leaf_index = e.get("leaf_index").and_then(|v| v.as_u64()).unwrap_or(u64::MAX);
+    let Some(proof) = proof_hashes(e.get("inclusion_proof")) else { return false };
     merkle::verify_inclusion(&leaf_hash, leaf_index, size, &proof, root)
 }
 
 fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8]) -> bool {
     let env = &e["envelope"];
-    let payload = match payload_of(env) {
-        Some(p) => p,
-        None => return false,
-    };
+    let Some(payload) = payload_of(env) else { return false };
     let body: Value = match serde_json::from_slice(&payload) {
         Ok(b) => b,
         Err(_) => return false,
@@ -697,21 +599,86 @@ fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8]) -> bool {
     check_entry_inclusion(e, &payload, size, root)
 }
 
+/// Did this bundle arrive carrying what it was exported to carry?
+///
+/// Everything in a bundle is signed except the bundle. Entries are individually
+/// signed and individually proven included, so deleting one leaves every
+/// remaining signature valid, every inclusion proof valid, and the same target
+/// root — a real force-included `evd.finding.raised` was removed in flight with
+/// VERDICT: VERIFIED and exit 0 in BOTH engines (owner audit 2026-08-05).
+///
+/// ABSENT (or null) means the bundle makes no completeness claim, which stays
+/// valid: bundles predate the manifest, and a key-less replica exports honestly
+/// without one. Python carries that third state in its report; here a bool is
+/// enough, and the asymmetry is deliberate — the same shape anchors already use.
+fn manifest_target_time(body: &Value, bundle: &Value, target: &Value, kid: &str) -> Option<String> {
+    if body.get("schema").and_then(|v| v.as_str()) != Some("evd/export-manifest/v1") {
+        return None;
+    }
+    let origin = body.get("origin").and_then(|v| v.as_str());
+    if origin.is_none() || origin != bundle.get("origin").and_then(|v| v.as_str()) || origin != target.get("body").and_then(|b| b.get("origin")).and_then(|v| v.as_str()) {
+        return None;
+    }
+    match (body.get("target_checkpoint_hash").and_then(|v| v.as_str()), checkpoint_body_hash(target)) {
+        (Some(claimed), Some(actual)) if claimed == actual => {}
+        _ => return None,
+    }
+    let ts = body.get("ts").and_then(|v| v.as_str())?;
+    if target.get("body").and_then(|v| v.get("ts")).and_then(Value::as_str) != Some(ts) || target.get("kid").and_then(Value::as_str) != Some(kid) {
+        return None;
+    }
+    Some(ts.to_string())
+}
+
+/// PRESENT means it must hold: signed by this target checkpoint's non-recorder
+/// issuer (never `bundle["jwks"]`), at that checkpoint's signed timestamp,
+/// and SET-EQUAL to the receipts actually carried, so neither removal nor
+/// injection survives.
+///
+/// THREE states, not two (verify/verifier.py::_check_export_manifest): None is
+/// "no completeness claim carried" — bundles predate the manifest and a
+/// key-less replica export (scripts/restore_check.py) cannot sign one — and it
+/// is NOT failure. Only `Some(false)` gates the bundle verdict.
+fn check_export_manifest(bundle: &Value, entries: &[Value], target: &Value, kl: &KeyLog) -> Option<bool> {
+    let raw = bundle.get("export_manifest").filter(|v| !v.is_null())?;
+    let (Some(body), Some(kid), Some(sig_b64)) = (raw.get("body").filter(|b| b.is_object()), raw.get("kid").and_then(|v| v.as_str()), raw.get("sig").and_then(|v| v.as_str())) else { return Some(false) };
+    let Some(ts) = manifest_target_time(body, bundle, target, kid) else { return Some(false) };
+    let Some(pubkey) = kl.keys.get(kid) else { return Some(false) };
+    if kl.non_issuer.contains(kid) || !kid_valid_at(kid, &ts, &kl.revoked_at) {
+        return Some(false);
+    }
+    let Some(canon) = jcs::canonical_checked(body) else { return Some(false) };
+    let Ok(sig) = B64.decode(sig_b64) else { return Some(false) };
+    if !ed25519_verify(pubkey, &pae(EXPORT_MANIFEST_TYPE, &canon), &sig) {
+        return Some(false);
+    }
+    let Some(listed) = body.get("receipt_hashes").and_then(|v| v.as_array()) else { return Some(false) };
+    if listed.len() > MAX_ENTRIES {
+        return Some(false);
+    }
+    let claimed: Option<BTreeSet<String>> = listed.iter().map(|h| h.as_str().map(str::to_string)).collect();
+    let Some(claimed) = claimed else { return Some(false) };
+    let carried: BTreeSet<String> = entries.iter().filter_map(|e| e.get("envelope").and_then(receipt_hash_hex)).collect();
+    Some(claimed == carried)
+}
+
+/// Everything about the ENTRIES a bundle carries: each one individually, the
+/// signed manifest saying which ones there should be, and per-agent sequence
+/// uniqueness. Split out of `check_checkpoints_and_entries` to keep that
+/// function within the §0.2·3a complexity ceiling.
+fn check_entry_set(bundle: &Value, entries: &[Value], target: &Value, kl: &KeyLog, complete: &mut Option<bool>) -> bool {
+    // seq GAPS are legitimate (subset exports); a duplicate (agent_id, seq) is
+    // always forgery or corruption. The manifest answer is recorded BEFORE the
+    // conjunction so a bundle that fails elsewhere still reports the same
+    // tri-state Python reports — `_check_export_manifest` runs unconditionally.
+    *complete = check_export_manifest(bundle, entries, target, kl);
+    check_entries(entries, target, kl) && *complete != Some(false) && check_seq_uniqueness(entries)
+}
+
 fn check_entries(entries: &[Value], target: &Value, kl: &KeyLog) -> bool {
-    let size = target
-        .get("body")
-        .and_then(|b| b.get("tree_size"))
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0);
-    let root_hex = target
-        .get("body")
-        .and_then(|b| b.get("root_hash"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let root = match hex_decode(root_hex) {
-        Some(r) => r,
-        None => return false,
-    };
+    let size = target.get("body").and_then(|b| b.get("tree_size")).and_then(|v| v.as_u64()).unwrap_or(0);
+    let root_hex = target.get("body").and_then(|b| b.get("root_hash")).and_then(|v| v.as_str()).unwrap_or("");
+    let Some(root) = hex_to_bytes(root_hex) else { return false };
     for e in entries {
         if !check_entry(e, kl, size, &root) {
             return false;
@@ -746,17 +713,10 @@ fn check_seq_uniqueness(entries: &[Value]) -> bool {
 }
 
 pub(crate) fn is_internal_agent(a: &str) -> bool {
-    matches!(
-        a,
-        "_system"
-            | "_grants"
-            | "_reports"
-            | "_detect"
-            | "_idem"
-            | "_authority"
-            | "_node"
-            | "_register"
-    ) || a.starts_with("_rel_")
+    matches!(a, "_system" | "_grants" | "_reports" | "_detect" | "_idem" | "_authority" | "_node" | "_register")
+    // `_rel_*` was exempt here too, on a false premise: it is the
+    // per-relationship SEQUENCE COUNTER id, never a receipt agent_id. The
+    // exemption shielded forged lineage and protected nothing honest.
 }
 
 type LineageItem = (String, String, i64, Value); // (action_type, receipt_hash, seq, context)
@@ -770,11 +730,7 @@ fn collect_lineage(entries: &[Value]) -> Option<BTreeMap<String, Vec<LineageItem
             if agent.is_empty() || is_internal_agent(agent) {
                 continue; // ONLY known internal bookkeeping agents are exempt
             }
-            let at = body
-                .get("action_type")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
+            let at = body.get("action_type").and_then(|v| v.as_str()).unwrap_or("").to_string();
             let seq = body.get("seq").and_then(|v| v.as_i64()).unwrap_or(-1);
             let rh = e.get("envelope").and_then(receipt_hash_hex)?;
             let ctx = body.get("context").cloned().unwrap_or(Value::Null);
@@ -796,13 +752,7 @@ fn check_lineage_orphan(items: &[LineageItem], valid: &BTreeSet<String>) -> bool
     true
 }
 
-fn check_lineage_established(
-    items: &[LineageItem],
-    valid: &BTreeSet<String>,
-    birth_at: &str,
-    birth_hash: &str,
-    birth_seq: i64,
-) -> bool {
+fn check_lineage_established(items: &[LineageItem], valid: &BTreeSet<String>, birth_at: &str, birth_hash: &str, birth_seq: i64) -> bool {
     // anti-laundering: `born` asserts no prior history so it must
     // sit at seq 1 (an agent with earlier activity can't put born
     // there). `adopted` is established at its first-OBSERVED seq
@@ -826,10 +776,7 @@ fn check_lineage_established(
 }
 
 fn check_agent_lineage(items: &[(String, String, i64, Value)]) -> bool {
-    let est: Vec<&(String, String, i64, Value)> = items
-        .iter()
-        .filter(|(at, _, _, _)| at == "lineage.born" || at == "lineage.adopted")
-        .collect();
+    let est: Vec<&(String, String, i64, Value)> = items.iter().filter(|(at, _, _, _)| at == "lineage.born" || at == "lineage.adopted").collect();
     if est.len() > 1 {
         return false; // duplicate establishment — forged or split history
     }
@@ -842,17 +789,12 @@ fn check_agent_lineage(items: &[(String, String, i64, Value)]) -> bool {
     }
     match est.first() {
         None => check_lineage_orphan(items, &valid),
-        Some((birth_at, birth_hash, birth_seq, _)) => {
-            check_lineage_established(items, &valid, birth_at, birth_hash, *birth_seq)
-        }
+        Some((birth_at, birth_hash, birth_seq, _)) => check_lineage_established(items, &valid, birth_at, birth_hash, *birth_seq),
     }
 }
 
 fn check_lineage(entries: &[Value]) -> bool {
-    let by_agent = match collect_lineage(entries) {
-        Some(m) => m,
-        None => return false,
-    };
+    let Some(by_agent) = collect_lineage(entries) else { return false };
     for (_agent, items) in by_agent {
         if !check_agent_lineage(&items) {
             return false;
@@ -861,117 +803,119 @@ fn check_lineage(entries: &[Value]) -> bool {
     true
 }
 
+/// A checkpoint cannot be anchored before it was signed.
+///
+/// `block_ts` is an unsigned string in an additive bundle member, never checked
+/// against a chain offline, yet authority-v1 §4 consumed it as verified time.
+/// Backdating it flipped an intent recorded 17 days AFTER its grant was revoked
+/// to authority VERIFIED (owner audit 2026-08-05). The checkpoint's own `ts` IS
+/// signed, so an earlier claim is refutable from the bytes alone. A malformed
+/// `block_ts` is not an ordering violation — §4 already ignores it.
+fn anchor_not_before_checkpoint(rec: &Value, signed_ts: Option<&str>) -> bool {
+    let signed = Value::String(signed_ts.unwrap_or_default().to_string());
+    let (Some(anchored), Some(signed)) = (crate::action::nts(rec.get("block_ts").unwrap_or(&Value::Null)), crate::action::nts(&signed)) else { return true };
+    anchored >= signed
+}
+
+fn bound_record_ok(rec: &Value, required: &[&str], chain_ts: &BTreeMap<String, String>) -> bool {
+    let Some(obj) = rec.as_object() else { return false };
+    if required.iter().any(|f| !obj.contains_key(*f)) {
+        return false;
+    }
+    let bh = rec.get("checkpoint_body_hash").and_then(|v| v.as_str()).unwrap_or("");
+    let Some(signed) = chain_ts.get(bh) else {
+        return false;
+    }; // not a checkpoint in this chain
+    !obj.contains_key("block_ts") || anchor_not_before_checkpoint(rec, Some(signed.as_str()))
+}
+
 fn check_bound_records(records: &Value, required: &[&str], chain: &[Value]) -> bool {
-    let arr = match records.as_array() {
-        Some(a) => a,
-        None => return false,
-    };
-    if arr.is_empty() {
-        return true;
+    let Some(arr) = records.as_array() else { return false };
+    let chain_ts: BTreeMap<String, String> = chain
+        .iter()
+        .filter_map(|c| {
+            let h = checkpoint_body_hash(c)?;
+            let ts = c.get("body")?.get("ts")?.as_str().unwrap_or("").to_string();
+            Some((h, ts))
+        })
+        .collect();
+    arr.iter().all(|rec| bound_record_ok(rec, required, &chain_ts))
+}
+
+fn check_tst_records(records: &Value, chain: &[Value]) -> bool {
+    if !check_bound_records(records, &["checkpoint_body_hash", "token_der_b64", "tsa_url", "gen_time", "cert_chain_pem", "qualified"], chain) {
+        return false;
     }
-    let chain_hashes: BTreeSet<String> =
-        chain.iter().filter_map(checkpoint_body_hash).collect();
-    for rec in arr {
-        let obj = match rec.as_object() {
-            Some(o) => o,
-            None => return false,
-        };
-        for f in required {
-            if !obj.contains_key(*f) {
-                return false;
-            }
-        }
-        let bh = rec
-            .get("checkpoint_body_hash")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if !chain_hashes.contains(bh) {
-            return false;
-        }
-    }
-    true
+    records.as_array().is_some_and(|items| {
+        items.iter().all(|record| {
+            let (Some(body_hash), Some(token_b64), Some(displayed_time), Some(chain)) = (record.get("checkpoint_body_hash").and_then(Value::as_str), record.get("token_der_b64").and_then(Value::as_str), record.get("gen_time").and_then(Value::as_str), record.get("cert_chain_pem").and_then(Value::as_str)) else { return false };
+            let Ok(token) = B64.decode(token_b64) else { return false };
+            crate::tsa::verify_tst_gen_time(&token, body_hash, chain).is_some_and(|actual_time| actual_time == displayed_time)
+        })
+    })
 }
 
 fn check_attestation_records(bundle: &Value, chain: &[Value]) -> bool {
-    // 7. timestamp records (if present): structural + binding checks. Full
-    // RFC 3161 CMS validation is the Python verifier's job (documented
-    // divergence closed to the binding level here: a TST that names a
-    // checkpoint outside this bundle's chain is a forgery, both verifiers).
-    if let Some(tsts) = bundle.get("tst_records") {
-        if !check_bound_records(
-            tsts,
-            &["checkpoint_body_hash", "token_der_b64", "gen_time"],
-            chain,
-        ) {
+    // 7. timestamp records (if present): full RFC 3161 CMS validation plus
+    // checkpoint binding and an exact verifier-derived genTime match. A
+    // structurally bound but unverified token is not time evidence and cannot
+    // feed action::independent_ts_map.
+    // Null compares equal to missing, the same `.get()` semantics
+    // `check_input_echo` already documents — a producer emitting null for an
+    // empty optional is not making a claim about timestamps or anchors. Any
+    // OTHER non-list value IS a claim, and a malformed one (parity with
+    // verify/verifier.py; tests/test_engine_parity.py).
+    if let Some(tsts) = bundle.get("tst_records").filter(|v| !v.is_null()) {
+        if !check_tst_records(tsts, chain) {
             return false;
         }
     }
 
     // 8. anchor records (if present): each must bind to a chain checkpoint
-    if let Some(anchors) = bundle.get("anchor_records") {
-        if !check_bound_records(
-            anchors,
-            &[
-                "checkpoint_body_hash",
-                "chain_id",
-                "tx_hash",
-                "block_number",
-                "block_ts",
-                "contract",
-            ],
-            chain,
-        ) {
+    if let Some(anchors) = bundle.get("anchor_records").filter(|v| !v.is_null()) {
+        if !check_bound_records(anchors, &["checkpoint_body_hash", "chain_id", "tx_hash", "block_number", "block_ts", "contract"], chain) {
             return false;
         }
     }
     true
 }
 
-fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog) -> bool {
+fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog, complete: &mut Option<bool>) -> bool {
     // 2. target checkpoint
-    let target = match bundle.get("target_checkpoint") {
-        Some(t) => t,
-        None => return false,
-    };
+    let Some(target) = bundle.get("target_checkpoint") else { return false };
     if !check_target_checkpoint(target, kl) {
         return false;
     }
 
     // 3. chain: signatures, linkage, monotonic, same origin, consistency
-    let chain: Vec<Value> = bundle
-        .get("checkpoint_chain")
-        .and_then(|v| v.as_array())
-        .map(|a| {
-            a.iter()
-                .filter_map(|e| e.get("checkpoint").cloned())
-                .collect()
-        })
-        .unwrap_or_default();
-    let chain_entries: Vec<Value> = bundle
-        .get("checkpoint_chain")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
+    let Some(chain_entries) = bundle.get("checkpoint_chain").and_then(|v| v.as_array()) else { return false };
+    // Never filter malformed links out of a presented history: Python rejects
+    // every malformed entry, and silently skipping one can create a false
+    // genesis or hide a broken predecessor.
+    let chain: Vec<Value> = match chain_entries.iter().map(|entry| entry.get("checkpoint").cloned()).collect() {
+        Some(chain) => chain,
+        None => return false,
+    };
     if chain.is_empty() {
         return false;
     }
-    if !check_checkpoint_chain(&chain, &chain_entries, kl) {
+    // The completeness tri-state settles HERE, at the point verify/verifier.py
+    // settles it: past the target and a structurally intact chain,
+    // `_check_export_manifest` runs whatever else fails. Deferring it to the
+    // tail would make a certificate over a chain-invalid bundle report
+    // `export_complete: null` where Python reports the real answer.
+    if !check_entry_set(bundle, entries, target, kl, complete) {
+        return false;
+    }
+    if !check_checkpoint_chain(&chain, chain_entries, kl) {
+        return false;
+    }
+    if !check_bundle_origin(bundle, target, &chain) {
         return false;
     }
 
     // 4. target == chain head
     if !chain_head_matches(&chain, target) {
-        return false;
-    }
-
-    // 5. entries
-    if !check_entries(entries, target, kl) {
-        return false;
-    }
-
-    // 5b. per-agent seq uniqueness: seq GAPS are legitimate (subset exports)
-    // but a duplicate (agent_id, seq) is always forgery/corruption.
-    if !check_seq_uniqueness(entries) {
         return false;
     }
 
@@ -996,15 +940,9 @@ fn disclosure_fields(pkg: &Value) -> Option<DisclosureFields> {
     if str_field(pkg, "schema")? != DISCLOSURE_SCHEMA {
         return None;
     }
-    let nonce = hex_decode(&str_field(pkg, "nonce_hex")?)?;
+    let nonce = hex_to_bytes(&str_field(pkg, "nonce_hex")?)?;
     let payload = B64.decode(str_field(pkg, "payload_b64")?).ok()?;
-    Some((
-        str_field(pkg, "receipt_hash")?,
-        str_field(pkg, "field")?,
-        str_field(pkg, "domain")?,
-        nonce,
-        payload,
-    ))
+    Some((str_field(pkg, "receipt_hash")?, str_field(pkg, "field")?, str_field(pkg, "domain")?, nonce, payload))
 }
 
 fn disclosure_commitment(domain: &str, payload: &[u8], nonce: &[u8]) -> Option<String> {
@@ -1024,10 +962,7 @@ fn disclosure_commitment(domain: &str, payload: &[u8], nonce: &[u8]) -> Option<S
 
 fn disclosure_committed_value(raw: &[u8], field: &str) -> Option<String> {
     let body: Value = serde_json::from_slice(raw).ok()?;
-    body.get("commitments")?
-        .get(field)?
-        .as_str()
-        .map(String::from)
+    body.get("commitments")?.get(field)?.as_str().map(String::from)
 }
 
 /// Verify an evd/disclosure/v1 package against an ALREADY-verified bundle:
@@ -1040,10 +975,7 @@ pub fn verify_disclosure(pkg: &Value, bundle: &Value) -> bool {
         Some(t) => t,
         None => return false,
     };
-    let entries = match bundle.get("entries").and_then(|v| v.as_array()) {
-        Some(a) => a,
-        None => return false,
-    };
+    let Some(entries) = bundle.get("entries").and_then(|v| v.as_array()) else { return false };
     for e in entries {
         let raw = match e.get("envelope").and_then(payload_of) {
             Some(r) => r,
@@ -1052,10 +984,7 @@ pub fn verify_disclosure(pkg: &Value, bundle: &Value) -> bool {
         if hex(&sha256(&raw)) != rh {
             continue;
         }
-        let expected = match disclosure_committed_value(&raw, &field) {
-            Some(x) => x,
-            None => return false,
-        };
+        let Some(expected) = disclosure_committed_value(&raw, &field) else { return false };
         return disclosure_commitment(&domain, &payload, &nonce).as_deref() == Some(&expected);
     }
     false
@@ -1063,40 +992,48 @@ pub fn verify_disclosure(pkg: &Value, bundle: &Value) -> bool {
 
 /// Verify an evd/bundle/v1 document. Returns true iff VERIFIED.
 pub fn verify_bundle(bundle: &Value) -> bool {
+    verify_bundle_report(bundle).0
+}
+
+/// (VERIFIED, export-completeness tri-state). The certificate layer computed
+/// the second value and threw it away, so a certificate consumer read a bare
+/// "VERIFIED" over a bundle whose entries may have been deleted after export
+/// while a bundle consumer read "VERIFIED (completeness unproven)". `None` —
+/// no manifest carried, or the run never reached the manifest — is NOT
+/// failure, and nothing in either engine gates on it.
+pub(crate) fn verify_bundle_report(bundle: &Value) -> (bool, Option<bool>) {
+    let mut complete = None;
     if bundle.get("schema").and_then(|v| v.as_str()) != Some("evd/bundle/v1") {
-        return false;
+        return (false, complete);
     }
     // H5 resource caps (parse phase) — over-cap is NOT VERIFIED, never a panic
     if !within_caps(bundle) {
-        return false;
+        return (false, complete);
     }
-    let entries: Vec<Value> = bundle
-        .get("entries")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
+    let entries: Vec<Value> = bundle.get("entries").and_then(|v| v.as_array()).cloned().unwrap_or_default();
     if entries.is_empty() {
-        return false;
+        return (false, complete);
     }
     if entries.iter().any(|e| {
         let env = &e["envelope"];
         body_of(env).is_some_and(|body| forbidden_managed_edge_cosign(&body, env))
     }) {
-        return false;
+        return (false, complete);
     }
 
     // 0. key log replay
     let kl = replay_key_log(&entries);
     if !kl.ok {
-        return false;
+        return (false, complete);
     }
 
     // 1. jwks agrees with the log
     if !check_jwks_match_log(bundle, &kl) {
-        return false;
+        return (false, complete);
     }
 
-    check_checkpoints_and_entries(bundle, &entries, &kl)
+    let ok = check_checkpoints_and_entries(bundle, &entries, &kl, &mut complete);
+    (ok, complete)
 }
 
 // -- WASM binding (feature-gated; native build never pulls wasm-bindgen) -----

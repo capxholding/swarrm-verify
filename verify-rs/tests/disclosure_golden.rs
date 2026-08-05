@@ -8,10 +8,7 @@ use std::fs;
 use std::path::PathBuf;
 
 fn golden_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("tests/golden/bundles")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/bundles")
 }
 
 fn load(name: &str) -> Value {
@@ -29,17 +26,10 @@ fn disclosure_golden_agrees_with_expected() {
     for (name, want) in expected.as_object().unwrap() {
         let pkg = load(&format!("{name}.json"));
         let got = swarrm_verify::verify_disclosure(&pkg, &bundle);
-        assert_eq!(
-            got,
-            want.as_bool().unwrap(),
-            "fixture {name}: Rust got {got}, expected {want}"
-        );
+        assert_eq!(got, want.as_bool().unwrap(), "fixture {name}: Rust got {got}, expected {want}");
         checked += 1;
     }
-    assert!(
-        checked >= 2,
-        "expected at least 2 disclosure fixtures, ran {checked}"
-    );
+    assert!(checked >= 2, "expected at least 2 disclosure fixtures, ran {checked}");
 }
 
 #[test]
