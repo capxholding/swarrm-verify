@@ -45,7 +45,8 @@
     },
     "result_root": "0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d",
     "schema": "evd/population-index/v1",
-    "signature": "c2lnLXBvcA==",
+    "signature": "3r3zA/TdDjSi6lrkcBKxQb5YZXzwyqHzVV6kUSGuw63UbFd/NqT2zFShj7FqP7m2SSTrlwp9kf0aqaUrjukPCg==",
+    "source_id": "source-1",
     "tree_size": 128
   },
   "schema": "evd/verdict-input/v1"

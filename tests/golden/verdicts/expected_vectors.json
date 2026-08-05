@@ -284,7 +284,7 @@
     "linkage": "NONE",
     "mark": "UNMARKED_UNREGISTERED",
     "node_integrity_basis": "LOG_WITNESSED_SOFTWARE",
-    "node_observation": "NOT_OBSERVED",
+    "node_observation": "OBSERVED",
     "out_of_scope_surfaces": [],
     "outcome": null,
     "population_status": null,

@@ -11,13 +11,15 @@ Reproduce and check:
     wasm-pack build --target web --features wasm
     shasum -a 256 pkg/swarrm_verify_bg.wasm
 
-Expected sha256 of swarrm_verify_bg.wasm (built from this source tree):
+Expected sha256 of swarrm_verify_bg.wasm (the canonical x86_64 Linux CI build
+from this source tree):
 
-    224aea639f852cf657bb89bf4f7a32141137cf44af0de968f9c3f22bf184f4f8
+    7d109f244c3c7a46d27d5b3c90241340e0bdd13088f7711bc3f59c5afaffcfe3
 
-This artifact was rebuilt with wasm-pack 0.15.0 and Rust 1.90.0 from the
-Cargo.lock-pinned dependency graph; use the same toolchain for an exact-byte
-reproduction.
+This artifact was rebuilt on x86_64 Linux with the official wasm-pack 0.15.0
+release binary and Rust 1.90.0 from the Cargo.lock-pinned dependency graph.
+CI asserts exact-byte reproduction on that host; other host platforms can
+produce semantically equivalent but byte-different modules.
 The page displays the sha256 of the module it actually loaded; compare it to
 the value above. The verifier is client-side only — it never uploads your
 bundle — so trusting it reduces to trusting this hash, which you can rebuild.

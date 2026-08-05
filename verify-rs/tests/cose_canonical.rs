@@ -39,17 +39,11 @@ pub(crate) fn ed25519_verify(pubkey: &[u8; 32], msg: &[u8], sig: &[u8]) -> bool 
 }
 
 fn golden_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("tests/golden/cose")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/cose")
 }
 
 fn unhex(s: &str) -> Vec<u8> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
+    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
 }
 
 fn seed32(hex: &str) -> [u8; 32] {
@@ -123,20 +117,10 @@ fn load_vectors() -> Vec<Vector> {
             continue;
         }
         let name = path.file_stem().unwrap().to_str().unwrap().to_owned();
-        let src: Json =
-            serde_json::from_str(&fs::read_to_string(dir.join(format!("{name}.json"))).unwrap())
-                .unwrap();
+        let src: Json = serde_json::from_str(&fs::read_to_string(dir.join(format!("{name}.json"))).unwrap()).unwrap();
         let seed = seed32(src["signer_seed"].as_str().unwrap());
         let payload = from_jm(&src["payload"]).unwrap();
-        out.push(Vector {
-            protected: from_jm(&src["protected"]).unwrap(),
-            unprotected: from_jm(&src["unprotected"]).unwrap(),
-            payload: payload_opt(&payload),
-            cose: fs::read(dir.join(format!("{name}.cose"))).unwrap(),
-            sig_input: fs::read(dir.join(format!("{name}.sig_input.bin"))).unwrap(),
-            seed,
-            name,
-        });
+        out.push(Vector { protected: from_jm(&src["protected"]).unwrap(), unprotected: from_jm(&src["unprotected"]).unwrap(), payload: payload_opt(&payload), cose: fs::read(dir.join(format!("{name}.cose"))).unwrap(), sig_input: fs::read(dir.join(format!("{name}.sig_input.bin"))).unwrap(), seed, name });
     }
     out
 }
@@ -146,8 +130,7 @@ fn build_matches_golden_byte_identical() {
     let vectors = load_vectors();
     assert!(vectors.len() >= 20, "only {} COSE vectors", vectors.len());
     for v in &vectors {
-        let built = cose::build_sign1(&v.protected, &v.unprotected, v.payload.as_deref(), &v.seed)
-            .unwrap_or_else(|| panic!("build refused {}", v.name));
+        let built = cose::build_sign1(&v.protected, &v.unprotected, v.payload.as_deref(), &v.seed).unwrap_or_else(|| panic!("build refused {}", v.name));
         assert_eq!(built, v.cose, "byte mismatch on {}", v.name);
     }
 }
@@ -166,13 +149,7 @@ fn sig_structure_matches_golden() {
             _ => panic!("protected not a bstr in {}", v.name),
         };
         let body = v.payload.clone().unwrap_or_default();
-        let sig = cbor::canonical_cbor(&Value::Array(vec![
-            Value::Text("Signature1".to_owned()),
-            Value::Bytes(protected_bytes),
-            Value::Bytes(Vec::new()),
-            Value::Bytes(body),
-        ]))
-        .unwrap();
+        let sig = cbor::canonical_cbor(&Value::Array(vec![Value::Text("Signature1".to_owned()), Value::Bytes(protected_bytes), Value::Bytes(Vec::new()), Value::Bytes(body)])).unwrap();
         assert_eq!(sig, v.sig_input, "sig_input mismatch on {}", v.name);
     }
 }
@@ -183,15 +160,13 @@ fn verify_accepts_and_roundtrips() {
         let (pk, kid) = key_of(&v.seed);
         let mut keys = BTreeMap::new();
         keys.insert(kid.clone(), pk);
-        let s = cose::verify_sign1(&v.cose, &keys, 65536, 16)
-            .unwrap_or_else(|| panic!("verify refused {}", v.name));
+        let s = cose::verify_sign1(&v.cose, &keys, 65536, 16).unwrap_or_else(|| panic!("verify refused {}", v.name));
         assert_eq!(s.kid, kid, "kid mismatch on {}", v.name);
         assert_eq!(s.payload, v.payload, "payload mismatch on {}", v.name);
         // Header faithfulness: the decoded headers re-encode to the exact
         // golden bytes (ciborium Map is a Vec, so compare canonically, not by
         // source insertion order).
-        let rebuilt = cose::build_sign1(&s.protected, &s.unprotected, s.payload.as_deref(), &v.seed)
-            .unwrap_or_else(|| panic!("rebuild refused {}", v.name));
+        let rebuilt = cose::build_sign1(&s.protected, &s.unprotected, s.payload.as_deref(), &v.seed).unwrap_or_else(|| panic!("rebuild refused {}", v.name));
         assert_eq!(rebuilt, v.cose, "header round-trip mismatch on {}", v.name);
     }
 }
@@ -210,27 +185,14 @@ fn verify_rejects_tampering() {
         let empty: BTreeMap<String, [u8; 32]> = BTreeMap::new();
         assert!(cose::verify_sign1(&v.cose, &empty, 65536, 16).is_none(), "kid {}", v.name);
         // over the byte cap
-        assert!(
-            cose::verify_sign1(&v.cose, &keys, v.cose.len() - 1, 16).is_none(),
-            "cap {}",
-            v.name
-        );
+        assert!(cose::verify_sign1(&v.cose, &keys, v.cose.len() - 1, 16).is_none(), "cap {}", v.name);
     }
 }
 
 #[test]
 fn hostile_bytes_never_panic() {
     let keys: BTreeMap<String, [u8; 32]> = BTreeMap::new();
-    let mut cases: Vec<Vec<u8>> = vec![
-        vec![],
-        vec![0xd2],
-        vec![0xd2, 0x00],
-        unhex("d29fff"),
-        unhex("d284"),
-        unhex("d2a10101"),
-        vec![0xff],
-        vec![0x00; 10],
-    ];
+    let mut cases: Vec<Vec<u8>> = vec![vec![], vec![0xd2], vec![0xd2, 0x00], unhex("d29fff"), unhex("d284"), unhex("d2a10101"), vec![0xff], vec![0x00; 10]];
     // a deeply nested body under the tag: the depth cap bails before any
     // recursion can overflow the stack.
     cases.push([vec![0xd2], vec![0x81; 40]].concat());

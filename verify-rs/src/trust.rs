@@ -22,27 +22,7 @@ use sha2::{Digest, Sha256};
 /// Every key category a derivation may appeal to. A category absent from the
 /// supplied context means this relying party named no root there, so every
 /// dimension grounded in it renders weak — never a favourable default.
-pub(crate) const KEY_CATEGORIES: [&str; 9] = [
-    "source_keys",
-    "mac_keys",
-    "evaluator_keys",
-    "node_keys",
-    "node_roots",
-    "temporal_keys",
-    "population_keys",
-    "scitt_ts_keys",
-    "log_keys",
-];
-
-fn decode_hex(s: &str) -> Option<Vec<u8>> {
-    if !s.len().is_multiple_of(2) || s.is_empty() {
-        return None;
-    }
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(s.get(i..i + 2)?, 16).ok())
-        .collect()
-}
+pub(crate) const KEY_CATEGORIES: [&str; 10] = ["source_keys", "mac_keys", "evaluator_keys", "node_keys", "node_roots", "temporal_keys", "population_keys", "accountability_keys", "scitt_ts_keys", "log_keys"];
 
 fn decode_b64(s: &str) -> Option<Vec<u8>> {
     use base64::{engine::general_purpose::STANDARD, Engine};
@@ -55,7 +35,7 @@ fn decode_material(v: Option<&Value>) -> Option<Vec<u8>> {
     if s.is_empty() {
         return None;
     }
-    decode_hex(s).or_else(|| decode_b64(s))
+    crate::scitt::hex_to_bytes(s).or_else(|| decode_b64(s))
 }
 
 /// The public key this relying party named for `name`, or None (the safe
@@ -86,17 +66,19 @@ pub(crate) fn signed_bytes(domain: &str, payload: &Value) -> Option<Vec<u8>> {
     Some(out)
 }
 
+/// Parse the signature and its domain-separated material once for both proofs.
+fn signed_proof(payload: &Value, domain: &str) -> Option<(Vec<u8>, Vec<u8>)> {
+    payload.is_object().then_some(())?;
+    Some((decode_material(payload.get("signature"))?, signed_bytes(domain, payload)?))
+}
+
 /// True iff `payload`'s signature verifies under the named trusted key. Total:
 /// any missing anchor, missing signature or malformed input is false. This is
 /// the ONLY route to a favourable externally-grounded value.
 pub(crate) fn verified(trust: Option<&Value>, category: &str, name: Option<&str>, domain: &str, payload: &Value) -> bool {
-    if !payload.is_object() {
-        return false;
-    }
     let Some(pub_bytes) = key_for(trust, category, name) else { return false };
     let Ok(pubkey): Result<[u8; 32], _> = pub_bytes.try_into() else { return false };
-    let Some(sig) = decode_material(payload.get("signature")) else { return false };
-    let Some(msg) = signed_bytes(domain, payload) else { return false };
+    let Some((sig, msg)) = signed_proof(payload, domain) else { return false };
     crate::ed25519_verify(&pubkey, &msg, &sig)
 }
 
@@ -135,11 +117,7 @@ fn ct_eq(a: &[u8], b: &[u8]) -> bool {
 /// A shared-secret MAC: possession by SOME holder, so the vocabulary caps it at
 /// `SHARED_SECRET`. Verified anyway — an unverified MAC is evidence of nothing.
 pub(crate) fn mac_verified(trust: Option<&Value>, name: Option<&str>, domain: &str, payload: &Value) -> bool {
-    if !payload.is_object() {
-        return false;
-    }
     let Some(secret) = key_for(trust, "mac_keys", name) else { return false };
-    let Some(mac) = decode_material(payload.get("signature")) else { return false };
-    let Some(msg) = signed_bytes(domain, payload) else { return false };
+    let Some((mac, msg)) = signed_proof(payload, domain) else { return false };
     ct_eq(&hmac_sha256(&secret, &msg), &mac)
 }

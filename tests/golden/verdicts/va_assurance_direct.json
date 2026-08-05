@@ -21,7 +21,20 @@
       "upper": "2026-01-01T01:00:00Z"
     }
   },
+  "batch": {
+    "gaps": [],
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z"
+  },
   "client_attestation_present": false,
   "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": true,
+    "batch_digest": "cac3f43f91d5a6e0c078e2b7a965c03300999108c763ca30b67cb23e4cc74dab",
+    "node_id": "node-1",
+    "node_signed": true,
+    "performed": true,
+    "signature": "O0WRe6Gnyp0CaME8Z2keTrZQmcaKsxcR6Kqh+2cHVgKKTaAUrqDzF9gF0rjbAqVDugI/bcSuakYWZEZv+BENBw=="
+  },
   "schema": "evd/verdict-input/v1"
 }

@@ -28,7 +28,9 @@ customer's action; missing evidence becomes an explicit gap.
   "material_fields": [..], "identity": SourceIdentity } ] }`.
   Config profile `node` (core/config.py) adds: `EVD_NODE_CONFIG` (required),
   `EVD_NODE_KEY_FILE`, `EVD_NODE_MASTER_KEY` / `EVD_NODE_MASTER_KEY_FILE`,
-  `EVD_NODE_DATA_DIR`, `EVD_NODE_SCAN_INTERVAL`.
+  `EVD_NODE_DATA_DIR`, `EVD_NODE_SCAN_INTERVAL`, `EVD_TENANT`. Local demo may
+  default `EVD_TENANT` to `t_dev`; a deployed Node MUST set it explicitly
+  before the data directory's first boot.
 - **One diagnostic command**: `swarrm node doctor` — effective config,
   master-key mode (dev file-key mode prints a NON-PRODUCTION banner), per
   source: reachability, auth mode, cursor capability, last complete cursor,
@@ -58,6 +60,15 @@ non-production:
   memory while mapping/reconciliation runs. A legacy plaintext row is moved
   into the encrypted store and SQLite is securely compacted on open; a
   file-backed NodeState has no plaintext-write fallback.
+- **Key continuity is a startup gate.** On first use the vault writes an
+  atomically-created, encrypted master-key check. On every later boot the
+  configured `EVD_NODE_MASTER_KEY` (or the selected dev key file) MUST open
+  that check before the Node creates a key, opens its log/state database, or
+  accepts intake. A syntactically valid but wrong key therefore refuses
+  startup; a set-but-empty or malformed `EVD_NODE_MASTER_KEY` is an error,
+  never a silent switch to dev mode. A legacy vault without a check is adopted
+  only after every live digest decrypts; unreadable or quarantined material
+  refuses adoption rather than being re-keyed or overwritten.
 
 ## 3. Durable intake (B22.3)
 
@@ -235,6 +246,14 @@ is stored.
   becomes an explicit `evd.gap.declared` — losing the nonce vault is an
   evidenced capability loss (no disclosure for those items), not a
   confidentiality breach.
+- **One volume, one tenant.** At first boot the Node atomically binds
+  `EVD_NODE_DATA_DIR` to the exact `EVD_TENANT` and corresponding
+  `evd://tenant/<id>` origin before it opens the receipt log, state database,
+  Node key, or vault. A later boot with another tenant MUST refuse; it must
+  never relabel old receipts under a new origin. A populated legacy directory
+  with no binding (including SQLite WAL/SHM sidecars) MUST also refuse rather
+  than guess. Preserve that directory and restore it under its original tenant
+  or perform an explicit supported migration; do not repoint or hand-edit it.
 
 ## 9. Honest health (B22.6)
 

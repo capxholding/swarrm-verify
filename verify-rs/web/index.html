@@ -32,6 +32,7 @@
   <div id="cert" class="note"></div>
   <div id="controls" style="display:none">
     <button id="flip">flip a byte &amp; re-verify (watch it break)</button>
+    <label><input id="require-manifest" type="checkbox" /> require a signed export manifest</label>
   </div>
   <p id="detail" class="note"></p>
 
@@ -47,6 +48,7 @@
     import init, { verify_bundle_json, verify_certificate_cbor } from "../pkg/swarrm_verify.js";
 
     const KNOWN_SCHEMA = "evd/bundle/v1";
+    const MAX_INPUT_BYTES = 64 * 1024 * 1024;
     const drop = document.getElementById("drop");
     const file = document.getElementById("file");
     const verdict = document.getElementById("verdict");
@@ -54,6 +56,7 @@
     const detail = document.getElementById("detail");
     const controls = document.getElementById("controls");
     const flip = document.getElementById("flip");
+    const requireManifest = document.getElementById("require-manifest");
     let currentText = null;
 
     // load + hash the wasm ourselves so the page can display what it ran
@@ -69,6 +72,44 @@
     // would make wasm-bindgen fetch the mutable URL a second time.
     const ready = init({ module_or_path: wasmBytes });
 
+    function rejectInput(message) {
+      currentText = null;
+      cert.innerHTML = "";
+      controls.style.display = "none";
+      verdict.textContent = "input refused";
+      verdict.className = "bad";
+      detail.textContent = message;
+    }
+
+    async function readResponseBounded(response) {
+      if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
+      const declared = Number(response.headers.get("content-length") || 0);
+      if (declared > MAX_INPUT_BYTES) throw new Error("bundle exceeds the 64 MiB browser limit");
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("browser cannot read this bundle safely");
+      const chunks = [];
+      let total = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.byteLength;
+        if (total > MAX_INPUT_BYTES) {
+          await reader.cancel();
+          throw new Error("bundle exceeds the 64 MiB browser limit");
+        }
+        chunks.push(value);
+      }
+      const bytes = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+      return bytes;
+    }
+
+    async function readFileBounded(f) {
+      if (!f || f.size > MAX_INPUT_BYTES) throw new Error("bundle exceeds the 64 MiB browser limit");
+      return new Uint8Array(await f.arrayBuffer());
+    }
+
     function show(text) {
       let bundle;
       try { bundle = JSON.parse(text); } catch { verdict.textContent = "not JSON"; verdict.className = "bad"; return; }
@@ -79,11 +120,26 @@
         return;
       }
       const r = verify_bundle_json(text);
-      verdict.textContent = "VERDICT: " + r;
-      verdict.className = r === "VERIFIED" ? "ok" : "bad";
-      detail.textContent = r === "VERIFIED"
-        ? "every receipt, proof, key-log entry and checkpoint checked — offline."
-        : "at least one check failed; this bundle is not trustworthy as presented.";
+      const manifestAbsent = bundle.export_manifest == null;
+      const passed = r === "VERIFIED" && !(requireManifest.checked && manifestAbsent);
+      verdict.textContent = "VERDICT: " + (passed ? "VERIFIED" : "NOT VERIFIED");
+      verdict.className = passed ? "ok" : "bad";
+      // This line is the whole claim a stranger reads, so it says what was
+      // actually computed and stops there. It used to read "every receipt,
+      // proof, key-log entry and checkpoint checked — offline.", which a reader
+      // takes as covering the anchor and timestamp too; nothing here queries a
+      // chain or a TSA, so those stay CLAIMS. The swarrm.ai copy of this page
+      // already said so and the appliance copy did not — a self-hosted
+      // deployment overclaiming relative to the public site (owner audit
+      // 2026-08-05). tests/test_verifier_page_claims.py pins the two together.
+      const completeness = manifestAbsent
+        ? " Export completeness is UNPROVEN: no signed export manifest."
+        : " Signed export manifest confirms the carried receipt set.";
+      detail.textContent = passed
+        ? "signed receipts, key-log replay, Merkle proofs and checkpoint chain checked — base E1 only; anchor and timestamp fields remain claims." + completeness
+        : requireManifest.checked && manifestAbsent
+          ? "this relying party requires a signed export manifest; this bundle makes no completeness claim."
+          : "at least one check failed; this bundle is not trustworthy as presented.";
     }
 
     async function handle(text) {
@@ -146,10 +202,16 @@
     }
 
     async function handleFile(f) {
-      const bytes = new Uint8Array(await f.arrayBuffer());
-      if (bytes[0] === 0x7b) return handle(new TextDecoder().decode(bytes)); // '{' → JSON bundle
-      return handleCertificate(bytes);
+      try {
+        const bytes = await readFileBounded(f);
+        if (bytes[0] === 0x7b) return handle(new TextDecoder().decode(bytes)); // '{' → JSON bundle
+        return handleCertificate(bytes);
+      } catch (e) {
+        rejectInput(String(e.message || e));
+      }
     }
+
+    requireManifest.onchange = () => { if (currentText) show(currentText); };
 
     flip.onclick = () => {
       if (!currentText) return;
@@ -168,7 +230,7 @@
     const q = new URLSearchParams(location.search).get("bundle");
     if (q) {
       detail.textContent = `fetching ${q} (from its host, not us) and verifying in your browser…`;
-      fetch(q).then((r) => r.text()).then(handle).catch((e) => {
+      fetch(q).then(readResponseBounded).then((bytes) => handle(new TextDecoder().decode(bytes))).catch((e) => {
         verdict.textContent = "could not fetch bundle";
         verdict.className = "bad";
         detail.textContent = String(e);

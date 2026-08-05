@@ -6,6 +6,8 @@
         "externally_grounded": true,
         "kind": "INSURER",
         "mandate_specific": true,
+        "party": "party-INSURER",
+        "signature": "tjFjl1kiBj5Kffxu8Su50BmCuBpWhR9TBcJ5V/BtSGw/3tEcYIWfV+Ssolva1pwaNw62CpTCM5Q0FpBp7XIyBQ==",
         "signed": true,
         "time_bounded": true,
         "value_bounded": true

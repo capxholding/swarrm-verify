@@ -142,6 +142,22 @@ mark and keeps expiry prospective. Entitlement state is not embedded in the
 statement, Receipt, checkpoint, or trust pack and is never read by offline
 verification; historical receipt validity is therefore unchanged by later
 commercial state.
+The retry exception is scoped to the exact durable `(tenant_id,
+covered_scope_digest, statement_digest)` registration tuple. The shared SCITT
+Merkle leaf remains deduplicated by `statement_digest`, but a first use of a
+known statement by a different tenant or covered scope is a new managed
+registration and MUST pass that tenant/scope's active `managed-scitt-v1`
+entitlement gate before the service records its tuple or returns a receipt. An
+entitlement for another `service_profile` MUST NOT authorize managed SCITT.
+Commercial entitlement commands are detached, canonical JSON facts signed by a
+dedicated commercial-admin key; tenant API credentials do not authorize them.
+Within each `(tenant_id, covered_scope_digest, service_profile)` timeline, a
+distinct command's signed `signed_at` value MUST be strictly later than every
+accepted command's canonical RFC 3339 UTC value. An exact replay of the same
+signed `command_id` is a no-op; a stale or equal-timestamp distinct command
+MUST be refused. This prevents a withheld pre-suspension command from
+reactivating a scope while leaving exact historical receipt recovery
+unaffected.
 For managed admission the header scope MUST equal the protected signed
 `evd_scope_digest` claim before the entitlement gate runs. The endpoint streams
 the body under the policy's 64 KiB ceiling; `Content-Length` and chunked bodies

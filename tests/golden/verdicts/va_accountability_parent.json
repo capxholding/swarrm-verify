@@ -6,6 +6,8 @@
         "externally_grounded": false,
         "kind": "PARENT",
         "mandate_specific": true,
+        "party": "party-PARENT",
+        "signature": "iPfTNwQnpSyRlsPipt0rXuKd66eJAKP7RRYoITHxqukiOSIWP4y2vcSFmmCyRqQh5e8Inwxib8z9LUeoCnSyBg==",
         "signed": true,
         "time_bounded": true,
         "value_bounded": true

@@ -23,10 +23,10 @@
 //! Cargo.lock. (verify-only: no private-key operations, so the `rsa` crate's
 //! Marvin decryption advisory RUSTSEC-2023-0071 does not apply.)
 //!
-//! Total function: this input is attacker-controlled, so malformed or
-//! hostile bytes return false — no unwrap/expect on any parse path. The
-//! `der` crate is strict DER where asn1crypto tolerates BER looseness
-//! (unsorted SET OF, trailing bytes); such tokens fail closed here.
+//! Total function: this input is attacker-controlled, so malformed or hostile
+//! bytes return false — no unwrap/expect on any parse path. The `der` crate is
+//! strict DER where asn1crypto tolerates BER looseness (unsorted SET OF,
+//! trailing bytes); such tokens fail closed here.
 
 use cms::cert::CertificateChoices;
 use cms::content_info::ContentInfo;
@@ -69,28 +69,22 @@ struct TstImprint {
 }
 
 fn hash_bytes(oid: &ObjectIdentifier, data: &[u8]) -> Option<Vec<u8>> {
-    if *oid == OID_SHA256 {
-        Some(Sha256::digest(data).to_vec())
-    } else if *oid == OID_SHA384 {
-        Some(Sha384::digest(data).to_vec())
-    } else if *oid == OID_SHA512 {
-        Some(Sha512::digest(data).to_vec())
-    } else {
-        None
+    match *oid {
+        OID_SHA256 => Some(Sha256::digest(data).to_vec()),
+        OID_SHA384 => Some(Sha384::digest(data).to_vec()),
+        OID_SHA512 => Some(Sha512::digest(data).to_vec()),
+        _ => None,
     }
 }
 
 /// Signature-algorithm OID -> hash OID, for the sanctioned families: ECDSA
 /// (P-256 / P-384) and RSASSA-PKCS1-v1_5. Any other family is None.
 fn sig_hash_oid(sig_alg: &ObjectIdentifier) -> Option<ObjectIdentifier> {
-    if *sig_alg == OID_ECDSA_SHA256 || *sig_alg == OID_SHA256_RSA {
-        Some(OID_SHA256)
-    } else if *sig_alg == OID_ECDSA_SHA384 || *sig_alg == OID_SHA384_RSA {
-        Some(OID_SHA384)
-    } else if *sig_alg == OID_ECDSA_SHA512 || *sig_alg == OID_SHA512_RSA {
-        Some(OID_SHA512)
-    } else {
-        None
+    match *sig_alg {
+        OID_ECDSA_SHA256 | OID_SHA256_RSA => Some(OID_SHA256),
+        OID_ECDSA_SHA384 | OID_SHA384_RSA => Some(OID_SHA384),
+        OID_ECDSA_SHA512 | OID_SHA512_RSA => Some(OID_SHA512),
+        _ => None,
     }
 }
 
@@ -102,18 +96,9 @@ fn sig_hash_oid(sig_alg: &ObjectIdentifier) -> Option<ObjectIdentifier> {
 /// (ecdsa-with-shaXXX, shaXXXWithRSA), else `digest_hint` (the separate digest
 /// algorithm). ECDSA backends truncate an over-long prehash to the field size
 /// (bits2field) as pyca does. Any unsupported key / curve / hash is false.
-fn verify_sig(
-    spki: &SubjectPublicKeyInfoOwned,
-    sig_alg: &ObjectIdentifier,
-    digest_hint: &ObjectIdentifier,
-    sig: &[u8],
-    data: &[u8],
-) -> bool {
+fn verify_sig(spki: &SubjectPublicKeyInfoOwned, sig_alg: &ObjectIdentifier, digest_hint: &ObjectIdentifier, sig: &[u8], data: &[u8]) -> bool {
     let hash_oid = sig_hash_oid(sig_alg).unwrap_or(*digest_hint);
-    let digest = match hash_bytes(&hash_oid, data) {
-        Some(d) => d,
-        None => return false,
-    };
+    let Some(digest) = hash_bytes(&hash_oid, data) else { return false };
     if spki.algorithm.oid == OID_RSA_ENCRYPTION {
         verify_rsa(spki, sig, &digest, &hash_oid)
     } else if spki.algorithm.oid == OID_EC_PUBLIC_KEY {
@@ -129,15 +114,8 @@ fn verify_ecdsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8]) -> 
     if spki.algorithm.oid != OID_EC_PUBLIC_KEY {
         return false;
     }
-    let curve = spki
-        .algorithm
-        .parameters
-        .as_ref()
-        .and_then(|p| p.decode_as::<ObjectIdentifier>().ok());
-    let key_bytes = match spki.subject_public_key.as_bytes() {
-        Some(b) => b,
-        None => return false,
-    };
+    let curve = spki.algorithm.parameters.as_ref().and_then(|p| p.decode_as::<ObjectIdentifier>().ok());
+    let Some(key_bytes) = spki.subject_public_key.as_bytes() else { return false };
     match curve {
         Some(c) if c == OID_PRIME256V1 => verify_p256(key_bytes, sig, digest),
         Some(c) if c == OID_SECP384R1 => verify_p384(key_bytes, sig, digest),
@@ -145,56 +123,38 @@ fn verify_ecdsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8]) -> 
     }
 }
 
-fn verify_p256(key_bytes: &[u8], sig_der: &[u8], digest: &[u8]) -> bool {
-    let vk = match p256::ecdsa::VerifyingKey::from_sec1_bytes(key_bytes) {
-        Ok(v) => v,
-        Err(_) => return false,
-    };
-    let sig = match p256::ecdsa::Signature::from_der(sig_der) {
-        Ok(s) => s,
-        Err(_) => return false,
-    };
-    vk.verify_prehash(digest, &sig).is_ok()
+// P-256 and P-384 differ only in concrete types; keep their parse/fail-closed
+// path in one place so supported curves cannot drift.
+macro_rules! verify_ecdsa_curve {
+    ($curve:ident, $key:expr, $sig:expr, $digest:expr) => {{
+        let Ok(key) = $curve::ecdsa::VerifyingKey::from_sec1_bytes($key) else { return false };
+        let Ok(sig) = $curve::ecdsa::Signature::from_der($sig) else { return false };
+        key.verify_prehash($digest, &sig).is_ok()
+    }};
 }
 
-fn verify_p384(key_bytes: &[u8], sig_der: &[u8], digest: &[u8]) -> bool {
-    let vk = match p384::ecdsa::VerifyingKey::from_sec1_bytes(key_bytes) {
-        Ok(v) => v,
-        Err(_) => return false,
-    };
-    let sig = match p384::ecdsa::Signature::from_der(sig_der) {
-        Ok(s) => s,
-        Err(_) => return false,
-    };
-    vk.verify_prehash(digest, &sig).is_ok()
+fn verify_p256(key: &[u8], sig: &[u8], digest: &[u8]) -> bool {
+    verify_ecdsa_curve!(p256, key, sig, digest)
+}
+fn verify_p384(key: &[u8], sig: &[u8], digest: &[u8]) -> bool {
+    verify_ecdsa_curve!(p384, key, sig, digest)
 }
 
 /// RSASSA-PKCS1-v1_5 with the SPKI's RSA key over the prehash `digest`.
-fn verify_rsa(
-    spki: &SubjectPublicKeyInfoOwned,
-    sig: &[u8],
-    digest: &[u8],
-    hash_oid: &ObjectIdentifier,
-) -> bool {
+fn verify_rsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8], hash_oid: &ObjectIdentifier) -> bool {
     if spki.algorithm.oid != OID_RSA_ENCRYPTION {
         return false;
     }
-    let key_bytes = match spki.subject_public_key.as_bytes() {
-        Some(b) => b,
-        None => return false,
-    };
+    let Some(key_bytes) = spki.subject_public_key.as_bytes() else { return false };
     let key = match RsaPublicKey::from_pkcs1_der(key_bytes) {
         Ok(k) => k,
         Err(_) => return false,
     };
-    let scheme = if *hash_oid == OID_SHA256 {
-        Pkcs1v15Sign::new::<Sha256>()
-    } else if *hash_oid == OID_SHA384 {
-        Pkcs1v15Sign::new::<Sha384>()
-    } else if *hash_oid == OID_SHA512 {
-        Pkcs1v15Sign::new::<Sha512>()
-    } else {
-        return false;
+    let scheme = match *hash_oid {
+        OID_SHA256 => Pkcs1v15Sign::new::<Sha256>(),
+        OID_SHA384 => Pkcs1v15Sign::new::<Sha384>(),
+        OID_SHA512 => Pkcs1v15Sign::new::<Sha512>(),
+        _ => return false,
     };
     key.verify(scheme, digest, sig).is_ok()
 }
@@ -239,30 +199,17 @@ fn parse_token(token_der: &[u8]) -> Option<(SignedData, Vec<u8>, TstImprint)> {
     }
     // eContent is [0] EXPLICIT — the Any holds the OCTET STRING around the
     // raw TSTInfo DER, mirroring Python's `econtent.contents`
-    let tst_der = sd
-        .encap_content_info
-        .econtent
-        .as_ref()?
-        .decode_as::<OctetStringRef>()
-        .ok()?
-        .as_bytes()
-        .to_vec();
+    let tst_der = sd.encap_content_info.econtent.as_ref()?.decode_as::<OctetStringRef>().ok()?.as_bytes().to_vec();
     let info = parse_tst_info(&tst_der)?;
     Some((sd, tst_der, info))
 }
 
 fn message_digest_matches(signed_attrs: &Attributes, want: &[u8]) -> bool {
-    let md: Vec<_> = signed_attrs
-        .iter()
-        .filter(|a| a.oid == OID_MESSAGE_DIGEST)
-        .collect();
+    let md: Vec<_> = signed_attrs.iter().filter(|a| a.oid == OID_MESSAGE_DIGEST).collect();
     if md.len() != 1 {
         return false;
     }
-    let value = match md[0].values.iter().next() {
-        Some(v) => v,
-        None => return false,
-    };
+    let Some(value) = md[0].values.iter().next() else { return false };
     match value.decode_as::<OctetStringRef>() {
         Ok(o) => o.as_bytes() == want,
         Err(_) => false,
@@ -274,10 +221,9 @@ fn message_digest_matches(signed_attrs: &Attributes, want: &[u8]) -> bool {
 /// the sig alg, or the digest algorithm for the bare rsaEncryption OID).
 fn check_signer_info<'a>(sd: &'a SignedData, tst_der: &[u8]) -> Option<&'a SignerInfo> {
     let mut infos = sd.signer_infos.0.iter();
-    let si = match (infos.next(), infos.next()) {
-        (Some(si), None) => si, // exactly 1 SignerInfo
-        _ => return None,
-    };
+    let (Some(si), None) = (infos.next(), infos.next()) else {
+        return None;
+    }; // exactly one
     let signed_attrs = si.signed_attrs.as_ref()?;
     if signed_attrs.is_empty() {
         return None; // RFC 3161 requires signed attributes
@@ -290,16 +236,11 @@ fn check_signer_info<'a>(sd: &'a SignedData, tst_der: &[u8]) -> Option<&'a Signe
 }
 
 fn find_signer_cert<'a>(sd: &'a SignedData, si: &SignerInfo) -> Option<&'a Certificate> {
-    let ias = match &si.sid {
-        SignerIdentifier::IssuerAndSerialNumber(i) => i,
-        SignerIdentifier::SubjectKeyIdentifier(_) => return None,
-    };
+    let SignerIdentifier::IssuerAndSerialNumber(ias) = &si.sid else { return None };
     let want_issuer = ias.issuer.to_der().ok()?;
     for choice in sd.certificates.as_ref()?.0.iter() {
         if let CertificateChoices::Certificate(cert) = choice {
-            if cert.tbs_certificate.serial_number == ias.serial_number
-                && cert.tbs_certificate.issuer.to_der().ok()? == want_issuer
-            {
+            if cert.tbs_certificate.serial_number == ias.serial_number && cert.tbs_certificate.issuer.to_der().ok()? == want_issuer {
                 return Some(cert);
             }
         }
@@ -308,17 +249,8 @@ fn find_signer_cert<'a>(sd: &'a SignedData, si: &SignerInfo) -> Option<&'a Certi
 }
 
 fn cert_sig_valid(current: &Certificate, issuer: &Certificate, tbs_der: &[u8]) -> bool {
-    let sig = match current.signature.as_bytes() {
-        Some(s) => s,
-        None => return false,
-    };
-    verify_sig(
-        &issuer.tbs_certificate.subject_public_key_info,
-        &current.signature_algorithm.oid,
-        &current.signature_algorithm.oid,
-        sig,
-        tbs_der,
-    )
+    let Some(sig) = current.signature.as_bytes() else { return false };
+    verify_sig(&issuer.tbs_certificate.subject_public_key_info, &current.signature_algorithm.oid, &current.signature_algorithm.oid, sig, tbs_der)
 }
 
 /// Chains the signer cert to a pinned self-signed root (`_verify_chain`).
@@ -337,10 +269,7 @@ fn verify_chain(signer: &Certificate, cert_chain_pem: &str) -> bool {
         if !seen.insert(tbs.clone()) {
             return false; // certificate chain contains a loop
         }
-        let issuer = match pinned
-            .iter()
-            .find(|c| c.tbs_certificate.subject == current.tbs_certificate.issuer)
-        {
+        let issuer = match pinned.iter().find(|c| c.tbs_certificate.subject == current.tbs_certificate.issuer) {
             Some(c) => c,
             None => return false, // does not chain to the pinned TSA root
         };
@@ -366,45 +295,39 @@ fn gen_time_in_validity(gen_time: &GeneralizedTime, cert: &Certificate) -> bool 
 /// extraction are a Python-report concern). Signatures verify under ECDSA
 /// P-256/P-384 and RSASSA-PKCS1-v1_5. Malformed or hostile input is false,
 /// never a panic.
-pub fn verify_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> bool {
-    let (sd, tst_der, tst) = match parse_token(token_der) {
-        Some(t) => t,
-        None => return false,
-    };
+fn verified_gen_time(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> Option<GeneralizedTime> {
+    let (sd, tst_der, tst) = parse_token(token_der)?;
     // 2. message imprint: SHA-256 over exactly the expected digest (string
     // compare on lowercase hex, exactly like the Python verifier)
     if tst.alg != OID_SHA256 || crate::hex(&tst.digest) != expected_digest_hex {
-        return false;
+        return None;
     }
     // 3. signer info + message-digest attribute
-    let si = match check_signer_info(&sd, &tst_der) {
-        Some(t) => t,
-        None => return false,
-    };
-    let signer = match find_signer_cert(&sd, si) {
-        Some(c) => c,
-        None => return false,
-    };
+    let si = check_signer_info(&sd, &tst_der)?;
+    let signer = find_signer_cert(&sd, si)?;
     // 4. signature over the signed attributes (re-encoded as DER SET OF —
     // Python's `signed_attrs.untag().dump()`)
-    let attrs_der = match si.signed_attrs.as_ref().and_then(|a| a.to_der().ok()) {
-        Some(a) => a,
-        None => return false,
-    };
+    let attrs_der = si.signed_attrs.as_ref().and_then(|a| a.to_der().ok())?;
     let spki = &signer.tbs_certificate.subject_public_key_info;
-    if !verify_sig(
-        spki,
-        &si.signature_algorithm.oid,
-        &si.digest_alg.oid,
-        si.signature.as_bytes(),
-        &attrs_der,
-    ) {
-        return false;
+    if !verify_sig(spki, &si.signature_algorithm.oid, &si.digest_alg.oid, si.signature.as_bytes(), &attrs_der) {
+        return None;
     }
     // 5. chain to a pinned self-signed root
     if !verify_chain(signer, cert_chain_pem) {
-        return false;
+        return None;
     }
     // 6. genTime within the signer certificate's validity window
-    gen_time_in_validity(&tst.gen_time, signer)
+    gen_time_in_validity(&tst.gen_time, signer).then_some(tst.gen_time)
+}
+
+/// Verify an RFC 3161 token and return its verifier-derived RFC 3339 genTime.
+/// The displayed record time must equal this value before it may carry temporal
+/// authority; accepting a structurally bound token without this check would let
+/// a caller choose its own clock.
+pub fn verify_tst_gen_time(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> Option<String> {
+    verified_gen_time(token_der, expected_digest_hex, cert_chain_pem).map(|time| time.to_date_time().to_string())
+}
+
+pub fn verify_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> bool {
+    verified_gen_time(token_der, expected_digest_hex, cert_chain_pem).is_some()
 }
