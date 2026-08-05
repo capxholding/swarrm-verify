@@ -66,13 +66,54 @@ a practitioner. Unique link + final event + no material disagreement →
 `CORROBORATED`; unique link + non-final event → `CLAIM_ONLY` (pending
 finality); event with no claim → `ORPHAN`.
 
+**The floor (NORMATIVE).** A manifest's per-class `material_fields` EXTEND
+the comparison; they can never retract it. The floor is
+`{value, currency, counterparty}` — the implemented subset of the list
+above — and a verifier MUST compare the floor union the manifest's named
+fields, whatever the manifest says or omits. A manifest naming a narrower
+set, an absent `material_fields`, or an action class relabelled so the
+lookup misses, all recompute the floor.
+
+**Order-free, and MISMATCH dominates (NORMATIVE).** Every effective field is
+evaluated before the outcome is decided. A verifier MUST NOT return on the
+first field one side is missing: a producer-inserted one-sided field would
+otherwise mask a real disagreement behind an earlier `UNCOMPARABLE`, which
+is exactly the softening this section forbids.
+
+**Undeclared fields (NORMATIVE).** A disagreement on a field carried by both
+the claim and the source event, which is neither declared in the
+verified-action-v1 types nor named by the manifest, makes the pair
+`UNCOMPARABLE` — never `CORROBORATED`, because such a field is material by
+construction in a Node build, and never `CONTRADICTED`, because a bare name
+collision between two independently authored vocabularies is not proof of a
+lie and this outcome is terminal.
+
 ## 6. Coverage (per bounded period; the batch is the unit)
 
 The `evd/coverage-manifest/v1` document commits, per source and period:
 cursor start/end, filter digest, declared count, ordered event-key root,
 finality watermark, gaps, exclusions, the agent population (claim set) and
 the orphan set. It is receipted under `_node` (context: period bounds,
-counts, roots; commitment: the canonical document).
+counts, roots, `coverage_doc_digest`; commitment: the canonical document).
+
+**Binding the comparison conventions (NORMATIVE, verifier side).** When a
+certificate's embedded bundle carries an `evd.coverage.recorded` receipt, the
+carried `coverage_doc` MUST be the document that receipt signed:
+`sha256_hex(canonical_bytes(coverage_doc))` MUST equal a signed
+`context.coverage_doc_digest`. That single equality binds the whole mapping
+convention block — `correlation_field`, `unique_fields`, `finality_rule`,
+`material_fields` — none of which is otherwise echoed or cross-checked.
+Absence of the receipt is not a failure: bundles that carry none are
+verified with the conventions unbound, and the residual is stated in
+certificate-v1 §7.
+
+> OPEN (producer side, 2026-08-05). Today `build_coverage` emits NONE of the
+> four conventions into the document it digests, and `compile_certificate`
+> does not embed the coverage receipt in the bundle it carries. Until both
+> land, the binding above is inert in production and the §4.4 material
+> recomputation reads a member the real Node has never written. Closing this
+> is a coordinated producer-side change, recorded here so the gap is visible
+> rather than implied.
 Engine inputs are built honestly from Node state:
 - gap-class findings (`cursor_gap`, `cursor_rollback`, `cursor_reuse`,
   `count_mismatch`, `event_root_mismatch`, `mapping_substituted`) each

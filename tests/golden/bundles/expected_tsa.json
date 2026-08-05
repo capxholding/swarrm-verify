@@ -14,6 +14,13 @@
     "rust": true,
     "token": "tsa_p256_valid.der"
   },
+  "tsa_rsa_bare": {
+    "chain": "tsa_rsa_bare_chain.pem",
+    "digest": "fda881c6b59b5733de08332df8bbad61df42c77b58a0eca13d0195e9e2d2f093",
+    "python": true,
+    "rust": true,
+    "token": "tsa_rsa_bare.der"
+  },
   "tsa_tampered": {
     "chain": "tsa_chain.pem",
     "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
@@ -27,13 +34,6 @@
     "python": true,
     "rust": true,
     "token": "tsa_valid.der"
-  },
-  "tsa_rsa_bare": {
-    "chain": "tsa_rsa_bare_chain.pem",
-    "digest": "fda881c6b59b5733de08332df8bbad61df42c77b58a0eca13d0195e9e2d2f093",
-    "python": true,
-    "rust": true,
-    "token": "tsa_rsa_bare.der"
   },
   "tsa_wrong_imprint": {
     "chain": "tsa_chain.pem",

@@ -43,6 +43,12 @@ One shared pool contributes the **largest EUR-equivalent authority** of its
 member grants, so permuting the declaration list cannot change the band.
 Overlap asserted but unevidenced renders the aggregate `UNKNOWN`.
 
+The v1 implementation is deliberately stricter than a claim of evidence: a
+free-form `shared_pool` label is **not** the signed shared-limit object above.
+Until a published verifier can authenticate that object and bind both grants to
+it, every shared-pool claim yields `INDETERMINATE` → `NO_REGISTRATION`; it may
+not reduce the aggregate.
+
 ## 3. Currency / FX
 
 Every grant declares its currency. Banding converts at the **ECB euro
@@ -64,6 +70,17 @@ ceilings. Each decimal input is bounded to 128 coefficient digits and an
 absolute base-10 exponent of 128; a larger representation is out of profile
 and yields `INDETERMINATE` rather than allocating input-sized arithmetic
 precision.
+
+The v1 implementation does not yet independently verify an ECB publication or
+an audited-rate document. A self-declared rate, source and date are therefore
+insufficient: non-EUR declarations currently yield `INDETERMINATE` →
+`NO_REGISTRATION` until that verification profile ships. This is intentional;
+it forbids a fabricated low rate from down-banding a scope.
+
+The managed v1 entitlement gate applies the same rule to its opaque commercial
+fact: a command carrying non-empty FX metadata is rejected rather than treating
+the self-declared rate as an auditable exception. It can be enabled only with a
+published, independently verified FX profile.
 
 ## 4. Criticality enum (PUBLISHED, derived, never judged)
 
@@ -88,10 +105,11 @@ this model eliminates.
 | D | ≤€25B | — | €1.5M |
 | Strategic | above D — **explicitly purchased only, never algorithmically selected** | — | €3M+ |
 
-Criticality is a coarse FLOOR that tops out at C. Missing or unresolvable
-required declarations yield `INDETERMINATE` → `NO_REGISTRATION` (never the
-Strategic band — an algorithm that can invoice €3M for a blank field is a
-liability). Strategic is reachable only by explicit purchase.
+Criticality is a coarse FLOOR that tops out at C. Missing, empty or
+unresolvable declaration **or criticality** inputs yield `INDETERMINATE` →
+`NO_REGISTRATION` (never the Strategic band — an algorithm that can invoice
+€3M for a blank field is a liability). Strategic is reachable only by explicit
+purchase.
 
 ## 6. Self-enforcement (scope-qualified)
 
@@ -108,7 +126,9 @@ band customer-side. The commercial plane receives only `{band, input_commitment,
 attestation}`. Independent attestation of the calculation is **mandatory at
 Band C+ and wherever the criticality floor is
 `IRREVERSIBLE_EXTERNAL_VALUE_TRANSFER` / `SAFETY_OR_LEGALLY_HIGH_RISK`;
-optional below**. The commercial plane is structurally incapable of leaking or
+optional below**. An active C+ entitlement must carry a content-addressed
+`sha256:<digest>` reference to that attestation; a non-empty label is not an
+attestation. The commercial plane is structurally incapable of leaking or
 being subpoenaed for customer transaction data — it never holds any.
 
 ## 8. Neutrality (non-negotiable)

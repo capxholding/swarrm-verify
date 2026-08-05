@@ -1,0 +1,94 @@
+{
+  "checkpoint_chain": [
+    {
+      "checkpoint": {
+        "body": {
+          "origin": "evd://tenant/t_golden",
+          "prev_hash": "",
+          "root_hash": "0e0883759ec7b4d144877e683c1969960809bcdebf9ab876dff940ec6fe3eef3",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 4,
+          "ts": "2026-08-05T13:53:25.299954Z"
+        },
+        "kid": "Vkdap1RjR0wChd9d",
+        "sig": "DQbSmuNa493emJM6WrevPo5gEkq+oFwENOKGDQIW2NrF0THP57Dc8dhgSrmjJ4lhrRxX4U8KKxLieswlsY81AA=="
+      }
+    }
+  ],
+  "entries": [
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MX0sImlkZW1wb3RlbmN5X2tleSI6ImlkZW0tMSIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "ffXbabAuIGCDkQXTrrWuK+dGGlWf8AfXwJgwSt5dXQ+FXL/vZ8n4BnUnGiJ/DlwghM+YBh6nvuR0KmbM39oRCw=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "d92759a1046f6fbcb84d914d247624c9c590605c11b837de556cd132723cd826",
+        "aa69d71157f4b7a84eec2b28f89f25c3a6742cd5b9b83236d757ec2a47cfe3ec"
+      ],
+      "leaf_index": 2
+    },
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTA4LTA1VDEzOjUzOjI1LjI5ODM4MFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTA4LTA1VDEzOjUzOjI1LjI5ODUxMloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTA4LTA1VDEzOjUzOjI1LjI5ODUxMloifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "cvcIyQNIaVRcmzY+/w0fX46iw29sekwNv718/PVoVOrWD3yrFxzNR2OAbbotiBMsJ8kUBnSPM9I9QdhU+bAFBA=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "1398368dff8cab0a44c523451bed320505c5a2f5ab884025ee9214a8e09ad6c7",
+        "90e508747a7cb42d63bd6d644c2621cebca0d46cf4eaa4123bc3bec6fe8818b0"
+      ],
+      "leaf_index": 0
+    }
+  ],
+  "export_manifest": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "receipt_hashes": [
+        "86cf831c2ff9cf13523aa62919775c6f6553c91b15092b09db2eb118873b495e",
+        "bd9beba815f2cca6031fa52175e9d00683aad6a552df8d2e571037e233bf152b"
+      ],
+      "schema": "evd/export-manifest/v1",
+      "target_checkpoint_hash": "65ab651b7fab6eb98abe5cb7f8b99cb271b8567e7590dd52455e66cd4d7fc2a0",
+      "ts": "not-a-timestamp"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "QcUFxSaWeQoWLwkcuQJlz3+Aw36EZgh+Z+GcicxvM6M0mgFyUYEyfif7djAxPig9LBcTMyRq9fVFngqrRkTMCA=="
+  },
+  "jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "Vkdap1RjR0wChd9d",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+      }
+    ]
+  },
+  "origin": "evd://tenant/t_golden",
+  "schema": "evd/bundle/v1",
+  "target_checkpoint": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "prev_hash": "",
+      "root_hash": "0e0883759ec7b4d144877e683c1969960809bcdebf9ab876dff940ec6fe3eef3",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 4,
+      "ts": "2026-08-05T13:53:25.299954Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "DQbSmuNa493emJM6WrevPo5gEkq+oFwENOKGDQIW2NrF0THP57Dc8dhgSrmjJ4lhrRxX4U8KKxLieswlsY81AA=="
+  }
+}

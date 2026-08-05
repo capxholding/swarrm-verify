@@ -240,6 +240,12 @@ VerdictInput = {
     ? operator_entity: text,
   },
   ? claim: AgentActionClaim,
+  ; A member that STEERS a CONTRADICTED verdict must be in the frozen schema.
+  ; node/reconcile.py writes this in production and the engine consumes it, but
+  ; it rode in undeclared through the certificate's `verdict_input: {* text =>
+  ; any}` — so a producer could name a narrower list than the reconcile-v1 §5
+  ; floor. Declared here; the floor rule in §5 is what bounds it.
+  ? source_manifest: { material_fields: [* text] },
   ? events: [* SourceEvent],
   ? event_matches: [* { event_key: text, echoed_action_id: bool,
       immutable_ref_match: bool, unique_field_match: bool, final: bool,

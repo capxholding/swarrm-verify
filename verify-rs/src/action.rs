@@ -12,36 +12,18 @@ use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{
-    body_of, checkpoint_body_hash, ed25519_verify, hex, jcs, key_from_jwk, receipt_hash_hex,
-    replay_key_log, sha256, verify_bundle,
-};
+use crate::{body_of, checkpoint_body_hash, ed25519_verify, hex, jcs, key_from_jwk, receipt_hash_hex, replay_key_log, sha256, verify_bundle};
 
 const ID_VALS: [&str; 3] = ["VERIFIED", "NOT_VERIFIED", "CONFLICT"];
 const INTENT_VALS: [&str; 3] = ["RECORDED", "NOT_RECORDED", "CONFLICT"];
 const KP_METHODS: [&str; 3] = ["DOMAIN_CONTROL", "TRUST_LIST", "EXTERNAL_CA"];
 const NODE_BASES: [&str; 3] = ["HARDWARE_ATTESTED", "INDEPENDENTLY_ATTESTED", "LOG_WITNESSED_SOFTWARE"];
-const LEGAL: [&str; 5] =
-    ["source_registry", "registry_id", "ultimate_controller", "retrieved_at", "retrieval_proof"];
-const POP: [&str; 8] = [
-    "dense_seq_range", "tree_size", "checkpoint_ref", "consistency_proof_ref", "query_descriptor",
-    "result_root", "count", "signature",
-];
-const GATED: [&str; 11] = [
-    "identity", "authority", "intent", "integrity", "linkage", "outcome", "coverage",
-    "coverage_basis", "temporal_binding", "fork_findings", "scitt_receipt",
-];
-const INTENT_CTX: [&str; 6] =
-    ["action_id", "action_class", "grant_id", "grant_version", "binding_id", "policy_version"];
+const LEGAL: [&str; 5] = ["source_registry", "registry_id", "ultimate_controller", "retrieved_at", "retrieval_proof"];
+const POP: [&str; 8] = ["dense_seq_range", "tree_size", "checkpoint_ref", "consistency_proof_ref", "query_descriptor", "result_root", "count", "signature"];
+const GATED: [&str; 11] = ["identity", "authority", "intent", "integrity", "linkage", "outcome", "coverage", "coverage_basis", "temporal_binding", "fork_findings", "scitt_receipt"];
+const INTENT_CTX: [&str; 6] = ["action_id", "action_class", "grant_id", "grant_version", "binding_id", "policy_version"];
 const EST_TYPES: [&str; 2] = ["lineage.born", "lineage.adopted"];
-const ELIGIBLE_EXACT: [(&str, &str); 6] = [
-    ("identity", "VERIFIED"),
-    ("authority", "VERIFIED"),
-    ("intent", "RECORDED"),
-    ("integrity", "VALID"),
-    ("outcome", "CORROBORATED"),
-    ("coverage", "CLOSED"),
-];
+const ELIGIBLE_EXACT: [(&str, &str); 6] = [("identity", "VERIFIED"), ("authority", "VERIFIED"), ("intent", "RECORDED"), ("integrity", "VALID"), ("outcome", "CORROBORATED"), ("coverage", "CLOSED")];
 
 // ---------------------------------------------------------------- utilities
 
@@ -66,8 +48,9 @@ fn g(v: &Value, k: &str) -> Value {
     v.get(k).cloned().unwrap_or(Value::Null)
 }
 
-/// Python truthiness of an optional JSON value.
-fn truthy(v: Option<&Value>) -> bool {
+/// Python truthiness of an optional JSON value. Shared with the certificate
+/// layer, which needs the same rule for `verdict_input`'s Python `or []`.
+pub(crate) fn truthy(v: Option<&Value>) -> bool {
     match v {
         None | Some(Value::Null) => false,
         Some(Value::Bool(b)) => *b,
@@ -85,7 +68,7 @@ fn nonempty(v: &Value, k: &str) -> bool {
 /// Normalize "YYYY-MM-DDTHH:MM:SS[.frac]Z" — fraction padded to 6 digits so
 /// normalized values compare lexicographically; None if malformed. ASCII-only,
 /// so byte length/index here mean the same thing as Python's codepoint tests.
-fn nts(t: &Value) -> Option<String> {
+pub(crate) fn nts(t: &Value) -> Option<String> {
     let t = t.as_str()?;
     if !t.is_ascii() || t.len() < 20 || !t.ends_with('Z') || t.as_bytes().get(10) != Some(&b'T') {
         return None;
@@ -96,9 +79,7 @@ fn nts(t: &Value) -> Option<String> {
         return None;
     }
     let b = whole.as_bytes();
-    if [b[4], b[7], b[10], b[13], b[16]] != [b'-', b'-', b'T', b':', b':']
-        || b.iter().enumerate().any(|(i, c)| ![4, 7, 10, 13, 16].contains(&i) && !c.is_ascii_digit())
-    {
+    if [b[4], b[7], b[10], b[13], b[16]] != [b'-', b'-', b'T', b':', b':'] || b.iter().enumerate().any(|(i, c)| ![4, 7, 10, 13, 16].contains(&i) && !c.is_ascii_digit()) {
         return None;
     }
     let number = |a, z| whole[a..z].parse::<u32>().ok();
@@ -148,8 +129,7 @@ fn py_repr(v: &Value) -> String {
             format!("[{}]", a.iter().map(py_repr).collect::<Vec<_>>().join(", "))
         }
         Value::Object(m) => {
-            let body: Vec<String> =
-                m.iter().map(|(k, x)| format!("'{}': {}", k, py_repr(x))).collect();
+            let body: Vec<String> = m.iter().map(|(k, x)| format!("'{}': {}", k, py_repr(x))).collect();
             format!("{{{}}}", body.join(", "))
         }
     }
@@ -235,9 +215,7 @@ fn source_signature(vi: &Value, trust: Option<&Value>) -> Result<&'static str, R
             continue;
         }
         let kid = s(&p, "key_identity");
-        if asym_pre_bound(&p, &kids)?
-            && crate::trust::verified(trust, "source_keys", kid, "source-proof", &p)
-        {
+        if asym_pre_bound(&p, &kids)? && crate::trust::verified(trust, "source_keys", kid, "source-proof", &p) {
             return Ok("ASYMMETRIC");
         }
         if s(&p, "proof_type") == Some("mac") {
@@ -265,23 +243,12 @@ fn control_domain(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Rai
     let decls = iter_items(vi.get("control_declarations"))?;
     let mut admits = decls.iter().any(|d| d.get("claims_overlap") == Some(&Value::Bool(true)));
     admits = admits || s(&ev, "claimed_control_domain") == Some("OVERLAPPING");
-    let grounded = if ev.as_object().map(|m| !m.is_empty()).unwrap_or(false) {
-        grounded_controllers(&ev)
-    } else {
-        None
-    };
+    let grounded = if ev.as_object().map(|m| !m.is_empty()).unwrap_or(false) { grounded_controllers(&ev) } else { None };
     let shared = matches!(&grounded, Some((a, b)) if a == b);
     // An admission of overlap is against interest -> believed without proof.
     // INDEPENDENT is favourable -> the evaluator signature must verify.
-    let evaluator_ok =
-        crate::trust::verified(trust, "evaluator_keys", s(&ev, "evaluator"), "control-evidence", &ev);
-    Ok(tri(
-        admits || shared,
-        "OVERLAPPING",
-        grounded.is_some() && evaluator_ok,
-        "INDEPENDENT",
-        "UNKNOWN",
-    ))
+    let evaluator_ok = crate::trust::verified(trust, "evaluator_keys", s(&ev, "evaluator"), "control-evidence", &ev);
+    Ok(tri(admits || shared, "OVERLAPPING", grounded.is_some() && evaluator_ok, "INDEPENDENT", "UNKNOWN"))
 }
 
 /// True iff the signed scan statement is ABOUT this verdict input's batch.
@@ -301,38 +268,30 @@ fn scan_binds_batch(vi: &Value, scan: &Value) -> bool {
 fn node_dims(vi: &Value, trust: Option<&Value>) -> (&'static str, &'static str, &'static str) {
     let scan = g(vi, "scan");
     let att = g(vi, "node_attestation");
-    let observed = flag(&scan, "performed")
-        && flag(&scan, "authenticated_read")
-        && scan_binds_batch(vi, &scan)
-        && crate::trust::verified(trust, "node_keys", s(&scan, "node_id"), "node-scan", &scan);
-    let att_ok = crate::trust::verified(trust, "node_roots", s(&att, "attestor"), "node-attestation", &att)
-        && s(&att, "state") == Some("ISSUED")
-        && s(&att, "method").map(|m| NODE_BASES.contains(&m)).unwrap_or(false)
-        && nts(&g(&att, "valid_from")).is_some()
-        && nts(&g(&att, "valid_to")).is_some();
+    let observed = flag(&scan, "performed") && flag(&scan, "authenticated_read") && scan_binds_batch(vi, &scan) && crate::trust::verified(trust, "node_keys", s(&scan, "node_id"), "node-scan", &scan);
+    let att_ok = crate::trust::verified(trust, "node_roots", s(&att, "attestor"), "node-attestation", &att) && s(&att, "state") == Some("ISSUED") && s(&att, "method").map(|m| NODE_BASES.contains(&m)).unwrap_or(false) && nts(&g(&att, "valid_from")).is_some() && nts(&g(&att, "valid_to")).is_some();
     let basis = match s(&att, "method") {
         Some("HARDWARE_ATTESTED") if att_ok => "HARDWARE_ATTESTED",
         Some("INDEPENDENTLY_ATTESTED") if att_ok => "INDEPENDENTLY_ATTESTED",
         _ => "LOG_WITNESSED_SOFTWARE",
     };
-    let client = tri(flag(vi, "client_attestation_present"), "ATTESTED", false, "", "NONE");
+    // ATTESTED used to come from the boolean alone, with no attestation
+    // artifact anywhere — the same declaration-vs-proof mistake `node_signed`
+    // made one line up. It is only worth the word if the Node signed what it saw.
+    let client = tri(flag(vi, "client_attestation_present") && observed, "ATTESTED", false, "", "NONE");
     (tri(observed, "OBSERVED", false, "", "NOT_OBSERVED"), client, basis)
 }
 
 fn full_scan(scan: &Value, observed: bool) -> bool {
-    flag(scan, "performed") && flag(scan, "complete")
-        && flag(scan, "cursor_gap_free") && observed
+    flag(scan, "performed") && flag(scan, "complete") && flag(scan, "cursor_gap_free") && observed
 }
 
-fn coverage(
-    vi: &Value, node_basis: &str, node_observed: bool, trust: Option<&Value>,
-) -> (&'static str, &'static str) {
+fn coverage(vi: &Value, node_basis: &str, node_observed: bool, trust: Option<&Value>) -> (&'static str, &'static str) {
     let batch = g(vi, "batch");
     let scan = g(vi, "scan");
     let pp = g(&batch, "population_proof");
     let full_scan = full_scan(&scan, node_observed);
-    let pp_ok = flag(&pp, "source_scope_defined")
-        && crate::trust::verified(trust, "population_keys", s(&pp, "source_id"), "population-proof", &pp);
+    let pp_ok = flag(&pp, "source_scope_defined") && crate::trust::verified(trust, "population_keys", s(&pp, "source_id"), "population-proof", &pp);
     let basis = if pp_ok {
         "SOURCE_PROVEN_POPULATION" // the source proves a scope IT defines
     } else if full_scan && node_basis == "HARDWARE_ATTESTED" {
@@ -341,8 +300,7 @@ fn coverage(
         "INSUFFICIENT"
     };
     let mut gapped = nonempty(&batch, "gaps") || flag(vi, "fork_findings_open");
-    gapped = gapped
-        || (flag(&scan, "performed") && scan.get("cursor_gap_free") == Some(&Value::Bool(false)));
+    gapped = gapped || (flag(&scan, "performed") && scan.get("cursor_gap_free") == Some(&Value::Bool(false)));
     gapped = gapped || has_open_finding(vi); // an open finding contradicts CLOSED
     if gapped {
         return ("GAPPED", basis);
@@ -352,36 +310,46 @@ fn coverage(
 
 fn match_candidates(vi: &Value) -> Result<Vec<Value>, Raise> {
     let keys = ["echoed_action_id", "immutable_ref_match", "unique_field_match"];
-    Ok(iter_items(vi.get("event_matches"))?
-        .into_iter()
-        .filter(|m| m.is_object() && keys.iter().any(|k| flag(m, k)))
-        .collect())
+    Ok(iter_items(vi.get("event_matches"))?.into_iter().filter(|m| m.is_object() && keys.iter().any(|k| flag(m, k))).collect())
 }
 
 /// Any unresolved finding contradicts a claim of complete coverage.
+///
+/// A container this cannot read is NOT an absence of findings; it is a
+/// coverage question it cannot answer, and the weaker answer is `open`. The
+/// same OPEN CRITICAL finding reached CLOSED/ELIGIBLE as a keyed map, as a
+/// nested list, and as a JSON string (owner audit 2026-08-05).
 fn has_open_finding(vi: &Value) -> bool {
-    let Some(items) = vi.get("findings").and_then(|f| f.as_array()) else { return false };
-    items.iter().any(|f| {
-        f.is_object()
-            && !matches!(
-                s(f, "state").unwrap_or("OPEN").to_ascii_uppercase().as_str(),
-                "RESOLVED" | "CLOSED" | "DISMISSED"
-            )
-    })
+    let Some(field) = vi.get("findings").filter(|f| !f.is_null()) else { return false };
+    let Some(items) = field.as_array() else { return true };
+    items.iter().any(|f| !f.is_object() || !matches!(s(f, "state").unwrap_or("OPEN").to_ascii_uppercase().as_str(), "RESOLVED" | "CLOSED" | "DISMISSED"))
 }
 
-/// Material fields compared claim-against-event. Named per action class in the
-/// SourceManifest; NEVER chosen at comparison time.
-const DEFAULT_MATERIAL_FIELDS: [&str; 3] = ["value", "currency", "counterparty"];
+/// The NORMATIVE material floor (SPEC/reconcile-v1.md §5). A producer-named
+/// list EXTENDS it and may never retract it: on the shipped lying-agent fixture
+/// (tests/golden/reconcile/lying_agent_value_flip.json, claim 999999.99 vs
+/// event 380.99) one added key — source_manifest.material_fields=["currency"] —
+/// REPLACED the trio and flipped both engines CONTRADICTED → CORROBORATED.
+/// Spelling and order are pinned to verify/action.py::MATERIAL_FLOOR.
+pub(crate) const MATERIAL_FLOOR: [&str; 3] = ["value", "currency", "counterparty"];
 
+/// The declared members of AgentActionClaim and SourceEvent
+/// (SPEC/cddl/verified-action-v1.cddl) minus the floor — the names a
+/// disagreement proves nothing about. `schema` is here because it disagrees on
+/// every HONEST pair ("evd/claim/v1" vs "evd/source-event/v1"), so comparing it
+/// would flag all nine golden families.
+const STRUCTURAL_FIELDS: [&str; 13] = ["action_class", "action_id", "context_commitment", "event_key", "external_ref", "finality", "inputs_commitment", "outcome", "proof_digests", "reference", "schema", "source_effect_time", "source_identity_ref"];
+
+/// The floor, then the producer's additions in the producer's own order.
 fn material_fields(vi: &Value) -> Vec<String> {
-    match g(vi, "source_manifest").get("material_fields").and_then(|f| f.as_array()) {
-        Some(a) if !a.is_empty() => a
-            .iter()
-            .map(|f| f.as_str().map(str::to_string).unwrap_or_else(|| f.to_string()))
-            .collect(),
-        _ => DEFAULT_MATERIAL_FIELDS.iter().map(|f| f.to_string()).collect(),
+    let mut fields: Vec<String> = MATERIAL_FLOOR.iter().map(|f| f.to_string()).collect();
+    for f in arr(&g(vi, "source_manifest"), "material_fields") {
+        let name = f.as_str().map(str::to_string).unwrap_or_else(|| f.to_string());
+        if !fields.contains(&name) {
+            fields.push(name);
+        }
     }
+    fields
 }
 
 fn field_text(v: &Value, f: &str) -> Option<String> {
@@ -392,10 +360,42 @@ fn field_text(v: &Value, f: &str) -> Option<String> {
     }
 }
 
+/// (agreements, any mismatch, any one-sided) over EVERY effective field.
+///
+/// Nothing returns early. Stopping at the first one-sided field let a producer
+/// append a field the event does not carry and hide a real `value` disagreement
+/// two positions later behind an UNCOMPARABLE — softening CONTRADICTED to
+/// CLAIM_ONLY, which SPEC/reconcile-v1.md §5 forbids ("any material
+/// disagreement → CONTRADICTED, regardless"). It is also a parity hazard: with
+/// the list a UNION, an early return makes the answer depend on iteration order.
+fn declared_tally(claim: &Value, event: &Value, fields: &[String]) -> (usize, bool, bool) {
+    let (mut compared, mut mismatch, mut uncomparable) = (0, false, false);
+    for f in fields {
+        match (field_text(claim, f), field_text(event, f)) {
+            (None, None) => continue, // not a field this action class carries
+            (Some(a), Some(b)) if a == b => compared += 1,
+            (Some(_), Some(_)) => mismatch = true,
+            _ => uncomparable = true, // one side asserts what the other cannot confirm
+        }
+    }
+    (compared, mismatch, uncomparable)
+}
+
+/// A field nobody declared, disagreeing on both sides (the beneficiary_iban
+/// class of lie). In production it is material by construction —
+/// node/reconcile.py::_attach_material_fields copies the manifest's named
+/// fields onto the claim — so it may not corroborate. It may not accuse either:
+/// a bare collision between two independently authored vocabularies is
+/// possible, and CONTRADICTED is terminal and never softened.
+fn undeclared_disagreement(claim: &Value, event: &Value, fields: &[String]) -> bool {
+    let Some(members) = claim.as_object() else { return false };
+    members.keys().any(|f| !STRUCTURAL_FIELDS.contains(&f.as_str()) && !fields.iter().any(|d| d == f) && matches!((field_text(claim, f), field_text(event, f)), (Some(a), Some(b)) if a != b))
+}
+
 /// AGREE / MISMATCH / UNCOMPARABLE. `material_mismatch` is honoured only when
 /// TRUE (an adverse admission); a favourable `false` is not evidence.
 /// UNCOMPARABLE can never corroborate — you cannot confirm an amount you were
-/// never shown.
+/// never shown. MISMATCH dominates it.
 fn material_agreement(vi: &Value, cand: &Value) -> &'static str {
     if flag(cand, "material_mismatch") {
         return "MISMATCH";
@@ -403,19 +403,16 @@ fn material_agreement(vi: &Value, cand: &Value) -> &'static str {
     let claim = g(vi, "claim");
     let key = s(cand, "event_key");
     let events = vi.get("events").and_then(|e| e.as_array()).cloned().unwrap_or_default();
-    let Some(event) = events.iter().find(|e| e.is_object() && s(e, "event_key") == key) else {
-        return "UNCOMPARABLE";
-    };
-    let mut compared = 0;
-    for f in material_fields(vi) {
-        match (field_text(&claim, &f), field_text(event, &f)) {
-            (None, None) => continue, // not a field this action class carries
-            (Some(a), Some(b)) if a == b => compared += 1,
-            (Some(_), Some(_)) => return "MISMATCH",
-            _ => return "UNCOMPARABLE", // one side asserts what the other cannot confirm
-        }
+    let Some(event) = events.iter().find(|e| e.is_object() && s(e, "event_key") == key) else { return "UNCOMPARABLE" };
+    let fields = material_fields(vi);
+    let (compared, mismatch, uncomparable) = declared_tally(&claim, event, &fields);
+    if mismatch {
+        return "MISMATCH";
     }
-    if compared > 0 { "AGREE" } else { "UNCOMPARABLE" }
+    if uncomparable || compared == 0 || undeclared_disagreement(&claim, event, &fields) {
+        return "UNCOMPARABLE";
+    }
+    "AGREE"
 }
 
 fn linkage_outcome(vi: &Value) -> Result<(&'static str, Value), Raise> {
@@ -445,16 +442,12 @@ fn temporal(vi: &Value, trust: Option<&Value>) -> &'static str {
     let Some(t) = obj(vi, "temporal") else { return "UNPROVEN" };
     let echo = g(t, "echo");
     let echoed = ["echoed_intent_digest", "echoed_action_id", "echoed_nonce"];
-    if echoed.iter().any(|k| flag(&echo, k))
-        && crate::trust::verified(trust, "source_keys", s(&echo, "source_id"), "temporal-echo", &echo)
-    {
+    if echoed.iter().any(|k| flag(&echo, k)) && crate::trust::verified(trust, "source_keys", s(&echo, "source_id"), "temporal-echo", &echo) {
         return "PROVEN_SOURCE_ECHO"; // the effect causally embeds the intent
     }
     let ib = g(t, "intent_bounds");
     let eb = g(t, "event_bounds");
-    if crate::trust::verified(trust, "temporal_keys", s(&ib, "attester"), "temporal-bounds", &ib)
-        && crate::trust::verified(trust, "temporal_keys", s(&eb, "attester"), "temporal-bounds", &eb)
-    {
+    if crate::trust::verified(trust, "temporal_keys", s(&ib, "attester"), "temporal-bounds", &ib) && crate::trust::verified(trust, "temporal_keys", s(&eb, "attester"), "temporal-bounds", &eb) {
         if let (Some(iu), Some(el)) = (nts(&g(&ib, "upper")), nts(&g(&eb, "lower"))) {
             if iu < el {
                 return "PROVEN_INDEPENDENT";
@@ -464,7 +457,13 @@ fn temporal(vi: &Value, trust: Option<&Value>) -> &'static str {
     "UNPROVEN" // incl. declared clock sync — those clocks are incomparable
 }
 
-fn surface_row(e: &Value) -> Value {
+/// §2.8 derives a surface's sub-verdicts the same way §2.3/§2.6 derive their
+/// top-level twins — so the favourable values need the same anchor. They had
+/// none: a presentation could carry top-level `control_domain: UNKNOWN` and
+/// `coverage: GAPPED` beside a per-surface row saying INDEPENDENT and CLOSED
+/// for the same facts (owner audit 2026-08-05). An ADMISSION stays believed
+/// without proof; the favourable value needs the controlling party's signature.
+fn surface_row(e: &Value, trust: Option<&Value>) -> Value {
     let decl = s(e, "mechanism_declaration");
     let mech = match decl {
         // ENFORCED/OBSERVED only with an evidence source ref; bare → DECLARED
@@ -472,17 +471,19 @@ fn surface_row(e: &Value) -> Value {
         Some("DECLARED") => "DECLARED",
         _ => "UNKNOWN",
     };
+    let grounded = crate::trust::verified(trust, "evaluator_keys", s(e, "controlling_party"), "surface-entry", e);
     let overlap = flag(e, "controller_admits_overlap");
-    let independent = flag(e, "controller_grounded_independent");
+    let independent = grounded && flag(e, "controller_grounded_independent");
     let cd = tri(overlap, "OVERLAPPING", independent, "INDEPENDENT", "UNKNOWN");
-    let cov = tri(flag(e, "coverage_gap"), "GAPPED", flag(e, "coverage_closed"), "CLOSED", "UNKNOWN");
+    let closed = grounded && flag(e, "coverage_closed");
+    let cov = tri(flag(e, "coverage_gap"), "GAPPED", closed, "CLOSED", "UNKNOWN");
     let sid = py_str(e.get("surface_id"), "");
     json!({"surface_id": sid, "mechanism": mech, "control_domain": cd, "coverage": cov})
 }
 
 type SurfaceSets = (Vec<Value>, Vec<Value>, Vec<Value>); // (rows, out-of-scope, breaches)
 
-fn surfaces(vi: &Value) -> Result<SurfaceSets, Raise> {
+fn surfaces(vi: &Value, trust: Option<&Value>) -> Result<SurfaceSets, Raise> {
     let Some(sur) = obj(vi, "surfaces") else { return Ok((vec![], vec![], vec![])) };
     let manifest = g(sur, "manifest");
     let entries = iter_items(if manifest.is_object() { manifest.get("entries") } else { None })?;
@@ -490,8 +491,7 @@ fn surfaces(vi: &Value) -> Result<SurfaceSets, Raise> {
     // membership below compares the stringified activity class against the
     // RAW declared values, so only string declarations can ever match; an
     // unhashable declared class raises in Python's set build
-    if decl.iter().any(|e| matches!(e.get("surface_class"), Some(v) if v.is_array() || v.is_object()))
-    {
+    if decl.iter().any(|e| matches!(e.get("surface_class"), Some(v) if v.is_array() || v.is_object())) {
         return Err(Raise);
     }
     let declared: BTreeSet<&str> = decl.iter().filter_map(|e| s(e, "surface_class")).collect();
@@ -507,7 +507,7 @@ fn surfaces(vi: &Value) -> Result<SurfaceSets, Raise> {
             breaches.insert(cls); // unexplained activity on a declared surface
         }
     }
-    let rows = decl.iter().map(|e| surface_row(e)).collect();
+    let rows = decl.iter().map(|e| surface_row(e, trust)).collect();
     let to_vals = |set: BTreeSet<String>| set.into_iter().map(Value::String).collect();
     Ok((rows, to_vals(oos), to_vals(breaches)))
 }
@@ -518,9 +518,11 @@ fn acc_basis(kind: &str) -> Option<usize> {
     ["SPONSOR", "PARENT", "INSURER", "BOND_ESCROW"].iter().position(|k| *k == kind)
 }
 
-fn accountability(vi: &Value) -> Result<&'static str, Raise> {
-    const ORDER: [&str; 4] =
-        ["SPONSOR_ASSERTED", "PARENT_GUARANTEED", "INSURER_CORROBORATED", "BONDED_OR_ESCROWED"];
+/// §2.9. Every basis above UNKNOWN says a THIRD PARTY stands behind this agent.
+/// The subject wrote all of it: `signed: true` was a boolean, not a signature,
+/// so a hostile input reached BONDED_OR_ESCROWED with no external party at all.
+fn accountability(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Raise> {
+    const ORDER: [&str; 4] = ["SPONSOR_ASSERTED", "PARENT_GUARANTEED", "INSURER_CORROBORATED", "BONDED_OR_ESCROWED"];
     let specifics = ["signed", "agent_specific", "mandate_specific", "value_bounded", "time_bounded"];
     let acc = g(vi, "accountability");
     let bindings = iter_items(if acc.is_object() { acc.get("bindings") } else { None })?;
@@ -531,6 +533,9 @@ fn accountability(vi: &Value) -> Result<&'static str, Raise> {
         if !specifics.iter().all(|f| flag(b, f)) {
             continue; // qualifies only if agent-, mandate-, value- and time-specific
         }
+        if !crate::trust::verified(trust, "accountability_keys", s(b, "party"), "accountability-binding", b) {
+            continue; // `signed` means a signature, not a boolean
+        }
         if rank >= 2 && !flag(b, "externally_grounded") {
             continue; // the two external bases need grounding by a non-subject party
         }
@@ -539,7 +544,10 @@ fn accountability(vi: &Value) -> Result<&'static str, Raise> {
     Ok(best.map(|r| ORDER[r]).unwrap_or("UNKNOWN"))
 }
 
-fn assurance(vi: &Value) -> &'static str {
+/// §2.12. DIRECT compared two digests the SAME producer wrote — a producer
+/// marking its own homework. A match now earns DIRECT only when the Node signed
+/// what it saw; otherwise DETERMINISTIC. A MISMATCH is adverse, so still believed.
+fn assurance(vi: &Value, observed: bool) -> &'static str {
     let a = g(vi, "assurance");
     if !nonempty(&a, "intent_digest") {
         return "NONE"; // an action with no handshake is normal and unremarkable
@@ -553,8 +561,10 @@ fn assurance(vi: &Value) -> &'static str {
         return "AMBIGUOUS";
     }
     if nonempty(&a, "presented_transcript_digest") {
-        let hit = a.get("presented_transcript_digest") == a.get("intent_digest");
-        return tri(hit, "DIRECT", true, "AMBIGUOUS", ""); // a mismatch is AMBIGUOUS
+        if a.get("presented_transcript_digest") != a.get("intent_digest") {
+            return "AMBIGUOUS";
+        }
+        return tri(observed, "DIRECT", true, "DETERMINISTIC", "");
     }
     tri(cands == Some(1) && flag(&a, "challenge_nonce_match"), "DETERMINISTIC", false, "", "NONE")
 }
@@ -626,11 +636,12 @@ fn scope_pair(p: &Value, cand: &Value) -> &'static str {
 }
 
 fn scope_relation(vi: &Value) -> Result<Value, Raise> {
-    let Some(m) = obj(vi, "mandates") else { return Ok(Value::Null) }; // null iff absent
+    let Some(m) = obj(vi, "mandates") else {
+        return Ok(Value::Null);
+    }; // null iff absent
     let p = g(m, "presented_scope");
     let cands = iter_items(m.get("candidates"))?;
-    let results: Vec<&str> =
-        cands.iter().filter(|c| c.is_object()).map(|c| scope_pair(&p, c)).collect();
+    let results: Vec<&str> = cands.iter().filter(|c| c.is_object()).map(|c| scope_pair(&p, c)).collect();
     if results.contains(&"RELATED") {
         return Ok(json!("RELATED"));
     }
@@ -638,11 +649,34 @@ fn scope_relation(vi: &Value) -> Result<Value, Raise> {
     Ok(json!(tri(unknown, "UNKNOWN", false, "", "UNRELATED")))
 }
 
-fn population(vi: &Value) -> Value {
+/// PROVEN was PRESENCE, not proof: the check accepted `result_root:
+/// "not-a-root"` and the literal string "THIS IS NOT A SIGNATURE".
+fn population(vi: &Value, trust: Option<&Value>) -> Value {
     let Some(pi) = obj(vi, "population_index") else { return Value::Null };
     let complete = POP.iter().all(|f| pi.get(*f).map(|v| !v.is_null()).unwrap_or(false));
     let canonical_query = pi.get("query_descriptor").map(|q| q.is_object()).unwrap_or(false);
-    json!(tri(complete && canonical_query, "PROVEN", false, "", "INDETERMINATE"))
+    let signed = crate::trust::verified(trust, "population_keys", s(pi, "source_id"), "population-index", pi);
+    json!(tri(complete && canonical_query && signed, "PROVEN", false, "", "INDETERMINATE"))
+}
+
+/// A manifest limits a history claim only when the presentation actually makes
+/// one. A no-surface presentation (the B28 handshake shape) makes no contrary
+/// scope statement, so its named history scope remains intact — exactly as in
+/// `verify/action.py::_history_manifest_surface_classes`.
+fn history_manifest_surface_classes(vi: &Value) -> Option<BTreeSet<String>> {
+    let entries = obj(vi, "surfaces").and_then(|surfaces| obj(surfaces, "manifest")).and_then(|manifest| manifest.get("entries")).and_then(Value::as_array)?;
+    if entries.is_empty() {
+        return None;
+    }
+    Some(
+        entries
+            .iter()
+            .filter(|entry| entry.is_object())
+            // Python uses str(entry.get("surface_class")); absent/null is
+            // therefore "None", not the empty default used for activity rows.
+            .map(|entry| py_str(entry.get("surface_class"), "None"))
+            .collect(),
+    )
 }
 
 fn history(vi: &Value) -> Result<Value, Raise> {
@@ -650,16 +684,19 @@ fn history(vi: &Value) -> Result<Value, Raise> {
     if flag(h, "evidenced_history_in_scope") {
         return Ok(Value::Null); // history renders as population-rooted facts
     }
-    let surfs: Vec<String> = iter_items(h.get("surfaces_closed_since_birth"))?
-        .iter()
-        .map(|x| py_str(Some(x), ""))
-        .collect();
+    let mut surfs: Vec<String> = iter_items(h.get("surfaces_closed_since_birth"))?.iter().map(|surface| py_str(Some(surface), "")).collect();
+    if let Some(declared) = history_manifest_surface_classes(vi) {
+        surfs.retain(|surface| declared.contains(surface));
+    }
     if flag(h, "born_with_evidence") && !surfs.is_empty() {
         return Ok(json!({"state": "CLOSED_SINCE_BIRTH", "surfaces": surfs}));
     }
     Ok(json!({"state": "NO_EVIDENCED_HISTORY_IN_PRESENTED_SCOPE", "surfaces": []}))
 }
 
+/// §2.14. STILL producer-asserted, deliberately: neutralised by
+/// `handshake/verify.py::B28_DISABLED`, which refuses every PASS and names this
+/// exact route among the unauthenticated ones its rebuild must close.
 fn authority_proof(vi: &Value) -> Value {
     let Some(h) = obj(vi, "handshake_authority") else { return Value::Null };
     json!(match s(h, "construction") {
@@ -696,16 +733,7 @@ fn registration_status(vi: &Value, trust: Option<&Value>) -> &'static str {
     // transparency service THIS relying party named, plus a receipt the verifier
     // derived itself (never the producer's own scitt_receipt_valid flag).
     let covered = flag(&sr, "covers_scope") && flag(&sr, "term_valid");
-    let registered = covered
-        && sr.get("registration").map(|x| x.is_object()).unwrap_or(false)
-        && flag(&reg, "scitt_receipt_valid")
-        && crate::trust::verified(
-            trust,
-            "scitt_ts_keys",
-            s(&sr, "transparency_service"),
-            "scope-registration",
-            &sr,
-        );
+    let registered = covered && sr.get("registration").map(|x| x.is_object()).unwrap_or(false) && flag(&reg, "scitt_receipt_valid") && crate::trust::verified(trust, "scitt_ts_keys", s(&sr, "transparency_service"), "scope-registration", &sr);
     if registered {
         return "REGISTERED";
     }
@@ -728,17 +756,9 @@ fn mark(te: &str, reg: &str, v: &Value) -> &'static str {
             // equality, never signature bytes; control_domain reaches INDEPENDENT
             // from truthy strings), so a subject could award itself the top mark.
             // Explicit withdrawal, never a silent absence. Mirrors verify/action.py.
-            let corroborated = s(v, "source_signature") == Some("ASYMMETRIC")
-                && s(v, "control_domain") == Some("INDEPENDENT");
-            let observed = s(v, "node_observation") == Some("OBSERVED")
-                && s(v, "node_integrity_basis") == Some("HARDWARE_ATTESTED");
-            tri(
-                corroborated,
-                "UNMARKED_ASSURANCE_WITHDRAWN",
-                observed,
-                "UNMARKED_ASSURANCE_WITHDRAWN",
-                "UNMARKED_TECHNICAL",
-            )
+            let corroborated = s(v, "source_signature") == Some("ASYMMETRIC") && s(v, "control_domain") == Some("INDEPENDENT");
+            let observed = s(v, "node_observation") == Some("OBSERVED") && s(v, "node_integrity_basis") == Some("HARDWARE_ATTESTED");
+            tri(corroborated, "UNMARKED_ASSURANCE_WITHDRAWN", observed, "UNMARKED_ASSURANCE_WITHDRAWN", "UNMARKED_TECHNICAL")
         }
     }
 }
@@ -748,7 +768,7 @@ fn derive_inner(vi: &Value, trust: Option<&Value>) -> Result<Value, Raise> {
     let (observed, client, node_basis) = node_dims(vi, trust);
     let (cov, basis) = coverage(vi, node_basis, observed == "OBSERVED", trust);
     let (linkage, outcome) = linkage_outcome(vi)?;
-    let (rows, oos, breaches) = surfaces(vi)?;
+    let (rows, oos, breaches) = surfaces(vi, trust)?;
     let mut v = json!({
         "schema": "evd/verdict-vector/v1",
         "identity": derived["identity"], "authority": derived["authority"],
@@ -759,17 +779,13 @@ fn derive_inner(vi: &Value, trust: Option<&Value>) -> Result<Value, Raise> {
         "coverage_basis": basis, "node_integrity_basis": node_basis,
         "temporal_binding": temporal(vi, trust), "intent_interval": derived["intent_interval"],
         "surfaces": rows, "out_of_scope_surfaces": oos, "boundary_breaches": breaches,
-        "accountability_basis": accountability(vi)?, "assurance_linkage": assurance(vi),
-        "scope_relation": scope_relation(vi)?, "population_status": population(vi),
+        "accountability_basis": accountability(vi, trust)?, "assurance_linkage": assurance(vi, observed == "OBSERVED"),
+        "scope_relation": scope_relation(vi)?, "population_status": population(vi, trust),
         "history_state": history(vi)?, "authority_proof": authority_proof(vi),
     });
     v["technical_eligibility"] = json!(eligibility(vi, &v)?);
     v["registration_status"] = json!(registration_status(vi, trust));
-    v["mark"] = json!(mark(
-        s(&v, "technical_eligibility").unwrap_or(""),
-        s(&v, "registration_status").unwrap_or(""),
-        &v
-    ));
+    v["mark"] = json!(mark(s(&v, "technical_eligibility").unwrap_or(""), s(&v, "registration_status").unwrap_or(""), &v));
     if let Some(ids) = ablock.get("subject_ids").filter(|x| x.is_object()) {
         v["subject_ids"] = ids.clone(); // echoed, never derived here
     }
@@ -789,42 +805,29 @@ pub fn derive_vector(verdict_input: &Value) -> Value {
 /// accepts (see `crate::trust`). Passed separately from the evidence precisely
 /// so the subject cannot supply its own anchors.
 pub fn derive_vector_with_trust(verdict_input: &Value, trust: Option<&Value>) -> Value {
-    derive_inner(verdict_input, trust).unwrap_or_else(|_| {
-        derive_inner(&json!({}), None).ok().expect("weak derivation is total")
-    })
+    derive_inner(verdict_input, trust).unwrap_or_else(|_| derive_inner(&json!({}), None).ok().expect("weak derivation is total"))
 }
 
 // ------------------------------------------ authority_facts (authority-v1)
 
-struct Rec {
+pub(crate) struct Rec {
     leaf: i64,
     agent: String,
-    action: String,
-    ctx: Value,
+    pub(crate) action: String,
+    pub(crate) ctx: Value,
     commitments: Value,
     rh: String,
     signer_kids: BTreeSet<String>,
 }
 
-fn entry_rows(bundle: &Value) -> Vec<Rec> {
+pub(crate) fn entry_rows(bundle: &Value) -> Vec<Rec> {
     let mut rows = Vec::new();
     for e in arr(bundle, "entries") {
         let env = g(e, "envelope");
         let (Some(body), Some(rh)) = (body_of(&env), receipt_hash_hex(&env)) else { continue };
         let ctx = obj(&body, "context").cloned().unwrap_or(json!({}));
         let commitments = obj(&body, "commitments").cloned().unwrap_or(json!({}));
-        rows.push(Rec {
-            leaf: e.get("leaf_index").and_then(|v| v.as_i64()).unwrap_or(-1),
-            agent: s(&body, "agent_id").unwrap_or("").to_string(),
-            action: s(&body, "action_type").unwrap_or("").to_string(),
-            ctx,
-            commitments,
-            rh,
-            signer_kids: arr(&env, "signatures")
-                .iter()
-                .filter_map(|sig| s(sig, "keyid").map(String::from))
-                .collect(),
-        });
+        rows.push(Rec { leaf: e.get("leaf_index").and_then(|v| v.as_i64()).unwrap_or(-1), agent: s(&body, "agent_id").unwrap_or("").to_string(), action: s(&body, "action_type").unwrap_or("").to_string(), ctx, commitments, rh, signer_kids: arr(&env, "signatures").iter().filter_map(|sig| s(sig, "keyid").map(String::from)).collect() });
     }
     rows.sort_by_key(|r| r.leaf);
     rows
@@ -869,11 +872,7 @@ fn witnessed_keys(rows: &[Rec]) -> (BTreeSet<String>, BTreeSet<[u8; 32]>) {
 }
 
 /// (root_kid, pub, legal_entity) iff the enrolment passes §3.1, else None.
-fn valid_enrolment(
-    ctx: &Value,
-    kids: &BTreeSet<String>,
-    mats: &BTreeSet<[u8; 32]>,
-) -> Option<(String, [u8; 32], Value)> {
+fn valid_enrolment(ctx: &Value, kids: &BTreeSet<String>, mats: &BTreeSet<[u8; 32]>) -> Option<(String, [u8; 32], Value)> {
     // key_from_jwk validates the JWK's own kid binding (public_from_jwk rule)
     let (pub_, derived_kid) = key_from_jwk(&g(ctx, "root_jwk"))?;
     let kid = s(ctx, "root_kid")?;
@@ -893,8 +892,7 @@ type RootEntry = (i64, String, [u8; 32], Value); // (leaf, kid, pub, legal_entit
 /// ignored; a valid UNLINKED second enrolment is a CONFLICT.
 fn replay_roots(rows: &[Rec]) -> (Option<String>, Vec<RootEntry>, bool) {
     let (kids, mats) = witnessed_keys(rows);
-    let (mut org_id, mut timeline, mut conflict): (Option<String>, Vec<RootEntry>, bool) =
-        (None, vec![], false);
+    let (mut org_id, mut timeline, mut conflict): (Option<String>, Vec<RootEntry>, bool) = (None, vec![], false);
     for r in rows {
         if r.agent != "_authority" || r.action != "authority.root.enrolled" {
             continue;
@@ -905,8 +903,7 @@ fn replay_roots(rows: &[Rec]) -> (Option<String>, Vec<RootEntry>, bool) {
             timeline.push((r.leaf, kid, pub_, legal));
             continue;
         };
-        let linked = s(&r.ctx, "prev_root_kid") == Some(last.1.as_str())
-            && dsig_ok(&last.2, &dom("authority.root.enrolled"), &r.ctx, r.ctx.get("prev_root_sig"));
+        let linked = s(&r.ctx, "prev_root_kid") == Some(last.1.as_str()) && dsig_ok(&last.2, &dom("authority.root.enrolled"), &r.ctx, r.ctx.get("prev_root_sig"));
         if linked {
             timeline.push((r.leaf, kid, pub_, legal)); // supersession chain
         } else {
@@ -923,26 +920,20 @@ fn root_at(timeline: &[RootEntry], leaf: i64) -> Option<&RootEntry> {
 /// `_authority` receipts of one type whose root_sig verifies under the root
 /// active at their log position.
 fn root_valid_auth<'a>(rows: &'a [Rec], timeline: &[RootEntry], action_type: &str) -> Vec<&'a Rec> {
-    rows.iter()
-        .filter(|r| {
-            r.agent == "_authority"
-                && r.action == action_type
-                && root_at(timeline, r.leaf)
-                    .map(|root| dsig_ok(&root.2, &dom(action_type), &r.ctx, r.ctx.get("root_sig")))
-                    .unwrap_or(false)
-        })
-        .collect()
+    rows.iter().filter(|r| r.agent == "_authority" && r.action == action_type && root_at(timeline, r.leaf).map(|root| dsig_ok(&root.2, &dom(action_type), &r.ctx, r.ctx.get("root_sig"))).unwrap_or(false)).collect()
 }
 
 /// checkpoint body_hash → EARLIEST independent ts, as (normalized, raw) (§4).
+///
+/// Both sources are admissible here ONLY because each is now constrained by
+/// something signed: a TST's `gen_time` must equal the token's verified
+/// genTime, and an anchor's `block_ts` must not precede the signed `ts` of the
+/// checkpoint it names (`check_anchor_record`).
 fn independent_ts_map(bundle: &Value) -> BTreeMap<String, (String, String)> {
     let mut times: BTreeMap<String, (String, String)> = BTreeMap::new();
     for (list, field) in [("anchor_records", "block_ts"), ("tst_records", "gen_time")] {
         for rec in arr(bundle, list).iter().filter(|r| r.is_object()) {
-            let (Some(h), Some(norm)) = (s(rec, "checkpoint_body_hash"), nts(&g(rec, field)))
-            else {
-                continue;
-            };
+            let (Some(h), Some(norm)) = (s(rec, "checkpoint_body_hash"), nts(&g(rec, field))) else { continue };
             let raw = s(rec, field).unwrap_or("").to_string();
             if times.get(h).map(|cur| norm < cur.0).unwrap_or(true) {
                 times.insert(h.to_string(), (norm, raw));
@@ -952,11 +943,20 @@ fn independent_ts_map(bundle: &Value) -> BTreeMap<String, (String, String)> {
     times
 }
 
-/// §4: lower = LAST independently timed checkpoint with tree_size <= leaf;
-/// upper = FIRST with tree_size > leaf; null when none.
-fn interval_for(bundle: &Value, leaf: i64) -> Value {
+/// (tree_size, normalized, raw) per independently timed checkpoint, ordered by
+/// tree_size, each clamped to the EARLIEST time proven for it or for any
+/// checkpoint that contains it.
+///
+/// Checkpoint N is a prefix of every later checkpoint, so a proof that N+1
+/// existed by T is equally a proof that N did. An anchor claiming N reached the
+/// chain LATER than N+1 contradicts the chain itself. Without the clamp,
+/// post-dating one `block_ts` produced an INVERTED interval (lower 2030 > upper
+/// 2026), and "authority covers the ENTIRE interval" is vacuously true of an
+/// interval that cannot exist — an action taken BEFORE its grant was issued
+/// came out VERIFIED (owner audit 2026-08-05).
+fn clamped_times(bundle: &Value) -> Vec<(i64, String, String)> {
     let times = independent_ts_map(bundle);
-    let (mut lower, mut upper) = (Value::Null, Value::Null);
+    let mut rows: Vec<(i64, String, String)> = Vec::new();
     for e in arr(bundle, "checkpoint_chain") {
         let Some(cp) = e.get("checkpoint") else { continue };
         let Some(t) = checkpoint_body_hash(cp).and_then(|h| times.get(&h).cloned()) else {
@@ -964,10 +964,31 @@ fn interval_for(bundle: &Value, leaf: i64) -> Value {
         };
         let size = cp.get("body").and_then(|b| b.get("tree_size")).and_then(|v| v.as_i64());
         let Some(size) = size else { continue };
+        rows.push((size, t.0, t.1));
+    }
+    rows.sort_by_key(|r| r.0); // stable: ties keep bundle order, as in Python
+    let mut earliest: Option<(String, String)> = None;
+    for row in rows.iter_mut().rev() {
+        if let Some(e) = &earliest {
+            if e.0 < row.1 {
+                row.1 = e.0.clone();
+                row.2 = e.1.clone();
+            }
+        }
+        earliest = Some((row.1.clone(), row.2.clone()));
+    }
+    rows
+}
+
+/// §4: lower = LAST independently timed checkpoint with tree_size <= leaf;
+/// upper = FIRST with tree_size > leaf; null when none.
+fn interval_for(bundle: &Value, leaf: i64) -> Value {
+    let (mut lower, mut upper) = (Value::Null, Value::Null);
+    for (size, _norm, raw) in clamped_times(bundle) {
         if size <= leaf {
-            lower = json!(t.1); // raw ts of the LAST checkpoint before the intent
+            lower = json!(raw); // raw ts of the LAST checkpoint before the intent
         } else if upper.is_null() {
-            upper = json!(t.1); // raw ts of the FIRST checkpoint after it
+            upper = json!(raw); // raw ts of the FIRST checkpoint after it
         }
     }
     json!({"lower": lower, "upper": upper})
@@ -982,12 +1003,61 @@ fn pick_intent<'a>(rows: &'a [Rec], action_id: Option<&str>) -> Option<(&'a Rec,
     }
     let chosen = *intents.first()?; // rows are leaf-ordered
     let aid = g(&chosen.ctx, "action_id");
-    let distinct: BTreeSet<&str> = intents
-        .iter()
-        .filter(|r| g(&r.ctx, "action_id") == aid)
-        .map(|r| r.rh.as_str())
-        .collect();
+    let distinct: BTreeSet<&str> = intents.iter().filter(|r| g(&r.ctx, "action_id") == aid).map(|r| r.rh.as_str()).collect();
     Some((chosen, distinct.len() > 1))
+}
+
+/// The one signed `action.intent` context for a displayed action identity.
+/// Exact duplicate export rows are harmless; distinct receipt hashes conflict.
+pub(crate) fn signed_action_context(bundle: &Value, action_id: &str) -> Option<Value> {
+    let mut contexts: BTreeMap<String, Value> = BTreeMap::new();
+    for row in entry_rows(bundle) {
+        if row.action == "action.intent" && s(&row.ctx, "action_id") == Some(action_id) {
+            contexts.entry(row.rh).or_insert(row.ctx);
+        }
+    }
+    (contexts.len() == 1).then(|| contexts.into_iter().next().map(|(_, context)| context))?
+}
+
+pub(crate) fn has_signed_action_intent(bundle: &Value) -> bool {
+    entry_rows(bundle).iter().any(|row| row.action == "action.intent")
+}
+
+/// (every action id any signed row names, every class signed for `action_id`).
+///
+/// The weak binding for a bundle with no `action.intent` receipt at all, whose
+/// certificate still displays an identity that was free text until now. Two
+/// signed sources say otherwise: a domain receipt's own `action_type` is the
+/// signed spelling of what the action WAS, and a grant's
+/// `context.action_classes` is the signed set it was permitted to be. The union
+/// is required — `forged`/`revoked`/`selectively_disclosed`/`valid` have no
+/// domain receipt but `action.intent` (hence the `action.` prefix skip), while
+/// `claim_only`/`contradicted`/`gapped`/`stale` have no grant.
+pub(crate) fn signed_action_intents(bundle: &Value, action_id: &str) -> (BTreeSet<String>, BTreeSet<String>) {
+    let (mut ids, mut classes) = (BTreeSet::new(), BTreeSet::new());
+    for row in entry_rows(bundle) {
+        let aid = s(&row.ctx, "action_id");
+        if let Some(aid) = aid.filter(|a| !a.is_empty()) {
+            ids.insert(aid.to_string());
+        }
+        if aid == Some(action_id) {
+            if !row.action.starts_with("action.") {
+                classes.insert(row.action.clone());
+            }
+            classes.extend(s(&row.ctx, "action_class").filter(|c| !c.is_empty()).map(str::to_string));
+            // EVERY class-contributing row must name THIS action. A grant is
+            // scoped to a SUBJECT (`subject_birthtag_id action_classes scope
+            // ...`, SPEC/authority-v1.md §3) and names no action_id, so outside
+            // this test one grant handed its permitted classes to every action
+            // in the bundle — a POSITIVE OVERGRANT, the verifier vouching for
+            // authority never tied to this action. The absent `action.intent`
+            // row is what would have tied them, so the tie is NOT ESTABLISHED.
+            if row.action == "authority.grant.issued" {
+                classes.extend(arr(&row.ctx, "action_classes").iter().map(|c| c.as_str().map(str::to_string).unwrap_or_else(|| c.to_string())));
+            }
+        }
+    }
+    (ids, classes)
 }
 
 fn intent_result(rows: &[Rec], chosen: &Rec, dup: bool) -> &'static str {
@@ -997,16 +1067,11 @@ fn intent_result(rows: &[Rec], chosen: &Rec, dup: bool) -> &'static str {
     if INTENT_CTX.iter().any(|k| chosen.ctx.get(*k).map(|v| v.is_null()).unwrap_or(true)) {
         return "NOT_RECORDED";
     }
-    if chosen.commitments.get("inputs").is_none() || chosen.commitments.get("context_doc").is_none()
-    {
+    if chosen.commitments.get("inputs").is_none() || chosen.commitments.get("context_doc").is_none() {
         return "NOT_RECORDED"; // required commitments absent
     }
     let aid = g(&chosen.ctx, "action_id");
-    let min_sub = rows
-        .iter()
-        .filter(|r| r.action == "action.submitted" && g(&r.ctx, "action_id") == aid)
-        .map(|r| r.leaf)
-        .min();
+    let min_sub = rows.iter().filter(|r| r.action == "action.submitted" && g(&r.ctx, "action_id") == aid).map(|r| r.leaf).min();
     // the intent must sit at a strictly earlier leaf than any submission
     tri(min_sub.map(|m| chosen.leaf >= m).unwrap_or(false), "NOT_RECORDED", false, "", "RECORDED")
 }
@@ -1025,11 +1090,7 @@ fn agent_lineage(rows: &[Rec], agent_id: &str) -> Option<Lineage> {
     }
     let revs: Vec<&&Rec> = mine.iter().filter(|r| r.action == "lineage.revised").collect();
     let revision = revs.last().map(|r| r.rh.clone()).unwrap_or_else(|| est[0].rh.clone());
-    Some(Lineage {
-        birthtag_id: est[0].rh.clone(),
-        revision_id: revision,
-        est_ctx: est[0].ctx.clone(),
-    })
+    Some(Lineage { birthtag_id: est[0].rh.clone(), revision_id: revision, est_ctx: est[0].ctx.clone() })
 }
 
 /// §7: transfer_sig by a passport-log key unrevoked at the transfer's
@@ -1057,9 +1118,7 @@ fn passport_bundle_ok(passport: &Value, imported: &str, timeline: &[RootEntry]) 
     if !verify_bundle(pb) {
         return false;
     }
-    let est_ok = entry_rows(pb)
-        .iter()
-        .any(|r| EST_TYPES.contains(&r.action.as_str()) && r.rh == imported);
+    let est_ok = entry_rows(pb).iter().any(|r| EST_TYPES.contains(&r.action.as_str()) && r.rh == imported);
     let transfer = g(passport, "transfer");
     if !est_ok || s(&transfer, "birthtag_id") != Some(imported) {
         return false;
@@ -1087,10 +1146,7 @@ fn windows_conflict(a: &Value, b: &Value) -> bool {
     if g(a, "runtime_kid") != g(b, "runtime_kid") {
         return false;
     }
-    let ts: Vec<Option<String>> = [a, b]
-        .iter()
-        .flat_map(|c| ["valid_from", "valid_to"].map(|f| nts(&g(c, f))))
-        .collect();
+    let ts: Vec<Option<String>> = [a, b].iter().flat_map(|c| ["valid_from", "valid_to"].map(|f| nts(&g(c, f)))).collect();
     let (Some(af), Some(at), Some(bf), Some(bt)) = (&ts[0], &ts[1], &ts[2], &ts[3]) else {
         return false; // unprovable overlap is not a contradiction
     };
@@ -1105,9 +1161,7 @@ fn binding_conflict(bindings: &[&Rec]) -> bool {
             if !windows_conflict(&a.ctx, &b.ctx) {
                 continue;
             }
-            let lists = |x: &Rec, other: &str| {
-                arr(&x.ctx, "concurrent_with").iter().any(|v| v.as_str() == Some(other))
-            };
+            let lists = |x: &Rec, other: &str| arr(&x.ctx, "concurrent_with").iter().any(|v| v.as_str() == Some(other));
             if !(lists(a, &b.rh) && lists(b, &a.rh)) {
                 return true; // undeclared concurrent bindings, one runtime key
             }
@@ -1116,21 +1170,14 @@ fn binding_conflict(bindings: &[&Rec]) -> bool {
     false
 }
 
-fn match_binding<'a>(
-    bindings: &[&'a Rec],
-    lineage: &Lineage,
-    intent: &Rec,
-    interval: &Value,
-) -> Option<&'a Rec> {
+fn match_binding<'a>(bindings: &[&'a Rec], lineage: &Lineage, intent: &Rec, interval: &Value) -> Option<&'a Rec> {
     let lo = nts(&interval["lower"])?; // a null bound cannot be covered (§4)
     let up = nts(&interval["upper"])?;
     bindings
         .iter()
         .find(|b| {
             let ctx = &b.ctx;
-            let hit = s(ctx, "birthtag_id") == Some(lineage.birthtag_id.as_str())
-                && s(ctx, "revision_id") == Some(lineage.revision_id.as_str())
-                && s(ctx, "runtime_kid").map(|k| intent.signer_kids.contains(k)).unwrap_or(false);
+            let hit = s(ctx, "birthtag_id") == Some(lineage.birthtag_id.as_str()) && s(ctx, "revision_id") == Some(lineage.revision_id.as_str()) && s(ctx, "runtime_kid").map(|k| intent.signer_kids.contains(k)).unwrap_or(false);
             let covers = matches!(
                 (nts(&g(ctx, "valid_from")), nts(&g(ctx, "valid_to"))),
                 (Some(vf), Some(vt)) if vf <= lo && up <= vt
@@ -1141,15 +1188,7 @@ fn match_binding<'a>(
 }
 
 /// → (result, binding_id | None, birthtag_id | None).
-fn derive_identity(
-    rows: &[Rec],
-    bundle: &Value,
-    intent: &Rec,
-    lineage: Option<&Lineage>,
-    timeline: &[RootEntry],
-    root_conflict: bool,
-    interval: &Value,
-) -> (&'static str, Option<String>, Option<String>) {
+fn derive_identity(rows: &[Rec], bundle: &Value, intent: &Rec, lineage: Option<&Lineage>, timeline: &[RootEntry], root_conflict: bool, interval: &Value) -> (&'static str, Option<String>, Option<String>) {
     let bindings = root_valid_auth(rows, timeline, "authority.principal.bound");
     if root_conflict || binding_conflict(&bindings) {
         return ("CONFLICT", None, None); // never degraded to a pass
@@ -1218,13 +1257,7 @@ fn doc_ok(doc: &Value, action_class: &Value, lo: &str, up: &str) -> bool {
 
 /// Status replay (§5): the effective document at EVERY instant of the
 /// interval must include the class and cover the whole interval.
-fn docs_cover(
-    issued: &Rec,
-    pairs: &[(i64, i64, String, Value)],
-    action_class: &Value,
-    lo: &str,
-    up: &str,
-) -> bool {
+fn docs_cover(issued: &Rec, pairs: &[(i64, i64, String, Value)], action_class: &Value, lo: &str, up: &str) -> bool {
     let mut docs: Vec<&Value> = vec![&issued.ctx];
     for (_v, _pv, _h, ctx) in pairs {
         let Some(eff) = nts(&g(ctx, "effective_ts")) else { return false };
@@ -1245,20 +1278,10 @@ fn versions_dense(pairs: &[(i64, i64, String, Value)]) -> bool {
 /// §3.5: revocation is prospective from effective_ts — the grant is revoked
 /// at some instant of the interval iff any effective_ts <= upper.
 fn revoked_in_interval(rows: &[Rec], timeline: &[RootEntry], gid: &Value, up: &str) -> bool {
-    root_valid_auth(rows, timeline, "authority.grant.revoked").iter().any(|r| {
-        g(&r.ctx, "grant_id") == *gid
-            && nts(&g(&r.ctx, "effective_ts")).map(|eff| eff.as_str() <= up).unwrap_or(true)
-    })
+    root_valid_auth(rows, timeline, "authority.grant.revoked").iter().any(|r| g(&r.ctx, "grant_id") == *gid && nts(&g(&r.ctx, "effective_ts")).map(|eff| eff.as_str() <= up).unwrap_or(true))
 }
 
-fn grant_chain_verified(
-    rows: &[Rec],
-    timeline: &[RootEntry],
-    issued: &Rec,
-    pairs: &[(i64, i64, String, Value)],
-    intent: &Rec,
-    interval: &Value,
-) -> bool {
+fn grant_chain_verified(rows: &[Rec], timeline: &[RootEntry], issued: &Rec, pairs: &[(i64, i64, String, Value)], intent: &Rec, interval: &Value) -> bool {
     let (Some(lo), Some(up)) = (nts(&interval["lower"]), nts(&interval["upper"])) else {
         return false; // a null bound cannot be covered (§4)
     };
@@ -1271,19 +1294,29 @@ fn grant_chain_verified(
     docs_cover(issued, pairs, &g(&intent.ctx, "action_class"), &lo, &up)
 }
 
-fn derive_authority(
-    rows: &[Rec],
-    timeline: &[RootEntry],
-    intent: &Rec,
-    interval: &Value,
-    birthtags: &BTreeSet<String>,
-) -> (&'static str, Map<String, Value>) {
+/// A grant names the principal binding it was issued FOR. Using it under a
+/// DIFFERENT binding of the same subject is an authorization SUBSTITUTION.
+///
+/// `subject_birthtag_id` alone was the whole test, and a birthtag outlives any
+/// one binding — an agent legitimately holds several (key rotation, a second
+/// runtime, prod beside staging, a re-bind after a lineage revision). So a grant
+/// issued for the quiet binding authorised an action executed under the live one
+/// and BOTH engines said authority VERIFIED. Reproduced as a one-line change to
+/// the shipped `b21_concurrent_binding_explicit` fixture.
+///
+/// Enforced only when a binding was actually MATCHED: with none in force
+/// identity is already NOT_VERIFIED and eligibility already fails on it.
+/// `binding_id` is optional on a grant (SPEC/authority-v1.md §3), and a grant
+/// naming none constrains nothing.
+fn binding_substituted(issued: &Rec, revised: &[&Rec], binding_id: Option<&str>) -> bool {
+    let Some(binding_id) = binding_id else { return false };
+    std::iter::once(&issued.ctx).chain(revised.iter().map(|r| &r.ctx)).any(|ctx| matches!(ctx.get("binding_id").and_then(Value::as_str), Some(named) if !named.is_empty() && named != binding_id))
+}
+
+fn derive_authority(rows: &[Rec], timeline: &[RootEntry], intent: &Rec, interval: &Value, birthtags: &BTreeSet<String>, binding_id: Option<&str>) -> (&'static str, Map<String, Value>) {
     let gid = g(&intent.ctx, "grant_id");
     let issued_all = root_valid_auth(rows, timeline, "authority.grant.issued");
-    let revised: Vec<&Rec> = root_valid_auth(rows, timeline, "authority.grant.revised")
-        .into_iter()
-        .filter(|r| g(&r.ctx, "grant_id") == gid)
-        .collect();
+    let revised: Vec<&Rec> = root_valid_auth(rows, timeline, "authority.grant.revised").into_iter().filter(|r| g(&r.ctx, "grant_id") == gid).collect();
     let pairs = grant_versions(&revised);
     if let Some(p) = &pairs {
         let versions: BTreeSet<i64> = p.iter().map(|x| x.0).collect();
@@ -1297,10 +1330,15 @@ fn derive_authority(
     let Some(issued) = issued.filter(|_| subject_ok) else { return ("NOT_VERIFIED", Map::new()) };
     let mut ids = Map::new();
     ids.insert("grant_id".into(), gid.clone());
+    if binding_substituted(issued, &revised, binding_id) {
+        return ("NOT_VERIFIED", ids);
+    }
     if let Some(m) = mandate_id(issued, &issued_all) {
         ids.insert("mandate_id".into(), json!(m));
     }
-    let Some(pairs) = pairs else { return ("NOT_VERIFIED", ids) }; // malformed versions
+    let Some(pairs) = pairs else {
+        return ("NOT_VERIFIED", ids);
+    }; // malformed versions
     let ok = grant_chain_verified(rows, timeline, issued, &pairs, intent, interval);
     (tri(ok, "VERIFIED", false, "", "NOT_VERIFIED"), ids)
 }
@@ -1331,21 +1369,16 @@ fn facts(bundle: &Value, action_id: Option<&str>) -> Value {
             sids.insert("intent_id".into(), json!(chosen.rh));
         }
         let lineage = agent_lineage(&rows, &chosen.agent);
-        let (identity, binding_id, birthtag) = derive_identity(
-            &rows, bundle, chosen, lineage.as_ref(), &timeline, root_conflict, &interval,
-        );
+        let (identity, binding_id, birthtag) = derive_identity(&rows, bundle, chosen, lineage.as_ref(), &timeline, root_conflict, &interval);
         out["identity"] = json!(identity);
-        if let Some(b) = binding_id {
+        if let Some(b) = &binding_id {
             sids.insert("binding_id".into(), json!(b));
         }
         if let Some(b) = &birthtag {
             sids.insert("birthtag_id".into(), json!(b));
         }
-        let birthtags: BTreeSet<String> = birthtag
-            .into_iter()
-            .chain(lineage.as_ref().map(|l| l.birthtag_id.clone()))
-            .collect();
-        let (authority, gids) = derive_authority(&rows, &timeline, chosen, &interval, &birthtags);
+        let birthtags: BTreeSet<String> = birthtag.into_iter().chain(lineage.as_ref().map(|l| l.birthtag_id.clone())).collect();
+        let (authority, gids) = derive_authority(&rows, &timeline, chosen, &interval, &birthtags, binding_id.as_deref());
         out["authority"] = json!(authority);
         sids.extend(gids);
     }
@@ -1364,4 +1397,3 @@ pub fn authority_facts(bundle: &Value, action_id: Option<&str>) -> Value {
     }
     facts(bundle, action_id)
 }
-

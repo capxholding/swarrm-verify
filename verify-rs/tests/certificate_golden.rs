@@ -13,51 +13,45 @@ use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
 
+#[path = "../src/cbor.rs"]
+#[allow(dead_code)]
+mod cbor;
+
+use ciborium::Value as CborValue;
 
 fn certs_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("tests/golden/certificates")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/certificates")
 }
 
 fn fuzz_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("tests/golden/certfuzz")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/certfuzz")
 }
 
 /// The relying-party anchors these goldens were generated under — the SAME
 /// file the Python runner loads, so both engines verify identically.
 fn trust() -> Value {
-    serde_json::from_str(&fs::read_to_string(certs_dir().join("trust_context.json")).unwrap())
-        .unwrap()
+    serde_json::from_str(&fs::read_to_string(certs_dir().join("trust_context.json")).unwrap()).unwrap()
 }
 
 fn verify(bytes: &[u8]) -> Value {
-    serde_json::from_str(&swarrm_verify::certificate::verify_certificate_cbor_with_trust(
-        bytes,
-        Some(&trust()),
-    ))
-    .expect("result is valid JSON")
+    serde_json::from_str(&swarrm_verify::certificate::verify_certificate_cbor_with_trust(bytes, Some(&trust()))).expect("result is valid JSON")
+}
+
+fn member_mut<'a>(value: &'a mut CborValue, key: &str) -> &'a mut CborValue {
+    let CborValue::Map(members) = value else { panic!("expected map") };
+    members.iter_mut().find_map(|(member, value)| matches!(member, CborValue::Text(name) if name == key).then_some(value)).unwrap_or_else(|| panic!("missing member {key}"))
 }
 
 #[test]
 fn certificate_suite_agrees_with_expected() {
     let dir = certs_dir();
-    let expected: Value =
-        serde_json::from_str(&fs::read_to_string(dir.join("expected.json")).unwrap()).unwrap();
+    let expected: Value = serde_json::from_str(&fs::read_to_string(dir.join("expected.json")).unwrap()).unwrap();
     let mut checked = 0;
     for (name, exp) in expected.as_object().unwrap() {
         let view = fs::read(dir.join(format!("{name}.view.cbor"))).unwrap();
         let got = verify(&view);
         assert_eq!(got["mark"], exp["mark"], "fixture {name}: mark");
-        assert_eq!(
-            got["cross_checks_ok"], exp["cross_checks_ok"],
-            "fixture {name}: cross_checks_ok ({:?})",
-            got["errors"]
-        );
+        assert_eq!(got["cross_checks_ok"], exp["cross_checks_ok"], "fixture {name}: cross_checks_ok ({:?})", got["errors"]);
         for (key, value) in exp["vector"].as_object().unwrap() {
             assert_eq!(&got["vector"][key], value, "fixture {name}: vector[{key}]");
         }
@@ -65,15 +59,8 @@ fn certificate_suite_agrees_with_expected() {
             let partial = fs::read(dir.join(format!("{name}.partial.cbor"))).unwrap();
             let gp = verify(&partial);
             assert_eq!(gp["mark"], exp["partial"]["mark"], "fixture {name}: partial mark");
-            assert_eq!(
-                gp["core_present"], exp["partial"]["core_present"],
-                "fixture {name}: partial core privacy"
-            );
-            assert_eq!(
-                gp["vector"]["technical_eligibility"],
-                exp["partial"]["technical_eligibility"],
-                "fixture {name}: partial technical_eligibility"
-            );
+            assert_eq!(gp["core_present"], exp["partial"]["core_present"], "fixture {name}: partial core privacy");
+            assert_eq!(gp["vector"]["technical_eligibility"], exp["partial"]["technical_eligibility"], "fixture {name}: partial technical_eligibility");
             assert_eq!(gp["errors"], exp["partial"]["errors"], "fixture {name}: partial errors");
         }
         checked += 1;
@@ -109,4 +96,55 @@ fn over_cap_synthetics_fail_closed() {
         assert_eq!(res["errors"][0], Value::from("PARSE"));
         assert_ne!(res["mark"], Value::from("UNMARKED_ASSURANCE_WITHDRAWN"));
     }
+}
+
+#[test]
+fn subject_display_fields_must_bind_to_verified_inputs() {
+    let valid = fs::read(certs_dir().join("valid.core.cbor")).unwrap();
+    for (field, replacement, error) in [("origin", "evd://tenant/t_attacker", "SUBJECT_ORIGIN_MISMATCH"), ("action_id", "act-attacker", "SUBJECT_ACTION_ID_MISMATCH"), ("action_class", "privileged.unrelated", "SUBJECT_ACTION_CLASS_MISMATCH")] {
+        let mut core = cbor::decode_cbor(&valid, cbor::MAX_DEPTH as usize, cbor::MAX_BYTES).expect("valid fixture parses");
+        *member_mut(member_mut(&mut core, "subject"), field) = CborValue::Text(replacement.into());
+        let bytes = cbor::canonical_cbor(&core).expect("canonical replacement");
+        let got = verify(&bytes);
+        assert_eq!(got["cross_checks_ok"], Value::Bool(false), "{field}: {:?}", got["errors"]);
+        assert!(got["errors"].as_array().unwrap().iter().any(|e| e.as_str() == Some(error)), "{field}: {:?}", got["errors"]);
+    }
+}
+
+#[test]
+fn certificate_action_identity_must_be_the_signed_intent_identity() {
+    let valid = fs::read(certs_dir().join("valid.core.cbor")).unwrap();
+    let mut core = cbor::decode_cbor(&valid, cbor::MAX_DEPTH as usize, cbor::MAX_BYTES).expect("valid fixture parses");
+    *member_mut(member_mut(&mut core, "subject"), "action_class") = CborValue::Text("privileged.unrelated".into());
+    *member_mut(member_mut(member_mut(&mut core, "verdict_input"), "action"), "action_class") = CborValue::Text("privileged.unrelated".into());
+
+    let got = verify(&cbor::canonical_cbor(&core).expect("canonical replacement"));
+
+    assert_eq!(got["cross_checks_ok"], Value::Bool(false), "{:?}", got["errors"]);
+    assert!(got["errors"].as_array().unwrap().iter().any(|e| e.as_str() == Some("ACTION_CONTEXT_MISMATCH")), "{:?}", got["errors"]);
+}
+
+#[test]
+fn certificate_action_id_cannot_be_erased_from_display_and_input() {
+    let valid = fs::read(certs_dir().join("valid.core.cbor")).unwrap();
+    let mut core = cbor::decode_cbor(&valid, cbor::MAX_DEPTH as usize, cbor::MAX_BYTES).expect("valid fixture parses");
+    *member_mut(member_mut(&mut core, "subject"), "action_id") = CborValue::Text(String::new());
+    *member_mut(member_mut(member_mut(&mut core, "verdict_input"), "action"), "action_id") = CborValue::Text(String::new());
+
+    let got = verify(&cbor::canonical_cbor(&core).expect("canonical replacement"));
+
+    assert_eq!(got["cross_checks_ok"], Value::Bool(false), "{:?}", got["errors"]);
+    assert!(got["errors"].as_array().unwrap().iter().any(|e| e.as_str() == Some("SUBJECT_ACTION_ID_MISMATCH")), "{:?}", got["errors"]);
+}
+
+#[test]
+fn certificate_subject_ids_must_be_recomputed_from_authority() {
+    let valid = fs::read(certs_dir().join("valid.core.cbor")).unwrap();
+    let mut core = cbor::decode_cbor(&valid, cbor::MAX_DEPTH as usize, cbor::MAX_BYTES).expect("valid fixture parses");
+    *member_mut(member_mut(&mut core, "subject"), "subject_ids") = CborValue::Map(vec![(CborValue::Text("org_id".into()), CborValue::Text("00".repeat(32)))]);
+
+    let got = verify(&cbor::canonical_cbor(&core).expect("canonical replacement"));
+
+    assert_eq!(got["cross_checks_ok"], Value::Bool(false), "{:?}", got["errors"]);
+    assert!(got["errors"].as_array().unwrap().iter().any(|e| e.as_str() == Some("SUBJECT_IDS_MISMATCH")), "{:?}", got["errors"]);
 }

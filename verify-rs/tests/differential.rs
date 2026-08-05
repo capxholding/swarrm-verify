@@ -32,29 +32,23 @@ fn differential_corpus_parity() {
         return;
     };
     let dir = PathBuf::from(dir);
-    let vectors: Value = serde_json::from_str(
-        &fs::read_to_string(dir.join("python_vectors.json")).expect("read python_vectors.json"),
-    )
-    .expect("parse python_vectors.json");
+    // The corpus now carries a trust context, because the gate whose job is
+    // proving the engines agree was exercising only the UNANCHORED half of
+    // derive_vector: every dimension anchored on 2026-08-03 and 2026-08-05 was
+    // invisible to it. verify-rs/tests/verdicts.rs already loads one this way.
+    let trust: Option<Value> = fs::read_to_string(dir.join("trust_context.json")).ok().map(|s| serde_json::from_str(&s).expect("parse trust_context.json"));
+    let vectors: Value = serde_json::from_str(&fs::read_to_string(dir.join("python_vectors.json")).expect("read python_vectors.json")).expect("parse python_vectors.json");
     let vectors = vectors.as_object().expect("python_vectors.json is an object");
-    let mut names: Vec<String> = fs::read_dir(&dir)
-        .expect("read corpus dir")
-        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
-        .filter(|n| n.starts_with("input_") && n.ends_with(".json"))
-        .collect();
+    let mut names: Vec<String> = fs::read_dir(&dir).expect("read corpus dir").filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned())).filter(|n| n.starts_with("input_") && n.ends_with(".json")).collect();
     names.sort();
     assert!(!names.is_empty(), "corpus dir {} has no input_*.json", dir.display());
     assert_eq!(names.len(), vectors.len(), "corpus/vector count mismatch");
     for name in &names {
         let raw = fs::read_to_string(dir.join(name)).expect("read input");
         let input: Value = serde_json::from_str(&raw).expect("parse input");
-        let got = swarrm_verify::action::derive_vector(&input);
+        let got = swarrm_verify::action::derive_vector_with_trust(&input, trust.as_ref());
         let want = vectors.get(name).unwrap_or_else(|| panic!("{name}: no python vector"));
-        assert!(
-            &got == want,
-            "{name}: engines diverge\n{}",
-            compact_diff(&got, want)
-        );
+        assert!(&got == want, "{name}: engines diverge\n{}", compact_diff(&got, want));
     }
     println!("differential: {} inputs, Rust == Python on every vector", names.len());
 }

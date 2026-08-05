@@ -6,6 +6,8 @@
         "externally_grounded": true,
         "kind": "BOND_ESCROW",
         "mandate_specific": true,
+        "party": "party-BOND_ESCROW",
+        "signature": "gpyJbHbYwCAhS9gUJjKA9aLoAeLA5//9UzPmkAq6ByWuh6oqhksLOW/SeTDddwhKeUO4GUWlSv7Eyc8d3UFJBw==",
         "signed": true,
         "time_bounded": true,
         "value_bounded": true

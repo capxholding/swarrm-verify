@@ -11,15 +11,11 @@ use std::fs;
 use std::path::PathBuf;
 
 fn repo(path: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join(path)
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join(path)
 }
 
 fn load_bundle(name: &str) -> Value {
-    serde_json::from_str(&fs::read_to_string(repo("tests/golden/bundles").join(name)).unwrap())
-        .unwrap()
+    serde_json::from_str(&fs::read_to_string(repo("tests/golden/bundles").join(name)).unwrap()).unwrap()
 }
 
 fn nested(levels: usize) -> Value {
@@ -35,12 +31,7 @@ fn nested(levels: usize) -> Value {
 #[test]
 fn fuzz_corpus_rejected_without_panic() {
     let dir = repo("tests/golden/fuzz");
-    let mut names: Vec<String> = fs::read_dir(&dir)
-        .unwrap()
-        .filter_map(|e| e.ok())
-        .map(|e| e.file_name().to_string_lossy().into_owned())
-        .filter(|n| n.ends_with(".json"))
-        .collect();
+    let mut names: Vec<String> = fs::read_dir(&dir).unwrap().filter_map(|e| e.ok()).map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n.ends_with(".json")).collect();
     names.sort();
     assert_eq!(names.len(), 30, "committed fuzz corpus must hold 30 cases");
     for name in names {
@@ -79,6 +70,22 @@ fn over_cap_synthetics_rejected_at_the_boundary() {
 }
 
 #[test]
+fn front_truncated_or_relabeled_history_is_rejected() {
+    let base = load_bundle("b21_authority_valid.json");
+    assert!(swarrm_verify::verify_bundle(&base), "control bundle must verify");
+
+    let mut truncated = base.clone();
+    let tail = truncated["checkpoint_chain"].as_array().unwrap()[1..].to_vec();
+    assert_ne!(tail[0]["checkpoint"]["body"]["prev_hash"], Value::String(String::new()));
+    truncated["checkpoint_chain"] = Value::Array(tail);
+    assert!(!swarrm_verify::verify_bundle(&truncated), "a signed suffix is not a complete history");
+
+    let mut relabeled = base;
+    relabeled["origin"] = Value::String("evd://tenant/t_attacker".into());
+    assert!(!swarrm_verify::verify_bundle(&relabeled), "outer origin must bind to signed checkpoints");
+}
+
+#[test]
 fn deep_nesting_cannot_overflow_the_stack() {
     // 100k levels — far past any stack. serde_json refuses >128 on parse, so
     // build the Value programmatically the way an embedding host could; the
@@ -90,4 +97,67 @@ fn deep_nesting_cannot_overflow_the_stack() {
     // test-thread stack — that hazard is the caller's, not the verifier's;
     // leak the bomb so the test measures only verify_bundle.
     std::mem::forget(bundle);
+}
+
+/// Two engines, one input, one answer (owner audit 2026-08-05).
+///
+/// Nine inputs got two different verdicts. `verify_bundle` in Python set
+/// `anchors_present = bool(raw)`, so a carried but FALSY `anchor_records`
+/// (`false`, `0`, `""`, `{}`) meant "no anchors" and skipped validation: Python
+/// VERIFIED, this engine NOT VERIFIED. `null` diverged the other way — Python's
+/// `.get()` semantics read it as absent, this engine as a malformed member.
+///
+/// The differential gate covers `derive_vector` vectors, not `verify_bundle`
+/// verdicts, so none of it was caught. The Python half of this test is
+/// tests/test_engine_parity.py; if you change either engine, change both.
+#[test]
+fn carried_record_members_agree_with_the_python_engine() {
+    let base = load_bundle("valid_e1.json");
+    assert!(swarrm_verify::verify_bundle(&base));
+
+    for field in ["anchor_records", "tst_records"] {
+        for junk in [json!(false), json!(0), json!(""), json!({}), json!("not-a-list")] {
+            let mut b = base.clone();
+            b[field] = junk.clone();
+            assert!(!swarrm_verify::verify_bundle(&b), "{field} = {junk} is a carried member that is not a list");
+        }
+        for absent in [json!(null), json!([])] {
+            let mut b = base.clone();
+            b[field] = absent.clone();
+            assert!(swarrm_verify::verify_bundle(&b), "{field} = {absent} means no records — absence never gates");
+        }
+    }
+}
+
+#[test]
+fn unverified_timestamp_token_cannot_supply_temporal_authority() {
+    let mut bundle = load_bundle("valid_e1.json");
+    bundle["tst_records"] = json!([{
+        "checkpoint_body_hash": "faa0c83321debd2c295ea2c7e298a2a769fca5dd1c10ba38bba2be457a80d0ac",
+        "token_der_b64": "AA==",
+        "tsa_url": "https://attacker.invalid/tst",
+        "gen_time": "2030-01-01T00:00:00Z",
+        "cert_chain_pem": "not a certificate chain",
+        "qualified": false
+    }]);
+    assert!(!swarrm_verify::verify_bundle(&bundle), "a structurally bound but cryptographically invalid TST is not independent time");
+}
+
+/// A newline spliced into a DSSE payload changes the bytes, so it must change
+/// the answer. Python's `standard_b64decode` discarded it and verified anyway,
+/// which also made "flip one byte and the bundle fails" false for that byte.
+#[test]
+fn noncanonical_base64_in_signed_fields_is_rejected() {
+    let base = load_bundle("valid_e1.json");
+    for junk in ["\n", " ", "\t", "!", "@"] {
+        let mut b = base.clone();
+        let p = b["entries"][0]["envelope"]["payload"].as_str().unwrap().to_string();
+        b["entries"][0]["envelope"]["payload"] = Value::String(format!("{}{}{}", &p[..8], junk, &p[8..]));
+        assert!(!swarrm_verify::verify_bundle(&b), "noncanonical base64 in a DSSE payload");
+    }
+
+    let mut checkpoint = base;
+    let sig = checkpoint["target_checkpoint"]["sig"].as_str().unwrap().to_string();
+    checkpoint["target_checkpoint"]["sig"] = Value::String(format!("!{sig}"));
+    assert!(!swarrm_verify::verify_bundle(&checkpoint), "a noncanonical checkpoint signature must not be decoded permissively");
 }

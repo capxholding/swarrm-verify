@@ -46,7 +46,7 @@
           "evidence_source_ref": "cfg://tool-policy/v1",
           "mechanism_declaration": "ENFORCED",
           "schema": "evd/surface/v1",
-          "signature": "c2lnLXNyZg==",
+          "signature": "dsSEePAL8Lx5e0elPPT7gRAmOxwOz1EeVI50eSEojzGiefwJQAkMPPxuRc+93joLCAVHbE7SGRc2BCCfSH04AA==",
           "surface_class": "tool_calls",
           "surface_id": "srf-h1"
         },
@@ -61,7 +61,7 @@
           "evidence_source_ref": "cfg://egress-policy/v1",
           "mechanism_declaration": "ENFORCED",
           "schema": "evd/surface/v1",
-          "signature": "c2lnLXNyZg==",
+          "signature": "c4fXSl+9+HOLD5DhCmzrAafF7VCT+Z/72ouJLqLnoaQmNbdVtRFSEp2+NnJva2pFd9oxePrQ+F+tKKhoTyOFDw==",
           "surface_class": "network_egress",
           "surface_id": "srf-h2"
         }
