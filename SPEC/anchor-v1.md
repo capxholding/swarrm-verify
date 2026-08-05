@@ -132,6 +132,11 @@ must chain to a SELF-SIGNED root inside the record's `cert_chain_pem`;
 record's display `gen_time` must equal the token's genTime. Any failure →
 **NOT VERIFIED**. Absence of `tst_records` never fails a bundle.
 
+A verifier that does not implement every check above MUST treat that record as
+**NOT VERIFIED** and MUST NOT consume its claimed `gen_time` as independent
+time for an authority or temporal-binding result. Structural checkpoint binding
+alone is not timestamp verification.
+
 Out of scope in v1 (documented limitation, not a hidden gap): CRL/OCSP
 revocation checking and ESSCertID binding. The pinned chain is the trust
 anchor: whoever distrusts it must distrust the token.

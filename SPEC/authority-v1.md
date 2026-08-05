@@ -131,6 +131,29 @@ Authority (§5) must cover the ENTIRE interval; a `null` bound cannot be
 covered, so an unanchored log yields authority `NOT_VERIFIED` — the weaker
 claim, by design.
 
+Two rules keep `independent_ts` from becoming a producer timestamp by the back
+door. A TST's `gen_time` is cross-checked against the genTime inside a token
+whose signature, chain and imprint are verified; `block_ts` had no counterpart,
+and offline it is an unsigned string in an additive member that any holder or
+forwarder can edit. Both rules are backed by signatures already in the bundle:
+
+- **Not before signing.** A checkpoint cannot be anchored before it existed, and
+  its `ts` is signed, so an anchor record whose `block_ts` precedes it is
+  REJECTED (`anchors_ok` false). Without this, backdating two strings moved an
+  intent recorded 17 days after its grant was revoked into the grant window and
+  flipped authority to `VERIFIED`, through the certificate layer, exit 0.
+- **Clamped to what contains it.** Checkpoint N is a prefix of every later
+  checkpoint, so a proof that N+1 existed by T proves N did too. Each
+  `independent_ts` is therefore clamped to the earliest proven for it or for any
+  checkpoint containing it. Without this, post-dating one `block_ts` produced an
+  INVERTED interval (`lower` after `upper`) — and "covers the ENTIRE interval"
+  is vacuously true of an interval that cannot exist, so an action taken BEFORE
+  its grant was issued verified as authorised.
+
+What remains unproven offline — that the anchor transaction exists at all, and
+that it is not post-dated within the window these rules allow — needs `--live`.
+The CLI renders an unconfirmed anchor as a claim, never a tick.
+
 ## 5. Verifier derivation: identity · authority · intent
 
 All three are verifier-derived; no producer may award itself a result. Closed
