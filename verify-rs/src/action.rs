@@ -1310,9 +1310,7 @@ fn grant_chain_verified(rows: &[Rec], timeline: &[RootEntry], issued: &Rec, pair
 /// naming none constrains nothing.
 fn binding_substituted(issued: &Rec, revised: &[&Rec], binding_id: Option<&str>) -> bool {
     let Some(binding_id) = binding_id else { return false };
-    std::iter::once(&issued.ctx).chain(revised.iter().map(|r| &r.ctx)).any(|ctx| {
-        matches!(ctx.get("binding_id").and_then(Value::as_str), Some(named) if !named.is_empty() && named != binding_id)
-    })
+    std::iter::once(&issued.ctx).chain(revised.iter().map(|r| &r.ctx)).any(|ctx| matches!(ctx.get("binding_id").and_then(Value::as_str), Some(named) if !named.is_empty() && named != binding_id))
 }
 
 fn derive_authority(rows: &[Rec], timeline: &[RootEntry], intent: &Rec, interval: &Value, birthtags: &BTreeSet<String>, binding_id: Option<&str>) -> (&'static str, Map<String, Value>) {
