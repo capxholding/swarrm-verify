@@ -1,0 +1,5 @@
+# The independently auditable verifier has an immutable physical-line ceiling.
+# Keep Rust's formatter compact so a formatting-only change cannot consume that
+# budget; CI checks this exact configuration in the verify-rs job.
+max_width = 500
+use_small_heuristics = "Max"
