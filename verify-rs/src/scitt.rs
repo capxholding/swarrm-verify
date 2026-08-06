@@ -113,8 +113,7 @@ fn receipt_profile(receipt: &crate::cose::Sign1) -> bool {
 /// known fields meant arbitrary unsigned content could ride inside a
 /// "signed" checkpoint while the recomputed hash still matched, and Python's
 /// `Checkpoint.from_dict` was corrected to reject such a body — leaving this as
-/// the more permissive engine on the same bytes (owner audit 2026-08-05,
-/// second pass).
+/// the more permissive engine on the same bytes.
 fn checkpoint_body(body: &Value) -> Option<(serde_json::Value, &str)> {
     // Exactly six members, all present and well-typed. Extracted from
     // `checkpoint` to keep that function inside the §0.2·3a complexity ceiling.

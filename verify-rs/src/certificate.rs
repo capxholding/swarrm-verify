@@ -320,7 +320,7 @@ fn check_input_echo(core: &J) -> bool {
 /// `open_findings` and `verdict_input.findings` are two carriages for one fact,
 /// and only the second gates coverage. A core holding an OPEN CRITICAL finding
 /// the verdict input never saw verified CLOSED/ELIGIBLE with the finding absent
-/// from the whole report (owner audit 2026-08-05).
+/// from the whole report.
 fn check_findings_carried(core: &J) -> bool {
     let carried = core["open_findings"].as_array().map(Vec::as_slice).unwrap_or(&[]);
     if carried.is_empty() {
@@ -384,7 +384,7 @@ fn is_final(ev: &J, rule: Option<&J>) -> bool {
 ///
 /// The lookup key is still the producer-chosen `claim.action_class`, but a
 /// missing or relabelled key now yields the floor instead of an empty list. On
-/// the shipped `contradicted` fixture (claim 100.00, event 90.00), deleting
+/// the `contradicted` fixture (claim 100.00, event 90.00), deleting
 /// `coverage_doc.material_fields` — or emptying it, narrowing it to
 /// ["currency"], or relabelling the class key with one trailing space — made
 /// this recomputation agree with a carried `false` and restored errors=[].
@@ -576,7 +576,7 @@ fn scitt_issuer_keys(bundle: &J) -> BTreeMap<String, [u8; 32]> {
 /// same thing as a failed one (weak-claim). Python was corrected first; leaving
 /// this early return would have made the two engines disagree on every
 /// certificate that carries no pack — which, since nothing in production
-/// assembles one, is all of them (owner audit 2026-08-05, second pass).
+/// assembles one, is all of them.
 fn apply_scitt_override(vi: &mut J, id: &str, bundle: &J) {
     let pack = match vi.get("registration").and_then(|r| r.get("scitt_pack")) {
         Some(p) if p.is_object() => p.clone(),

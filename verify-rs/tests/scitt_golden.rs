@@ -115,7 +115,7 @@ fn scitt_suite_agrees_with_expected() {
 
 #[test]
 fn cross_engine_certificate_id_matches_the_core() {
-    // §2/§6.2: the shipped core hashes to the certificate_id every statement
+    // §2/§6.2: the core hashes to the certificate_id every statement
     // commits to — the receipt registers precisely this immutable core.
     let dir = scitt_dir();
     let cid = read_json(dir.join("expected.json"))["certificate_id"].as_str().unwrap().to_owned();

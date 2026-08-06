@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Build 21 verdict fixtures: the Rust engine runs the SAME golden verdict
+//! Verdict fixtures: the Rust engine runs the same golden verdict
 //! inputs as the Python verifier (tests/test_verdicts.py) and must produce
 //! byte-identical vectors to expected_vectors.json. Two independent
 //! implementations agreeing is the conformance contract.
@@ -39,7 +39,7 @@ fn verdict_suite_agrees_with_expected_vectors() {
     assert!(checked >= 40, "expected at least 40 verdict fixtures, ran {checked}");
 }
 
-/// THE regression guard for the owner audit (2026-08-03), mirroring
+/// Regression guard mirroring
 /// tests/test_verdicts.py: a subject's own document, with NO independently
 /// supplied anchors, must never reach a favourable externally-grounded value —
 /// whatever it declares.

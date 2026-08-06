@@ -67,10 +67,10 @@ pub fn verify_consistency(first: u64, second: u64, first_root: &[u8], second_roo
             return false;
         }
     }
-    // RFC 9162 §2.1.4.2 step 6 compares *sn* to 0, not fn, and the two are not
+    // RFC 9162 §2.1.4.2 compares *sn* to 0, not fn, and the two are not
     // interchangeable: fn <= sn always and both shift together, so sn == 0
     // implies fn == 0 but never the reverse. Testing fn skipped the path-length
-    // check outright whenever `first` was a power of two, since step 3 shifts an
+    // check outright whenever `first` was a power of two, since the prior shift moves an
     // all-ones fn to 0 before the loop. Reproduction: the genuine (1,3) proof is
     // two hashes; folding only the first leaves fn=0, sn=1 and sr holding the
     // size-2 root, which this engine accepted as the size-3 root while

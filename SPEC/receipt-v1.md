@@ -144,8 +144,10 @@ registration, lineage, Node, finding, or coverage state.
    canonical bytes of one `evd/receipt/v1` body with the required §3 fields
    and their declared types (plus only the additive `session_id` /
    `session_inferred` pair). `seq` is in `1..2^63-1`. An upload carries **1..7
-   distinct 64-byte Ed25519 signatures**; the verifier-wide eighth slot is
-   reserved for the issuer counter-signature.
+   distinct 64-byte Ed25519 recorder signatures**. The verifier-wide cap is
+   **nine**: the managed issuer appends its current signature and, only during
+   the signed bounded issuer-rotation overlap, its immediately preceding
+   issuer signature. No edge upload may consume either issuer slot.
 3. **Bind tenant and constrain the edge role.** The signed `tenant_id` MUST
    equal the tenant authenticated by the API key. `agent_id` MUST NOT begin
    `_`. The managed edge action profile is a positive allow-list:

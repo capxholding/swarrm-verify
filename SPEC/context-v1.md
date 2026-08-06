@@ -12,7 +12,7 @@ disclosable later by the payload holder) or must not exist anywhere.
 
 | action_type | PLAINTEXT context (queryable) | COMMITTED (disclosable) | NEVER anywhere |
 |---|---|---|---|
-| `llm.chat` | model, endpoint, status, stream, finish_reason, input_tokens, output_tokens, requested_tool_names[], latency_ms | full request (`prompt`), full response (`output`) | raw user identifiers in context |
+| `llm.chat` | model, endpoint, status, stream, stream_truncated, truncation_type, finish_reason, input_tokens, output_tokens, requested_tool_names[], latency_ms | full request (`prompt`), full response (`output`) | raw user identifiers in context |
 | `tool.call` | tool_name, server_name, duration_ms, is_error, arg_keys[] (top-level keys only), result_kind (text/json/binary/none), result_size_band | tool.args, tool.result | any arg/result VALUES in context |
 | `data.read` | source_system, query_kind, record_count_band, duration_ms | query, result_set_hash | record contents in context |
 | `human.approve/override/reject` | decision, approver_role, latency_band | approver_id, justification | approver PII in context |

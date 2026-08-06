@@ -28,10 +28,10 @@
   </div>
 
   <h2>Copy-paste embed</h2>
-  <p>Paste anywhere. Optionally deep-link to a specific bundle you host by
-  appending <code>?bundle=&lt;https URL of your bundle.json&gt;</code> to the
-  href — the verifier fetches it client-side and verifies it in the visitor's
-  browser (still zero trust in us).</p>
+  <p>Paste anywhere. The verifier deliberately does not fetch bundle URLs from
+  a badge link: visitors download the bundle they intend to inspect and choose
+  it locally, so a query string cannot make their browser contact an arbitrary
+  host.</p>
   <pre>&lt;a href="https://swarrm.ai/verify"
    style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;
           font:600 13px system-ui,sans-serif;color:#0a7d33;border:1px solid #0a7d33;
