@@ -61,7 +61,8 @@ Key lifecycle events are ordinary receipts with `agent_id="_system"` and
 ```json
 {"jwk": {…RFC 8037 OKP/Ed25519…}, "effective_ts": "<RFC 3339>",
  "role": "<sponsored recorder creation only>",
- "prev_kid": "<rotations only>", "continuity_sig": "<rotations only, b64>"}
+ "prev_kid": "<rotations only>", "continuity_sig": "<rotations only, b64>",
+ "operator_authorization": {"…": "optional managed-custody signed command"}}
 ```
 
 Rules (all normative):
@@ -77,7 +78,10 @@ Rules (all normative):
 3. **Rotation** — signed by the OLD key; `continuity_sig` is the old key's
    Ed25519 signature over the new JWK's RFC 8785 canonical bytes. Rotation
    ADDS the new key; the old key remains valid until revoked (in-flight
-   material must not break).
+   material must not break). Managed production additionally carries its
+   separately verified offline operator authorization in
+   `operator_authorization`; it is issuer-witnessed audit metadata and does not
+   change generic offline key-log replay rules.
 4. **Revocation** — signed by an active key; the revoked kid is invalid for
    any material whose ts is after `effective_ts`. History before it stands.
    Key entries are never deleted or superseded in place.

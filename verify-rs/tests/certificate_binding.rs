@@ -2,9 +2,8 @@
 //! The Rust twin of tests/test_certificate_binding.py — the producer-supplied
 //! fields the verifier used to consume as authoritative.
 //!
-//! The owner audit (2026-08-05) found the certificate SUBJECT mutable while
-//! still reporting verified. The primary binding was fixed; this module is the
-//! second engine's proof for the FAMILY behind it: which fields count as
+//! Certificate subjects must be immutable while reporting verified. This module
+//! verifies the same rule in the second engine: which fields count as
 //! material, whether the comparison can be steered by field ORDER or by a field
 //! no manifest names, the displayed action identity when the bundle carries no
 //! `action.intent`, whether the `claim` may name a different action than the
@@ -100,7 +99,7 @@ fn lying_agent() -> J {
 
 #[test]
 fn a_producer_named_field_list_cannot_retract_the_floor() {
-    // The shipped lying-agent fixture, whose whole purpose is this lie: claim
+    // The lying-agent fixture demonstrates this claim:
     // value 999999.99 against event value 380.99. At HEAD one added key —
     // `source_manifest.material_fields: ["currency"]` — REPLACED the default
     // trio and both engines answered CORROBORATED.
@@ -133,7 +132,7 @@ fn the_producer_tail_still_widens_the_comparison() {
 #[test]
 fn the_coverage_doc_cannot_disarm_the_material_recomputation() {
     // §4.4 recomputes `material_mismatch` over an UNSIGNED, unechoed map. On
-    // the shipped `contradicted` core (claim 100.00 vs event 90.00) each of
+    // the `contradicted` core (claim 100.00 vs event 90.00) each of
     // these made the recomputation agree with a carried `false` and restored
     // errors=[] — deleting the member, emptying it, narrowing it to a subset
     // of the floor, or relabelling the class key by one trailing space.
@@ -373,8 +372,8 @@ fn the_covered_population_must_contain_the_certified_claim() {
 
 #[test]
 fn a_coverage_doc_making_no_population_statement_is_not_established() {
-    // REVERSED (owner, 2026-08-05). Treating "coverage_doc is an open CDDL map,
-    // so an absent claim_refs is not a lie" as a pass handed the producer the
+    // Treating "coverage_doc is an open CDDL map, so an absent claim_refs is
+    // not a lie" as a pass hands the producer the
     // switch: deleting claim_refs AND claim_count skipped the population clause
     // entirely and still reported coverage=CLOSED with a headline byte-identical
     // to the honest certificate. A producer-selectable omission must yield NOT

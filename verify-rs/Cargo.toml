@@ -19,13 +19,10 @@ serde_json = "1"
 sha2 = { version = "0.10", features = ["oid"] }
 ed25519-dalek = "2"
 base64 = "0.22"
-# RFC 3161 parity crates — the RustCrypto set sanctioned in A_BUILD §0.2·3
-# (owner, 2026-08-01). Exact pins mirrored in ci/architecture_policy.json.
+# RFC 3161 parity crates. Exact pins are mirrored in ci/architecture_policy.json.
 p256 = "=0.13.2"
-# Sanction extension (owner, 2026-08-03): RSA + P-384 for real RFC 3161 / TSA
-# certificate chains (freeTSA: P-384 ECDSA signer + RSA-signed chain; qualified
-# TSPs commonly RSA-sign). Same RustCrypto lineage, pure Rust (no C). Exact pins
-# mirrored in ci/architecture_policy.json.
+# RSA and P-384 support RFC 3161/TSA certificate chains. These pure-Rust
+# dependencies and their exact pins are mirrored in ci/architecture_policy.json.
 p384 = "=0.13.1"
 rsa = "=0.9.8"
 # B24 CBOR primitives — owner sanction O·1 (§0.2·3): ciborium is the ONLY

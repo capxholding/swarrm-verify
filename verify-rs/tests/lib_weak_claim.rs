@@ -1,6 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Two engines, one answer — the weak-claim seam in verify-rs/src/lib.rs
-//! (owner audit 2026-08-05).
+//! Two engines, one answer for weak claims in verify-rs/src/lib.rs.
 //!
 //! Both cases below let a hostile bundle read as VERIFIED in Rust while Python
 //! rejects it, which breaks the product claim that either engine answers the

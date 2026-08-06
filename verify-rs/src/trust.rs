@@ -1,7 +1,7 @@
 // Apache-2.0 (public verifier repo)
 //! Independently-supplied trust anchors — mirror of `verify/trust.py`.
 //!
-//! **The rule (owner audit 2026-08-03): a favourable verdict may never derive
+//! **A favourable verdict may never derive
 //! from an input the subject supplies.** Every externally-grounded dimension
 //! used to be computed from a producer boolean (`verified: true`,
 //! `node_signed: true`, `attester_independent: true`), so a subject could award

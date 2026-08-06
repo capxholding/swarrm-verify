@@ -6,10 +6,10 @@
 //! evidence that the format is unambiguous. Verify-only, offline, no network.
 
 pub mod action;
-#[allow(dead_code)] // canonical_from_json: golden-phase seam; tests use #[path]
+#[allow(dead_code)] // Test-only canonical JSON adapter.
 mod cbor;
-pub mod certificate; // B24.3 — verify_certificate_cbor doubles as the wasm export
-#[allow(dead_code)] // B25 W1 COSE adapter: consumed by later SCITT weeks and the golden test
+pub mod certificate; // `verify_certificate_cbor` also serves the WASM export.
+#[allow(dead_code)] // COSE adapter used by SCITT and golden tests.
 mod cose;
 pub(crate) mod jcs;
 mod merkle;
@@ -30,15 +30,15 @@ const EXPORT_MANIFEST_TYPE: &str = "application/vnd.evd.export-manifest.v1+json"
 const DISCLOSURE_SCHEMA: &str = "evd/disclosure/v1";
 const DOMAIN_PREFIX: &str = "evd/v1/";
 
-// H5 resource caps — IDENTICAL to verify/verifier.py: a bundle over any cap
-// is NOT VERIFIED by BOTH implementations, so golden agreement stays pinned.
+// Resource caps match `verify/verifier.py`: input over any cap is NOT VERIFIED
+// in either implementation.
 // All caps sit far above every legitimate bundle.
 #[allow(dead_code)] // enforced at byte entry points (verify_bundle_json/wasm)
 const MAX_BUNDLE_BYTES: usize = 64 * 1024 * 1024;
 const MAX_ENTRIES: usize = 200_000;
 const MAX_INCLUSION_PROOF_LEN: usize = 64;
 const MAX_CHECKPOINT_CHAIN_LEN: usize = 100_000;
-const MAX_SIGNATURES_PER_ENVELOPE: usize = 8;
+const MAX_SIGNATURES_PER_ENVELOPE: usize = 9;
 const MAX_JSON_DEPTH: i64 = jcs::MAX_DEPTH; // 64 — whole bundle shares the JCS cap
 
 fn depth_exceeds(v: &Value, limit: i64) -> bool {
@@ -69,7 +69,7 @@ fn entry_within_caps(e: &Value) -> bool {
     true
 }
 
-/// H5 resource caps, checked BEFORE any cryptographic work — same caps,
+/// Resource caps are checked before cryptographic work, using the same caps
 /// same order as _cap_error in verify/verifier.py.
 fn within_caps(bundle: &Value) -> bool {
     if let Some(entries) = bundle.get("entries").and_then(|v| v.as_array()) {
@@ -137,8 +137,8 @@ pub(crate) fn key_from_jwk(jwk: &Value) -> Option<([u8; 32], String)> {
     // aliases. Guarding the comparison with `.as_str()` meant a kid that was
     // PRESENT but not a string (false, 0, {}, []) skipped the check entirely
     // and the alias was accepted — 10 of 672 type-confusion mutants verified
-    // here and were rejected by Python, all at jwks.keys[0].kid (owner audit
-    // 2026-08-05). A carried member that is not the shape it claims is
+    // here and were rejected by Python, all at jwks.keys[0].kid. A carried
+    // member that is not the shape it claims is
     // MALFORMED, not absent; `null` alone stays equal to missing, which is the
     // no-claim state the rest of this verifier reads through `.get()`.
     match jwk.get("kid") {
@@ -398,12 +398,10 @@ pub(crate) fn hex(b: &[u8]) -> String {
 /// A Merkle proof is a sequence of 32-byte hashes or it is not a proof.
 ///
 /// `filter_map` over the hex decode DROPPED every element it could not decode,
-/// so a proof with junk spliced into it was evaluated as a SHORTER proof
-/// instead of being rejected: the audit lengthened a valid inclusion proof with
-/// `"zz"` and verify-rs answered on the remaining siblings while Python's
-/// `bytes.fromhex` raised and the bundle was NOT VERIFIED (owner audit
-/// 2026-08-05). ABSENT (or null) still means an empty proof — the no-claim
-/// shape, which only ever verifies a one-leaf tree — but a carried member that
+/// so a proof with junk spliced into it was evaluated as a shorter proof instead
+/// of being rejected. A proof containing `"zz"` must fail in both verifiers.
+/// ABSENT (or null) still means an empty proof — the no-claim shape, which only
+/// ever verifies a one-leaf tree — but a carried member that
 /// is not a list of 32-byte hex hashes is MALFORMED and rejects the proof.
 fn proof_hashes(v: Option<&Value>) -> Option<Vec<[u8; 32]>> {
     match v {
@@ -439,7 +437,7 @@ fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool 
 /// density is computed over the key entries PRESENT, so [1, 2] reads dense once
 /// entry 3 is gone: dropping `evd.key.rotated` or `evd.key.created` was caught,
 /// dropping `evd.key.revoked` was not, and the golden `post_revocation_forgery`
-/// fixture flipped to VERIFIED in both engines (owner audit 2026-08-05).
+/// fixture must be rejected in both engines.
 fn check_jwks_match_log(bundle: &Value, kl: &KeyLog) -> bool {
     let jwks = match bundle.get("jwks").and_then(|v| v.get("keys")).and_then(|v| v.as_array()) {
         Some(k) if !k.is_empty() => k,
@@ -604,8 +602,8 @@ fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8]) -> bool {
 /// Everything in a bundle is signed except the bundle. Entries are individually
 /// signed and individually proven included, so deleting one leaves every
 /// remaining signature valid, every inclusion proof valid, and the same target
-/// root — a real force-included `evd.finding.raised` was removed in flight with
-/// VERDICT: VERIFIED and exit 0 in BOTH engines (owner audit 2026-08-05).
+/// root. Removing a force-included `evd.finding.raised` must be rejected in
+/// both engines.
 ///
 /// ABSENT (or null) means the bundle makes no completeness claim, which stays
 /// valid: bundles predate the manifest, and a key-less replica exports honestly
@@ -808,8 +806,8 @@ fn check_lineage(entries: &[Value]) -> bool {
 /// `block_ts` is an unsigned string in an additive bundle member, never checked
 /// against a chain offline, yet authority-v1 §4 consumed it as verified time.
 /// Backdating it flipped an intent recorded 17 days AFTER its grant was revoked
-/// to authority VERIFIED (owner audit 2026-08-05). The checkpoint's own `ts` IS
-/// signed, so an earlier claim is refutable from the bytes alone. A malformed
+/// to authority VERIFIED. The checkpoint's own `ts` is signed, so an earlier
+/// claim is refutable from the bytes alone. A malformed
 /// `block_ts` is not an ordering violation — §4 already ignores it.
 fn anchor_not_before_checkpoint(rec: &Value, signed_ts: Option<&str>) -> bool {
     let signed = Value::String(signed_ts.unwrap_or_default().to_string());
@@ -1006,7 +1004,7 @@ pub(crate) fn verify_bundle_report(bundle: &Value) -> (bool, Option<bool>) {
     if bundle.get("schema").and_then(|v| v.as_str()) != Some("evd/bundle/v1") {
         return (false, complete);
     }
-    // H5 resource caps (parse phase) — over-cap is NOT VERIFIED, never a panic
+    // Enforce resource caps during parsing; over-cap input is NOT VERIFIED.
     if !within_caps(bundle) {
         return (false, complete);
     }

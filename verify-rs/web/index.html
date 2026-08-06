@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Swarrm — verify an evidence bundle (offline, in your browser)</title>
+  <title>Swarrm — verify an evidence bundle locally, in your browser</title>
   <style>
     body { font: 16px/1.5 system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1rem; color: #16161a; }
     #drop { border: 2px dashed #bbb; border-radius: 8px; padding: 3rem; text-align: center; color: #666; cursor: pointer; }
@@ -20,10 +20,10 @@
 </head>
 <body>
   <h1>Verify an evidence bundle</h1>
-  <p class="note">Everything runs <b>in your browser</b>. Your bundle never leaves this page —
-  no server, no network, no upload, no analytics. This is a second, independent verifier
-  (Rust → WASM); it agrees with the reference verifier on the shared golden suite. Open your
-  browser's Network panel and confirm: verifying makes <b>zero</b> requests.</p>
+  <p class="note">The verifier runs <b>in your browser</b>. A bundle you choose is read locally
+  and is never uploaded; verifying it makes no bundle-related network request. This is a second,
+  independent verifier (Rust → WASM); it agrees with the reference verifier on the shared golden
+  suite.</p>
 
   <div id="drop">drop <code>bundle.json</code> or a <code>.cbor</code>/<code>.cert</code> certificate here, or click to choose
     <input id="file" type="file" accept=".json,.cbor,.cert,application/json" hidden />
@@ -81,30 +81,6 @@
       detail.textContent = message;
     }
 
-    async function readResponseBounded(response) {
-      if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
-      const declared = Number(response.headers.get("content-length") || 0);
-      if (declared > MAX_INPUT_BYTES) throw new Error("bundle exceeds the 64 MiB browser limit");
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("browser cannot read this bundle safely");
-      const chunks = [];
-      let total = 0;
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        total += value.byteLength;
-        if (total > MAX_INPUT_BYTES) {
-          await reader.cancel();
-          throw new Error("bundle exceeds the 64 MiB browser limit");
-        }
-        chunks.push(value);
-      }
-      const bytes = new Uint8Array(total);
-      let offset = 0;
-      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-      return bytes;
-    }
-
     async function readFileBounded(f) {
       if (!f || f.size > MAX_INPUT_BYTES) throw new Error("bundle exceeds the 64 MiB browser limit");
       return new Uint8Array(await f.arrayBuffer());
@@ -129,9 +105,8 @@
       // proof, key-log entry and checkpoint checked — offline.", which a reader
       // takes as covering the anchor and timestamp too; nothing here queries a
       // chain or a TSA, so those stay CLAIMS. The swarrm.ai copy of this page
-      // already said so and the appliance copy did not — a self-hosted
-      // deployment overclaiming relative to the public site (owner audit
-      // 2026-08-05). tests/test_verifier_page_claims.py pins the two together.
+      // must use the same scope. tests/test_verifier_page_claims.py pins the
+      // public and appliance copy together.
       const completeness = manifestAbsent
         ? " Export completeness is UNPROVEN: no signed export manifest."
         : " Signed export manifest confirms the carried receipt set.";
@@ -223,19 +198,6 @@
       show(currentText);
       detail.textContent = "one byte flipped in the bundle — verification now fails, in-browser.";
     };
-
-    // Badge deep-link: ?bundle=<https URL the CUSTOMER hosts>. This makes ONE
-    // fetch to that URL (the customer's host — never us) and verifies it here.
-    // The drop-a-file flow above stays strictly zero-network.
-    const q = new URLSearchParams(location.search).get("bundle");
-    if (q) {
-      detail.textContent = `fetching ${q} (from its host, not us) and verifying in your browser…`;
-      fetch(q).then(readResponseBounded).then((bytes) => handle(new TextDecoder().decode(bytes))).catch((e) => {
-        verdict.textContent = "could not fetch bundle";
-        verdict.className = "bad";
-        detail.textContent = String(e);
-      });
-    }
 
     drop.onclick = () => file.click();
     file.onchange = () => { if (file.files[0]) handleFile(file.files[0]); };

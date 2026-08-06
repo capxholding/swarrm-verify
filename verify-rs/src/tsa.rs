@@ -11,7 +11,7 @@
 //!   5. signer cert chains to a SELF-SIGNED root inside the pinned chain
 //!   6. genTime lies within the signer cert's validity window
 //!
-//! ALGORITHM COVERAGE (owner sanctions A_BUILD §0.2·3, 2026-08-01 + 2026-08-03):
+//! Algorithm coverage:
 //! signatures verify under ECDSA P-256 / P-384 (`p256`/`p384`) and RSASSA-
 //! PKCS1-v1_5 (`rsa`) — the same set pyca/cryptography accepts on the Python
 //! side, so the real freeTSA token (P-384 signer key, RSA-signed chain) and

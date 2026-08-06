@@ -34,8 +34,8 @@ fn differential_corpus_parity() {
     let dir = PathBuf::from(dir);
     // The corpus now carries a trust context, because the gate whose job is
     // proving the engines agree was exercising only the UNANCHORED half of
-    // derive_vector: every dimension anchored on 2026-08-03 and 2026-08-05 was
-    // invisible to it. verify-rs/tests/verdicts.rs already loads one this way.
+    // derive_vector. Every trust-anchored dimension must participate in the
+    // parity corpus; verify-rs/tests/verdicts.rs loads the same context.
     let trust: Option<Value> = fs::read_to_string(dir.join("trust_context.json")).ok().map(|s| serde_json::from_str(&s).expect("parse trust_context.json"));
     let vectors: Value = serde_json::from_str(&fs::read_to_string(dir.join("python_vectors.json")).expect("read python_vectors.json")).expect("parse python_vectors.json");
     let vectors = vectors.as_object().expect("python_vectors.json is an object");

@@ -47,7 +47,7 @@ fn fuzz_corpus_rejected_without_panic() {
 
 #[test]
 fn over_cap_synthetics_rejected_at_the_boundary() {
-    // caps IDENTICAL to verify/verifier.py: proof 64, sigs 8, depth 64
+    // caps IDENTICAL to verify/verifier.py: proof 64, sigs 9, depth 64
     let base = load_bundle("valid_e1.json");
     assert!(swarrm_verify::verify_bundle(&base), "valid_e1 must verify");
 
@@ -57,8 +57,8 @@ fn over_cap_synthetics_rejected_at_the_boundary() {
 
     let mut sigs = base.clone();
     let sig = sigs["entries"][0]["envelope"]["signatures"][0].clone();
-    sigs["entries"][0]["envelope"]["signatures"] = Value::Array(vec![sig; 9]);
-    assert!(!swarrm_verify::verify_bundle(&sigs), "8+1 signatures over cap");
+    sigs["entries"][0]["envelope"]["signatures"] = Value::Array(vec![sig; 10]);
+    assert!(!swarrm_verify::verify_bundle(&sigs), "9+1 signatures over cap");
 
     let mut deep = base.clone();
     deep["__depth65__"] = nested(64); // bundle object + 64 = depth 65, one over
@@ -99,7 +99,7 @@ fn deep_nesting_cannot_overflow_the_stack() {
     std::mem::forget(bundle);
 }
 
-/// Two engines, one input, one answer (owner audit 2026-08-05).
+/// Two engines, one input, one answer.
 ///
 /// Nine inputs got two different verdicts. `verify_bundle` in Python set
 /// `anchors_present = bool(raw)`, so a carried but FALSY `anchor_records`

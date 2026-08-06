@@ -318,7 +318,7 @@ fn match_candidates(vi: &Value) -> Result<Vec<Value>, Raise> {
 /// A container this cannot read is NOT an absence of findings; it is a
 /// coverage question it cannot answer, and the weaker answer is `open`. The
 /// same OPEN CRITICAL finding reached CLOSED/ELIGIBLE as a keyed map, as a
-/// nested list, and as a JSON string (owner audit 2026-08-05).
+/// nested list, and as a JSON string.
 fn has_open_finding(vi: &Value) -> bool {
     let Some(field) = vi.get("findings").filter(|f| !f.is_null()) else { return false };
     let Some(items) = field.as_array() else { return true };
@@ -326,7 +326,7 @@ fn has_open_finding(vi: &Value) -> bool {
 }
 
 /// The NORMATIVE material floor (SPEC/reconcile-v1.md §5). A producer-named
-/// list EXTENDS it and may never retract it: on the shipped lying-agent fixture
+/// list extends it and may never retract it: the lying-agent fixture
 /// (tests/golden/reconcile/lying_agent_value_flip.json, claim 999999.99 vs
 /// event 380.99) one added key — source_manifest.material_fields=["currency"] —
 /// REPLACED the trio and flipped both engines CONTRADICTED → CORROBORATED.
@@ -461,7 +461,7 @@ fn temporal(vi: &Value, trust: Option<&Value>) -> &'static str {
 /// top-level twins — so the favourable values need the same anchor. They had
 /// none: a presentation could carry top-level `control_domain: UNKNOWN` and
 /// `coverage: GAPPED` beside a per-surface row saying INDEPENDENT and CLOSED
-/// for the same facts (owner audit 2026-08-05). An ADMISSION stays believed
+/// for the same facts. An ADMISSION stays believed
 /// without proof; the favourable value needs the controlling party's signature.
 fn surface_row(e: &Value, trust: Option<&Value>) -> Value {
     let decl = s(e, "mechanism_declaration");
@@ -750,8 +750,7 @@ fn mark(te: &str, reg: &str, v: &Value) -> &'static str {
         (_, "UNREGISTERED") => "UNMARKED_UNREGISTERED",
         ("INELIGIBLE", _) => "UNMARKED_TECHNICAL",
         _ => {
-            // THE MARK IS WITHDRAWN (owner audit 2026-08-03, containment step 1):
-            // both paths read DECLARATION-derived dimensions (source_signature
+            // Both paths read declaration-derived dimensions (source_signature
             // reaches ASYMMETRIC from a `verified: true` boolean + key-NAME
             // equality, never signature bytes; control_domain reaches INDEPENDENT
             // from truthy strings), so a subject could award itself the top mark.
@@ -953,7 +952,7 @@ fn independent_ts_map(bundle: &Value) -> BTreeMap<String, (String, String)> {
 /// post-dating one `block_ts` produced an INVERTED interval (lower 2030 > upper
 /// 2026), and "authority covers the ENTIRE interval" is vacuously true of an
 /// interval that cannot exist — an action taken BEFORE its grant was issued
-/// came out VERIFIED (owner audit 2026-08-05).
+/// would otherwise be reported as VERIFIED.
 fn clamped_times(bundle: &Value) -> Vec<(i64, String, String)> {
     let times = independent_ts_map(bundle);
     let mut rows: Vec<(i64, String, String)> = Vec::new();
@@ -1301,8 +1300,7 @@ fn grant_chain_verified(rows: &[Rec], timeline: &[RootEntry], issued: &Rec, pair
 /// one binding — an agent legitimately holds several (key rotation, a second
 /// runtime, prod beside staging, a re-bind after a lineage revision). So a grant
 /// issued for the quiet binding authorised an action executed under the live one
-/// and BOTH engines said authority VERIFIED. Reproduced as a one-line change to
-/// the shipped `b21_concurrent_binding_explicit` fixture.
+/// and both engines said authority VERIFIED.
 ///
 /// Enforced only when a binding was actually MATCHED: with none in force
 /// identity is already NOT_VERIFIED and eligibility already fails on it.

@@ -34,7 +34,7 @@ fn hexes(v: &[&str]) -> Vec<[u8; 32]> {
 }
 
 /// A truncated consistency path must fail. `first` is a power of two here,
-/// so step 3 drives fn to 0 before the loop even starts and the old
+/// so the prior shift drives fn to 0 before the loop even starts and the old
 /// `fn == 0` terminal test could never fire. Folding only the first hash
 /// of the (1,3) proof leaves sr holding the size-2 root, which the forger
 /// then presents as the size-3 root.
