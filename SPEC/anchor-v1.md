@@ -1,7 +1,9 @@
 <!-- Apache-2.0 -->
 # evd/anchor v1 — public-chain anchoring of checkpoints
 
-Status: NORMATIVE for Build 2. §tsa (RFC 3161 timestamps) lands in Build 3.
+Status: NORMATIVE wire and verification profile. The E2 and qualified-timestamp
+assurance labels are withdrawn; carried anchor/timestamp material is rendered
+as a claim unless its external trust inputs are supplied independently.
 
 ## 1. What is anchored, and why the checkpoint `body_hash`
 
@@ -25,7 +27,8 @@ zero authority. The EVENT is the anchor; the sender address is incidental
 (anyone may pay to anchor a digest — a digest anchored by a stranger is still
 an anchored digest).
 
-Chains: Base Sepolia (staging, chainId 84532) → Base (prod, chainId 8453).
+The wire format can name a chain id. The current operated deployment uses Base
+Sepolia staging (chainId 84532); no Base-mainnet production claim is made.
 
 ## 3. AnchorRecord (wire format, embedded in bundles)
 
@@ -40,8 +43,10 @@ Chains: Base Sepolia (staging, chainId 84532) → Base (prod, chainId 8453).
 }
 ```
 
-`block_ts` is the block's timestamp (consensus time), RFC 3339 UTC. It is
-evidence of "existed no later than", not a precision clock.
+`block_ts` is the claimed block timestamp, RFC 3339 UTC. It supports an
+"existed no later than" conclusion only after the transaction, emitting
+contract, chain and timestamp are checked against independently selected live
+chain state; the carried string alone has no temporal authority.
 
 Bundles (`evd/bundle/v1`) gain an ADDITIVE field `anchor_records`: a list of
 records for every checkpoint in `checkpoint_chain` that has one. The field is
@@ -51,18 +56,18 @@ remain correct.
 ## 4. Offline verification semantics (normative)
 
 1. If `anchor_records` is absent or empty: the bundle verifies at **E1**
-   (signed receipts in a consistent checkpointed log). Anchors UPGRADE
-   evidence to E2; their absence never fails verification. Reports MUST
-   render "not anchored".
+   (signed receipts in a consistent checkpointed log). Their absence never
+   fails verification. Reports MUST render "not anchored".
 2. If `anchor_records` is present, then for EACH record:
    - all six fields MUST be present, and
    - `checkpoint_body_hash` MUST equal the `body_hash` of some checkpoint in
      the bundle's `checkpoint_chain`.
    Any violation → **NOT VERIFIED**. (A bundle claiming anchors it cannot
    bind to its own chain is lying about its evidence level.)
-3. Offline verification proves the records are *internally consistent* with
-   the chain. It cannot prove the tx exists on the public chain — that is
-   exactly what `--live` adds.
+3. Offline verification proves only that the carried records are *internally
+   consistent* with the carried checkpoint chain. It cannot prove the tx exists
+   on a public chain and MUST NOT award E2 or consume `block_ts` as independent
+   time.
 
 ## 5. Live verification (`--live`)
 
@@ -88,6 +93,11 @@ that cannot complete is a failed live check, not a skipped one). `--live`
 composes with `--json` identically — the JSON report gains a `live` object
 and the exit code reflects live failures the same as in text mode.
 
+A successful live result establishes those facts relative to the caller's
+chosen RPC and configured contract. It is reported separately; the current
+release still awards no E2 label. Trust in the RPC/chain selection is an input,
+not something the bundle can supply about itself.
+
 Two non-failures, for symmetry with §4.1: a bundle with NO anchor records
 under `--live` has nothing to falsify (still valid E1, reported as such);
 records that already failed OFFLINE validation are not live-checked — the
@@ -96,12 +106,13 @@ bundle is NOT VERIFIED before the network is ever touched.
 The offline verifier makes NO network calls without `--live`. This is a hard
 guarantee of the public CLI.
 
-## 6. RFC 3161 timestamps (§tsa) — E2 part 2
+## 6. RFC 3161 timestamp claims (§tsa)
 
-One digest, two independent roots: the same checkpoint `body_hash` that is
-anchored on-chain is also submitted to an RFC 3161 timestamp authority.
-Either can fail without affecting the other; each alone upgrades evidence,
-together they remove any single point of temporal trust.
+The same checkpoint `body_hash` may be anchored on-chain and submitted to an
+RFC 3161 timestamp authority. Either operation can fail without affecting the
+other. They are not independent trust roots when the bundle supplies its own
+chain endpoint, TSA certificates or labels, and neither currently upgrades an
+offline report to E2.
 
 ### TstRecord (wire format, embedded in bundles)
 
@@ -139,17 +150,19 @@ alone is not timestamp verification.
 
 Out of scope in v1 (documented limitation, not a hidden gap): CRL/OCSP
 revocation checking and ESSCertID binding. The pinned chain is the trust
-anchor: whoever distrusts it must distrust the token.
+material used for cryptographic validation, but when that chain travels inside
+the same bundle it is not an independently supplied TSA trust root. The token
+therefore remains a bound claim rather than an E2 award.
 
 ### The "qualified" labeling rule (claims ≤ mechanism)
 
 `qualified: true` is an OPERATOR CLAIM that the issuing TSA is on the EU
-trusted list. The offline verifier cannot check trust-list membership; it
-verifies the cryptography either way and reports show the TSA URL so the
-claim is auditable out-of-band. The word "qualified" MUST NOT appear for
-freeTSA or any non-trust-listed TSA — dev output says "non-qualified",
-always. TSA outage = skip and retry next cycle; never blocks checkpointing
-or anchoring.
+trusted list. The offline verifier cannot check trust-list membership, so no
+input awards a qualified-timestamp label. It verifies the bound token
+cryptography and reports the TSA URL plus the claimed field for explicit
+out-of-band review; a renderer MUST NOT turn that producer boolean into a
+qualified check or badge. freeTSA/dev/staging output is non-qualified. TSA
+outage = skip and retry next cycle; it never blocks checkpointing or anchoring.
 
 ## 7. Worker semantics
 

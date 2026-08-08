@@ -27,6 +27,9 @@ CertificateCore = {
                       source: text, period: { * text => text } }],
   proof_digests: [* hex32],
   ? assurance_transcript_digest: hex32,
+  ? challenge_envelope_hash: hex32,
+  ? presentation_envelope_hash: hex32,
+  ? asa_envelope_hash: hex32,
   ? presentation_digest: hex32,
   agent_context_digest: hex32,
   verdict_input: { * text => any },               ; complete evd/verdict-input/v1

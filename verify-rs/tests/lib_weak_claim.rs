@@ -69,6 +69,30 @@ fn a_string_kid_that_aliases_other_key_material_is_rejected() {
     assert!(!swarrm_verify::verify_bundle(&bundle));
 }
 
+/// JSON `false` is not Merkle position zero. Python's bool-is-int rule let
+/// this unsigned presentation mutation through while Rust/WASM rejected it.
+#[test]
+fn a_boolean_leaf_index_is_malformed_not_leaf_zero() {
+    let mut bundle = load_bundle("valid_e1.json");
+    bundle["entries"][0]["leaf_index"] = json!(false);
+    assert!(!swarrm_verify::verify_bundle(&bundle));
+}
+
+/// Anchor time is unsigned additive metadata, but it can never evade the
+/// signed checkpoint's lower bound through a permissive timestamp grammar.
+#[test]
+fn a_noncanonical_or_early_anchor_time_is_rejected() {
+    let base = load_bundle("b21_authority_valid.json");
+    for time in ["2026-01-01T00:00:00.Z", "2026-02-30T00:00:00Z", "not-a-timestamp", "2025-01-01T00:00:00Z"] {
+        let mut bundle = base.clone();
+        bundle["anchor_records"][0]["block_ts"] = json!(time);
+        assert!(!swarrm_verify::verify_bundle(&bundle), "block_ts={time}");
+    }
+    let mut leap_day = base;
+    leap_day["anchor_records"][0]["block_ts"] = json!("2028-02-29T00:00:00.000001Z");
+    assert!(swarrm_verify::verify_bundle(&leap_day), "a real leap-day fraction remains canonical");
+}
+
 /// Malformed proof elements were dropped by `filter_map`, so a proof with junk
 /// spliced in was evaluated as a SHORTER proof rather than rejected. Python
 /// does not drop: `bytes.fromhex` raises and the bundle is NOT VERIFIED.
@@ -110,5 +134,23 @@ fn a_malformed_element_rejects_the_whole_consistency_proof() {
         let mut bundle = base.clone();
         bundle["checkpoint_chain"][step]["consistency_from_prev"] = carried;
         assert!(!swarrm_verify::verify_bundle(&bundle), "a 6-to-8 leaf extension is not proven by a proof that is not three hashes");
+    }
+}
+
+#[test]
+fn sparse_checkpoint_profile_must_be_explicit_and_still_prove_growth() {
+    let mut bundle = load_bundle("export_manifest_recorder_child.json");
+    bundle.as_object_mut().unwrap().remove("export_manifest");
+    assert!(swarrm_verify::verify_bundle(&bundle));
+    // Checkpoints 0 and 1 commit to the same three-leaf root. Removing 1 makes
+    // the head's signed prev_hash non-direct, while its existing 3->4 Merkle
+    // consistency proof remains valid from checkpoint 0's identical root.
+    bundle["checkpoint_chain"].as_array_mut().unwrap().remove(1);
+    assert!(!swarrm_verify::verify_bundle(&bundle), "an undeclared skip is truncation");
+    bundle["checkpoint_chain_profile"] = json!("evd/checkpoint-chain/sparse-proof-v1");
+    assert!(swarrm_verify::verify_bundle(&bundle));
+    for malformed in [Value::Null, json!(false), json!("evd/checkpoint-chain/unknown-v1")] {
+        bundle["checkpoint_chain_profile"] = malformed;
+        assert!(!swarrm_verify::verify_bundle(&bundle));
     }
 }

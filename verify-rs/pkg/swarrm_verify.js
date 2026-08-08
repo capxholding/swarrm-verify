@@ -1,6 +1,60 @@
 /* @ts-self-types="./swarrm_verify.d.ts" */
 
 /**
+ * JSON/WASM entry point for a verdict input plus the relying party's LOCAL
+ * trust context.  The contexts remain separate arguments; exchange data can
+ * never smuggle its own roots into the verification call.
+ * @param {string} verdict_input_json
+ * @param {string} trust_json
+ * @returns {string}
+ */
+export function derive_vector_json(verdict_input_json, trust_json) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const ptr0 = passStringToWasm0(verdict_input_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(trust_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.derive_vector_json(ptr0, len0, ptr1, len1);
+        deferred3_0 = ret[0];
+        deferred3_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * Verify a two-field exchange after locally validating context and root pin.
+ * @param {Uint8Array} exchange
+ * @param {Uint8Array} local_context
+ * @param {Uint8Array} trust_pack
+ * @param {Uint8Array} expected_trust_pack_digest
+ * @returns {string}
+ */
+export function verify_b28_cwt(exchange, local_context, trust_pack, expected_trust_pack_digest) {
+    let deferred5_0;
+    let deferred5_1;
+    try {
+        const ptr0 = passArray8ToWasm0(exchange, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(local_context, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passArray8ToWasm0(trust_pack, wasm.__wbindgen_malloc);
+        const len2 = WASM_VECTOR_LEN;
+        const ptr3 = passArray8ToWasm0(expected_trust_pack_digest, wasm.__wbindgen_malloc);
+        const len3 = WASM_VECTOR_LEN;
+        const ret = wasm.verify_b28_cwt(ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3);
+        deferred5_0 = ret[0];
+        deferred5_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred5_0, deferred5_1, 1);
+    }
+}
+
+/**
  * Verify a bundle passed as a JSON string. Returns "VERIFIED" /
  * "NOT VERIFIED" / "ERROR: <reason>". For the file-drop static page.
  * @param {string} json

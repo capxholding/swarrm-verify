@@ -1,9 +1,10 @@
-# swarrm-verify — the open verifier for Swarrm evidence bundles
+# swarrm-verify — the open Swarrm verifier
 
 **Don't trust us. Verify it yourself.** This repository is the independent,
-open-source verifier for [Swarrm](https://swarrm.ai) evidence bundles
-(`evd/bundle/v1`) — the same verifier that runs client-side at
-[swarrm.ai/verify](https://swarrm.ai/verify).
+open-source Rust/WASM verifier for [Swarrm](https://swarrm.ai) evidence
+bundles (`evd/bundle/v1`), certificates, and the CWT/COSE-only
+`swarrm-b28/v1` Counterparty Assurance beta — the same verifier that runs
+client-side at [swarrm.ai/verify](https://swarrm.ai/verify).
 
 A Swarrm evidence bundle is a self-contained file: signed receipts of AI-agent
 actions, an RFC 6962 Merkle log with inclusion/consistency proofs, signed
@@ -12,6 +13,14 @@ integrity core **offline** — zero network and zero accounts. When a bundle als
 carries anchor or timestamp material, it verifies the supplied records and
 their cryptographic binding; it does not independently establish public-chain
 inclusion or timestamp-authority trust without external evidence.
+
+The B28 verifier checks a nonce-bound exact action, organisation-root passport
+chain, current proof-bearing authority, and an action-specific authorization
+against a separately pinned local trust pack. The public WASM entry point is
+deliberately read-only: it does not durably consume replay state and therefore
+cannot authorize execution. During the `1.1.0b1` beta, every otherwise
+favourable candidate is forced to `INDETERMINATE/PASS_DISABLED_BETA` with
+`should_execute=false`. No trust score or `Swarrm Verified` mark ships.
 
 ## Why this exists
 
@@ -26,7 +35,7 @@ RFC 6962 leaf prefix).
 
 ```
 verify-rs/     the Rust crate (rlib + wasm cdylib)
-  src/         JCS canonicalization, RFC 6962 Merkle, DSSE/Ed25519, bundle walk
+  src/         JCS/CBOR, RFC 6962, DSSE/COSE/Ed25519, bundle/cert/B28 checks
   tests/       golden-suite runner
   web/         the static drop-a-bundle page + parity test
 tests/golden/  shared fixtures: valid + adversarial bundles, expected verdicts
@@ -37,7 +46,10 @@ SPEC/          the wire formats (receipt-v1, log-v1, bundle-v1, anchor-v1, …)
 
 ```bash
 cd verify-rs
-cargo test                 # runs the shared golden suite — all fixtures must agree
+rustup toolchain install 1.90.0 --component rustfmt,clippy --target wasm32-unknown-unknown
+cargo +1.90.0 test --locked # shared valid and hostile suites must agree
+cargo +1.90.0 clippy --locked --all-targets -- -D warnings
+git diff --exit-code -- Cargo.lock
 ```
 
 The golden suite includes adversarial fixtures — tampered payloads, forged
@@ -48,7 +60,7 @@ rejected with the right error, not just "invalid".
 
 ```bash
 cd verify-rs
-wasm-pack build --target web --features wasm
+wasm-pack build --target web --features wasm --locked # pinned 0.15.0 binary
 shasum -a 256 pkg/swarrm_verify_bg.wasm
 ```
 
@@ -56,6 +68,9 @@ Compare the hash against `INTEGRITY.txt` on swarrm.ai. Bit-exact reproduction
 requires the same toolchain (rustc + wasm-pack versions are recorded in the
 integrity file); regardless of toolchain, this source is what to audit — the
 page at swarrm.ai/verify loads no external code and never uploads your file.
+For byte reproduction, follow the hash-checked wasm-pack 0.15.0 procedure in
+[`verify-rs/README.md`](verify-rs/README.md); CI also asserts that `Cargo.lock`
+does not change.
 
 ## What verification proves (and doesn't)
 
@@ -66,6 +81,14 @@ Anchor and timestamp records can strengthen that result only when their
 external trust assumptions are supplied and validated. Verification does not
 prove the *payloads* are true — it proves the recorded actions have not been
 altered since they were written.
+
+It also cannot establish global or latest completeness from a producer-chosen
+export. An internally valid bundle, key log, or authority-state checkpoint may
+still be an older consistent prefix. Before relying on freshness, compare an
+independently obtained later checkpoint or signed high-water. B28 similarly
+proves identity and authority only at its verified checkpoint; it does not
+predict future behaviour, certify an action outcome, or evaluate Node, source,
+coverage, history, or post-action evidence readiness in v1.
 
 ## License
 

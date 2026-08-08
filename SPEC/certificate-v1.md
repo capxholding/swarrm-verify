@@ -12,6 +12,8 @@ signed wrapper is B25's SCITT profile; internal receipts remain DSSE/JCS.
 
 RFC 8949 §4.2.1 Core Deterministic Encoding, restricted:
 - definite lengths only; no tags; no indefinite items; **no floats**;
+- at most **100,000 aggregate CBOR items** per decoded document, counted
+  before codec materialization as the root plus every array/map member;
 - data model: `null`, `bool`, signed 64-bit integers, UTF-8 text, byte
   strings, arrays, and maps with TEXT keys only;
 - map keys sorted by the bytewise-lexicographic order of their ENCODED bytes;
@@ -53,7 +55,12 @@ binding, grant, intent/submission receipts, checkpoint chain, anchors, TSTs)
 measurement basis) · `open_findings` (EVERY open finding for the covered
 period — an omitted finding is a silent overclaim) · `proof_digests`
 (retained source-proof material, digest-addressed) ·
-`assurance_transcript_digest?` + `presentation_digest?` (B28 seam) ·
+`assurance_transcript_digest?` + `challenge_envelope_hash?` +
+`presentation_envelope_hash?` + `asa_envelope_hash?` (one all-or-none B28
+group, derived only from the verifier's opaque durably-consumed exchange handle
+and required to match `subject.action_id`; the compiler has no public raw-hash
+inputs) · `presentation_digest?` (legacy
+pre-B28 seam; never substitutes for the exact group) ·
 `agent_context_digest` (SHA-256 over JCS of `{surface_manifest_digest,
 org_bindings_digest, mandate_lineage_digest}` as they stood at the
 `intent_interval` — the artifacts themselves are NOT inline; a B28

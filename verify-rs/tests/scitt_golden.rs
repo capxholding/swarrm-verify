@@ -25,8 +25,12 @@ mod merkle;
 #[path = "../src/scitt.rs"]
 mod scitt;
 
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64URL, Engine};
-use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use base64::{
+    engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64URL},
+    Engine,
+};
+use ciborium::Value as Cbor;
+use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -55,6 +59,21 @@ pub(crate) fn ed25519_verify(pubkey: &[u8; 32], msg: &[u8], sig: &[u8]) -> bool 
     vk.verify(msg, &Signature::from_bytes(&s)).is_ok()
 }
 
+pub(crate) fn key_from_jwk(jwk: &Value) -> Option<([u8; 32], String)> {
+    if jwk.get("kty")?.as_str()? != "OKP" || jwk.get("crv")?.as_str()? != "Ed25519" {
+        return None;
+    }
+    let raw = B64URL.decode(jwk.get("x")?.as_str()?).ok()?;
+    let key: [u8; 32] = raw.try_into().ok()?;
+    let kid = B64URL.encode(sha256(&key)).chars().take(16).collect::<String>();
+    match jwk.get("kid") {
+        None | Some(Value::Null) => {}
+        Some(Value::String(claimed)) if *claimed == kid => {}
+        Some(_) => return None,
+    }
+    Some((key, kid))
+}
+
 // ---- fixture loading --------------------------------------------------------
 
 fn scitt_dir() -> PathBuf {
@@ -71,11 +90,7 @@ fn unhex(s: &str) -> Vec<u8> {
 
 /// One JWK (OKP/Ed25519) → (raw 32-byte pubkey, kid), the core/keys rule.
 fn key_of(jwk: &Value) -> ([u8; 32], String) {
-    let raw = B64URL.decode(jwk["x"].as_str().unwrap()).unwrap();
-    let mut pk = [0u8; 32];
-    pk.copy_from_slice(&raw);
-    let kid = B64URL.encode(Sha256::digest(pk)).chars().take(16).collect();
-    (pk, kid)
+    key_from_jwk(jwk).unwrap()
 }
 
 fn keys_from_jwks(jwks: &Value) -> BTreeMap<String, [u8; 32]> {
@@ -85,6 +100,21 @@ fn keys_from_jwks(jwks: &Value) -> BTreeMap<String, [u8; 32]> {
         out.insert(kid, pk);
     }
     out
+}
+
+fn integer_member_mut(value: &mut Cbor, label: i128) -> Option<&mut Cbor> {
+    let Cbor::Map(entries) = value else { return None };
+    entries.iter_mut().find_map(|(key, item)| matches!(key, Cbor::Integer(number) if i128::from(*number) == label).then_some(item))
+}
+
+fn mutate_inclusion_number(receipt: &[u8], ts_keys: &BTreeMap<String, [u8; 32]>, position: usize, value: u64) -> Vec<u8> {
+    let parsed = cose::verify_sign1(receipt, ts_keys, 65536, 16).unwrap();
+    let mut unprotected = parsed.unprotected;
+    let triple = integer_member_mut(integer_member_mut(&mut unprotected, 396).unwrap(), -1).unwrap();
+    let Cbor::Array(items) = triple else { panic!("fixture inclusion is not an array") };
+    items[position] = Cbor::Integer(value.into());
+    let seed = <[u8; 32]>::try_from((64u8..96).collect::<Vec<_>>()).unwrap();
+    cose::build_sign1(&parsed.protected, &unprotected, parsed.payload.as_deref(), &seed).unwrap()
 }
 
 // ---- the gate ---------------------------------------------------------------
@@ -142,4 +172,65 @@ fn wrong_ts_key_and_hostile_bytes_fail_closed() {
     }
     // a genuinely valid family still verifies True under its own pack keys
     assert!(scitt::verify_scitt_receipt(&stmt, &rcpt, &ts_keys, &issuer_keys, &cid));
+}
+
+#[test]
+fn pack_policy_is_locally_anchored_and_binds_checkpoint_metadata() {
+    let dir = scitt_dir();
+    let pack = read_json(dir.join("registered_valid.pack.json"));
+    let statement = unhex(pack["signed_statement"].as_str().unwrap());
+    let receipt = unhex(pack["receipt"].as_str().unwrap());
+    let cid = pack["certificate_id"].as_str().unwrap();
+    let issuer_keys = keys_from_jwks(&read_json(dir.join("keys.json"))["issuer_jwks"]);
+    // Out-of-band fixture root: the generator's fixed TS seed, never read from
+    // this subject-carried pack.
+    let root_seed = <[u8; 32]>::try_from((64u8..96).collect::<Vec<_>>()).unwrap();
+    let root = SigningKey::from_bytes(&root_seed).verifying_key().to_bytes();
+    let local_roots = BTreeMap::from([("ts-1".to_owned(), root)]);
+
+    let ts_keys = scitt::verified_scitt_pack_keys(&pack, &local_roots, &statement).expect("locally anchored honest pack");
+    assert!(scitt::verify_scitt_receipt_with_checkpoint(&statement, &receipt, &ts_keys, &issuer_keys, cid, &pack["checkpoint"]));
+    assert!(scitt::verified_scitt_pack_keys(&pack, &BTreeMap::new(), &statement).is_none(), "carried TS JWKs cannot bootstrap trust");
+
+    // This pack is internally coherent: an attacker root signs the same exact
+    // TS-key policy, and the TS receipt/checkpoint remain genuine. It validates
+    // under that attacker root but not under the relying party's local root.
+    let mut attacker_pack = pack.clone();
+    let mut unsigned = attacker_pack["registration_policy"].as_object().unwrap().clone();
+    unsigned.remove("signature");
+    let seed = <[u8; 32]>::try_from((96u8..128).collect::<Vec<_>>()).unwrap();
+    let attacker = SigningKey::from_bytes(&seed);
+    let signature = attacker.sign(&jcs::canonical_checked(&Value::Object(unsigned)).unwrap());
+    attacker_pack["registration_policy"]["signature"] = Value::String(B64.encode(signature.to_bytes()));
+    let attacker_roots = BTreeMap::from([("attacker".to_owned(), attacker.verifying_key().to_bytes())]);
+    assert!(scitt::verified_scitt_pack_keys(&attacker_pack, &attacker_roots, &statement).is_some(), "attacker fixture must be internally valid");
+    assert!(scitt::verified_scitt_pack_keys(&attacker_pack, &local_roots, &statement).is_none(), "local root rejects attacker policy");
+
+    let mut policy_tamper = pack.clone();
+    policy_tamper["registration_policy"]["policy_version"] = Value::String("attacker-policy".to_owned());
+    assert!(scitt::verified_scitt_pack_keys(&policy_tamper, &local_roots, &statement).is_none());
+
+    let mut checkpoint_tamper = pack.clone();
+    checkpoint_tamper["checkpoint"]["body"]["ts"] = Value::String("2020-01-01T00:00:00.000000Z".to_owned());
+    assert!(scitt::verified_scitt_pack_keys(&checkpoint_tamper, &local_roots, &statement).is_none());
+
+    let mut carried_key_tamper = pack.clone();
+    carried_key_tamper["ts_jwks"]["keys"][0]["use"] = Value::String("enc".to_owned());
+    assert!(scitt::verified_scitt_pack_keys(&carried_key_tamper, &local_roots, &statement).is_none());
+}
+
+#[test]
+fn inclusion_numbers_must_match_the_signed_checkpoint() {
+    let dir = scitt_dir();
+    let pack = read_json(dir.join("registered_valid.pack.json"));
+    let statement = unhex(pack["signed_statement"].as_str().unwrap());
+    let receipt = unhex(pack["receipt"].as_str().unwrap());
+    let cid = pack["certificate_id"].as_str().unwrap();
+    let ts_keys = keys_from_jwks(&pack["ts_jwks"]);
+    let issuer_keys = keys_from_jwks(&read_json(dir.join("keys.json"))["issuer_jwks"]);
+
+    let size_mismatch = mutate_inclusion_number(&receipt, &ts_keys, 0, 2);
+    assert!(!scitt::verify_scitt_receipt(&statement, &size_mismatch, &ts_keys, &issuer_keys, cid));
+    let out_of_range = mutate_inclusion_number(&receipt, &ts_keys, 1, 1);
+    assert!(!scitt::verify_scitt_receipt(&statement, &out_of_range, &ts_keys, &issuer_keys, cid));
 }
