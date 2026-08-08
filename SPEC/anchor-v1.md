@@ -1,9 +1,11 @@
 <!-- Apache-2.0 -->
 # evd/anchor v1 — public-chain anchoring of checkpoints
 
-Status: NORMATIVE wire and verification profile. The E2 and qualified-timestamp
-assurance labels are withdrawn; carried anchor/timestamp material is rendered
-as a claim unless its external trust inputs are supplied independently.
+Status: NORMATIVE wire and verification profile. Offline E2, qualified-timestamp
+and E3 labels remain unavailable. The Evidence Report's explicit live profile
+may derive E2 only from a covering Base (`8453`) or Base Sepolia (`84532`)
+anchor re-read through the caller-selected RPC. Carried anchor/timestamp
+material alone remains a claim, and no timestamp-only E2 route ships.
 
 ## 1. What is anchored, and why the checkpoint `body_hash`
 
@@ -94,11 +96,15 @@ composes with `--json` identically — the JSON report gains a `live` object
 and the exit code reflects live failures the same as in text mode.
 
 A successful live result establishes those facts relative to the caller's
-chosen RPC and configured contract. The CLI reports it separately. The
+chosen RPC and chain. The contract address is a checked member of the record:
+the live read proves that address emitted the commitment, not that the contract
+has any independent authority. The CLI reports the result separately. The
 Evidence Report's explicit live mode may derive E2 for a receipt only when a
-successfully re-read checkpoint covers that receipt; an offline report remains
-E1. Trust in the RPC/chain selection is an input, not something the bundle can
-supply about itself.
+successfully re-read checkpoint covers that receipt and `chain_id` is Base
+mainnet `8453` or Base Sepolia `84532`. A successful local-development or
+unknown-chain read remains E1, and an offline report remains E1. Trust in the
+RPC/chain selection is an input, not something the bundle can supply about
+itself.
 
 Two non-failures, for symmetry with §4.1: a bundle with NO anchor records
 under `--live` has nothing to falsify (still valid E1, reported as such);
