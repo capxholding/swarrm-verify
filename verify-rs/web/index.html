@@ -195,7 +195,7 @@
           ? "this relying party requires a signed export manifest; this bundle makes no completeness claim."
           : "at least one check failed; this bundle is not trustworthy as presented.";
       if (passed) {
-        bundleDigest.textContent = "Bundle " + r.bundle_digest.slice(0, 8) + "… — cite this determination by SHA-256 (JCS): " + r.bundle_digest;
+        bundleDigest.textContent = "Bundle " + r.bundle_digest.slice(0, 8) + "… — cite this evidence bundle by SHA-256 (JCS): " + r.bundle_digest;
         bundleDigest.hidden = false;
       }
     }
