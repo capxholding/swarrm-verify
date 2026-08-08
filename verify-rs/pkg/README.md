@@ -33,7 +33,7 @@ echo "c09f971ecaed9a2efc80fdcea7a00ef6b53c7fadc8c57d1f61b53a6aa66b668a  $archive
   | sha256sum --check -
 tar -xzf "$archive"
 ./wasm-pack-v0.15.0-x86_64-unknown-linux-musl/wasm-pack \
-  build --locked --target web --features wasm
+  build --target web --features wasm --locked
 git diff --exit-code -- Cargo.lock
 python3 -m http.server      # from verify-rs/; open http://localhost:8000/web/
 ```
