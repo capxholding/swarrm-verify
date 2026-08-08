@@ -16,6 +16,7 @@ no API access, no cooperation from the log operator, no network.
 {
   "schema": "evd/bundle/v1",
   "origin": "evd://tenant/<id>",
+  "checkpoint_chain_profile": "evd/checkpoint-chain/sparse-proof-v1",
   "target_checkpoint": { "body": {...}, "kid": "...", "sig": "..." },
   "entries": [
     { "envelope": { DSSE }, "leaf_index": N, "inclusion_proof": ["<hex>", ...] }
@@ -38,6 +39,11 @@ no API access, no cooperation from the log operator, no network.
 }
 ```
 
+`checkpoint_chain_profile` is OPTIONAL. Absence means the original complete,
+directly linked checkpoint history. Its only v1 value is
+`evd/checkpoint-chain/sparse-proof-v1`: a proof-preserving network profile for
+long-running logs. Unknown or malformed values fail verification.
+
 `export_manifest` is OPTIONAL and additive. Everything else in a bundle is
 signed except the bundle itself: entries are individually signed and
 individually proven included, so deleting one leaves every remaining signature
@@ -52,12 +58,14 @@ receipt or a checkpoint.
 1. **Keys**: every JWK's `kid` matches its key material; reject aliases.
 2. **Target checkpoint** signature verifies.
 3. **Chain**: every checkpoint signature verifies; the first supplied
-   checkpoint is genesis (`prev_hash == ""`); every later `prev_hash` links
-   to its predecessor; `tree_size` is monotone; and the unsigned outer
+   checkpoint is genesis (`prev_hash == ""`); `tree_size` is monotone; and the unsigned outer
    `bundle.origin`, target-checkpoint origin, and every chain origin are the
-   same value. Every non-genesis step ships a consistency proof that verifies
-   old_root → new_root. A missing or failing proof is a FAIL (rewritten or
-   front-truncated history).
+   same value. In the default profile every later `prev_hash` directly links to
+   its carried predecessor. In the sparse-proof profile it MUST be non-empty,
+   but may name an omitted intermediate checkpoint. Every carried non-genesis
+   step in both profiles ships an RFC 6962 consistency proof that verifies the
+   prior carried root → current carried root. A missing/failing proof, an
+   undeclared skip, or any other profile value is a FAIL.
 4. **Head**: `target_checkpoint` is the chain head.
 5. **Entries**: per receipt — DSSE signature(s) verify; schema is
    `evd/receipt/v1`; `receipt_hash` recomputed from payload; inclusion
@@ -82,15 +90,23 @@ receipt or a checkpoint.
    identically.
 7. Verdict is the conjunction. Any single failure ⇒ NOT VERIFIED.
 
+For a bounded sparse-proof export, the producer MUST first validate the entire
+stored checkpoint hash chain, then carry genesis, the target head, and the
+earliest anchored and timestamped checkpoint covering every carried entry.
+This preserves every carried receipt/state proof and its earliest available
+carried timing evidence while bounding redundant checkpoint signatures. The
+verifier reports that the intermediate checkpoint history itself was not
+carried; sparse proof is never rendered as a complete checkpoint-history export.
+
 ## 4. Trust model & known limits (honest by design)
 
 - The bundle proves integrity relative to the log's public keys. An auditor
   MUST obtain the log's kid from an independent channel (published JWKS,
   anchored key-transparency entries, or a prior trusted bundle) — a bundle
   alone cannot defeat an attacker who forges *everything including the
-  keys*. E2 anchoring closes this: the anchored checkpoint hash pins the
-  history to a public chain and an RFC 3161 timestamp no key swap can
-  reproduce. (Anchor attachment format: anchor-v1, next increment.)
+  keys*. Independently verified external anchor/TSA state can constrain that
+  attack, but carried `anchor_records`/`tst_records` do not: the subject also
+  supplies them. The current release awards no E2 label (SPEC/anchor-v1.md).
 - **A bundle without an export manifest makes no completeness claim.** Absence
   is not failure — bundles predate the manifest, and a replica holding no
   private key (`scripts/restore_check.py` reads a restored `.db` with public
@@ -113,5 +129,6 @@ receipt or a checkpoint.
   never that it is complete.
 - Selective disclosure of payloads = revealing `(payload, nonce)` for a
   specific commitment; the verifier recomputes and compares (§receipt-v1).
-- E3 policy attestation blocks are carried in `commitments`/`context` and
-  enforced by requiring the edge `kid` — profile TBD in policy-v1.
+- Legacy dual-attestation blocks may be carried in `commitments`/`context` and
+  their two signatures can be checked. They do not establish independent
+  counterparty control, and the current release awards no E3 label.

@@ -200,7 +200,8 @@ Matrix: `surface_mechanism`, `surface_scope`, `history_state`.
 A registry-signed statement that a scope is registered for a term.
 - `covered_scope_digest`/`scope_description_digest` — what is covered and its
   human description, both digest-committed.
-- `policy_version`/`policy_digest` — the policy the mark is computed under.
+- `policy_version`/`policy_digest` — the policy consumed by the historical,
+  now-withdrawn mark derivation.
 - `band_commitment` — commitment to the fee band; never a score.
 - `entitlement_status` + `prev_registration_id` — an append-only chain
   `ISSUED → AMENDED → EXPIRED/SUSPENDED`; amendments link, never overwrite.
@@ -221,26 +222,22 @@ field forces `technical_eligibility = NOT_RECOMPUTED` and
 `mark = NOT_RECOMPUTED` — never a pass. Matrix: `technical_eligibility`,
 `mark` (`NOT_RECOMPUTED`).
 
-## 14. Handshake seams (`evd/trust-*/v1`, `evd/status-snapshot/v1`) — B28
+## 14. Retired pre-B28 handshake seams
 
-Shapes frozen now because they change signed bytes; **handshake logic waits
-for B28 and is built only against a written relying-party requirement.**
-- `AgentTrustChallengeV1` — relying party's nonce, action description/class,
-  policy digest, challenger identity, expiry. The nonce is what
-  `PROVEN_SOURCE_ECHO` and `DETERMINISTIC` assurance linkage can bind to.
-- `AgentTrustPresentationV1` — the agent's response: key proof,
-  `authority_proof_kind` with either a complete `asa` block (all bindings of
-  SPEC/verified-action-v1.md §2.14 — any missing binding renders `NONE`) or a
-  `disclosed_limit`, a `StatusSnapshotV1`, optional `transcript_digest`, and
-  a mandatory `non_assertion` block stating what the presentation does NOT
-  claim.
-- `StatusSnapshotV1` — revocation/binding/continuity status as of a named
-  checkpoint; a snapshot is evidence of status at that point, never current
-  truth.
-- `TrustPolicyV1` — the relying party's machine-readable acceptance policy;
-  which weak values disqualify is ALWAYS the relying party's decision
-  (`on_indeterminate`), never Swarrm's.
-Matrix: `authority_proof`, `assurance_linkage`.
+The dictionary-era `evd/trust-*/v1` and `evd/status-snapshot/v1` objects are
+retained only so historical artifacts remain readable. They are **not** the
+current B28 protocol, producers MUST NOT emit them as Counterparty Assurance
+v1, and their legacy verifier route is disabled. In particular, a legacy
+`authority_proof_kind`, `disclosed_limit`, producer-selected trust policy, or
+status reference cannot satisfy B28 identity, authority, freshness, replay or
+transcript checks.
+
+The sole normative B28 profile is `swarrm-b28/v1` in
+SPEC/handshake-v1.md: deterministic CBOR in one tagged COSE_Sign1 envelope,
+with proof-bearing authority state and an exact action-specific authorization.
+The legacy matrix dimensions `authority_proof` and `assurance_linkage` remain
+part of the evidence/certificate verifier only; they do not stand in for a B28
+verdict.
 
 ## 15. ConnectorHealth (`evd/connector-health/v1`)
 

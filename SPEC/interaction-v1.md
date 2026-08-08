@@ -20,6 +20,43 @@ the receipt commits to the CANONICAL bytes the transport actually carried.
   VISIBLE gap, not silence. An alternate history (rewritten message) fails
   signature + inclusion checks like any tamper.
 
+### B28 acceptance mode
+
+A B28 acceptance is never the unilateral degradation form. It requires both
+agent signatures and all of these context bindings:
+
+`assurance_transcript_digest` · `challenge_envelope_hash` ·
+`presentation_envelope_hash` · `asa_envelope_hash` ·
+`acceptance_result_digest` · `assurance_message_digest` ·
+`assurance_verdict` (`PASS|FAIL|INDETERMINATE`).
+
+All six digests are lowercase SHA-256 hex. The message commitment covers the
+canonical deterministic-CBOR `swarrm-b28/acceptance-core/v1`, while
+`assurance_message_digest` prevents a direct caller from substituting a
+different acceptance core on an otherwise-identical retry. The idempotency key
+is derived from the unordered relationship and semantic transcript digest. An
+exact retry returns the identical stored receipt; any changed signed binding or
+message digest fails.
+
+In beta, a favourable candidate is recorded only as
+`INDETERMINATE/PASS_DISABLED_BETA` with `should_execute=false`. The receipt is
+evidence of what both agents accepted about the exchange; it is not action
+authorization and does not pre-certify behavior.
+
+The producer emits downstream B28 evidence only from the opaque
+verified-and-durably-consumed exchange handle returned only after this
+bilateral receipt is finalized. The production flow is three-stage: the
+challenger verifies and consumes the ASA, durably stores one immutable
+`PREPARED` receipt and signs it; the responder independently verifies the
+acceptance core and challenger signature before co-signing those exact bytes;
+the challenger verifies the returned signature and atomically commits the
+reserved row. A crash resumes the same prepared body. No process needs both
+private keys. The single-call compatibility wrapper is for deliberate
+same-process custody and tests, not the hosted protocol. Intent and certificate
+APIs reject raw digest strings, syntactically valid but unverified envelopes,
+prepared-but-unfinalized handles, wrong-party handles and action-ID
+substitution.
+
 ## Bindings
 
 | transport | message bytes committed |
@@ -27,6 +64,10 @@ the receipt commits to the CANONICAL bytes the transport actually carried.
 | `a2a` | the canonical A2A message JSON |
 | `mcp` | the canonical JSON-RPC `tools/call` request or response |
 | `ap2` | the canonical AP2 mandate object (receipts can wrap payment mandates without translation — same RFC 8785 canonicalization) |
+
+For B28, the A2A v1 message contains exactly one inline `raw` Part with
+`mediaType=application/eat+cwt`; URL Parts, automatic fetch and multiple
+alternative copies are rejected.
 
 ## NON-goals (explicit — these stay out)
 

@@ -71,13 +71,17 @@ the Merkle leaf (see log-v1) and the value `parents` references.
   (`domain ‖ 0x00 ‖ nonce ‖ 0x00` then chunks); the result MUST equal the
   one-shot computation.
 
-## 5. Signatures & dual attestation (E3 profile — NORMATIVE as of Build 5)
+## 5. Signatures & dual attestation (wire profile; E3 label withdrawn)
 
 An envelope carries 1..n signatures over the same PAE bytes:
 
-- **E0/E1/E2**: the log's issuing key (per tenant).
-- **E3 (dual attestation)**: additionally, an edge-recorder key held at the
-  *customer's* edge. Verifiers enforcing E3 MUST require both `keyid`s.
+- **E0/E1 and carried anchor/timestamp material**: the log's issuing key (per
+  tenant). No E2 label currently ships.
+- **dual-attestation wire shape**: additionally, an edge-recorder key held at
+  the *customer's* edge. Verifiers checking that shape MUST require both
+  `keyid`s. The offline E3 assurance label is withdrawn: keys carried in the
+  same bundle do not independently establish counterparty identity or control
+  domain merely because both signatures verify.
   Neither party alone can then forge or repudiate a receipt.
 
 **Which kid is which, and the flow (normative):**
@@ -98,10 +102,11 @@ An envelope carries 1..n signatures over the same PAE bytes:
    applies the ordered law below and only then COUNTER-SIGNS with the tenant
    issuer key and appends. The appended envelope carries the edge and issuer
    signatures.
-4. **Verification rule** — E3 holds for a receipt iff
+4. **Dual-signature verification rule** — the two-signature wire condition holds iff
    `verify_envelope(env, log_keys, require_kids={issuer_kid, recorder_kid})`
    passes, with both kids drawn from the LOG's key history (log-v1 §5) and
-   valid at the receipt's `ts_server`.
+   valid at the receipt's `ts_server`. This does not award E3 or establish that
+   the named key holders are independent.
 
 **Legacy privileged-co-signature rule.** Offline verifiers MUST reject a
 multi-signed receipt when `agent_id` begins `_`, or when `action_type` begins
@@ -116,10 +121,12 @@ current positive admission profile. `interaction.message` remains an admitted
 bilateral action.
 
 **Ordering** — the recorder assigns per-agent monotonic `seq` at the edge;
-the spool preserves capture order and `sync()` stops at the first failure,
-so hosted leaf order matches edge seq order with zero silent gaps. Concurrent
-sync calls serialize, and a receipt appended while a sync is awaiting ingest
-MUST remain after that sync removes its successfully delivered prefix.
+the durable journal/spool preserves accepted capture order and `sync()` stops at
+the first failure, so hosted leaf order matches that accepted sequence.
+Concurrent sync calls serialize, and a receipt appended while a sync is awaiting
+ingest MUST remain after that sync removes its successfully delivered prefix.
+Bounded-storage/reserve refusal is an explicit cannot-retain gap, not a
+losslessness claim.
 `ts_server` is the recorder-observed capture time (the server side of the
 customer's local relay), not managed-ingest arrival time; this preserves the
 truth of receipts that remain offline in the spool before upload.

@@ -1,0 +1,74 @@
+{
+  "expected": "ASYMMETRIC",
+  "mac_expected": "SHARED_SECRET",
+  "mac_trust": {
+    "mac_keys": {
+      "mac-kid-1": "ZnVsbC1kaXNjbG9zdXJlLXNoYXJlZC1zZWNyZXQ="
+    },
+    "schema": "evd/trust-context/v1",
+    "source_keys": {}
+  },
+  "mac_verdict_input": {
+    "schema": "evd/verdict-input/v1",
+    "source_identity": {
+      "account": "acct-mac",
+      "declared_control_domain": "UNKNOWN",
+      "declared_controller": "shared-fixture",
+      "keys": [
+        {
+          "algorithm_family": "hmac-sha256",
+          "kid": "mac-kid-1",
+          "valid_from": "2026-01-01T00:00:00Z"
+        }
+      ],
+      "schema": "evd/source-identity/v1",
+      "source_system": "fixture-ledger"
+    },
+    "source_proofs": [
+      {
+        "key_identity": "mac-kid-1",
+        "material": "eyJib2R5IjogeyJldmVudF9rZXkiOiAiZXZ0LW1hYy0xIiwgInZhbHVlIjogIjEwLjAwIn0sICJraWQiOiAibWFjLWtpZC0xIiwgInNpZ25hdHVyZSI6ICI1YWJlNjkwY2MwMWQ5MWMyNzBlMTJmNTU4YjdjNDY3OTczOGEwOWFlN2E3MTdkNzRhN2EwZTdjMTg1NWQzYTRmIn0=",
+        "material_digest": "d86c0a910f9bb7e8a2f828d96650e31c3d4a87f91153b04cb1b03a9ca66e15d0",
+        "proof_type": "mac",
+        "schema": "evd/source-proof/v1",
+        "signature_context": "evd/source-webhook-body-jcs/v1",
+        "verified": false
+      }
+    ]
+  },
+  "trust": {
+    "mac_keys": {},
+    "schema": "evd/trust-context/v1",
+    "source_keys": {
+      "YbVuR1wJZC7w1ZyT": "+62MK6zGrGs0Hb5AJQWKdLufSTDefsYzQl6DUktHDuE="
+    }
+  },
+  "verdict_input": {
+    "schema": "evd/verdict-input/v1",
+    "source_identity": {
+      "account": "acct-91",
+      "declared_control_domain": "UNKNOWN",
+      "declared_controller": "swarrm-emulator",
+      "keys": [
+        {
+          "algorithm_family": "ed25519",
+          "kid": "YbVuR1wJZC7w1ZyT",
+          "valid_from": "2026-01-01T00:00:00Z"
+        }
+      ],
+      "schema": "evd/source-identity/v1",
+      "source_system": "emu-ledger"
+    },
+    "source_proofs": [
+      {
+        "key_identity": "YbVuR1wJZC7w1ZyT",
+        "material": "eyJib2R5IjogeyJjb3VudGVycGFydHkiOiAiYWNtZS05Njc3IiwgImN1cnJlbmN5IjogIkVVUiIsICJldmVudF9rZXkiOiAiZXZ0LTAwMDAwMCIsICJmaW5hbGl0eSI6ICJmaW5hbCIsICJvdXRjb21lIjogInN1Y2NlZWRlZCIsICJyZWZlcmVuY2UiOiAicmVmLTkxLTAwMDAiLCAic291cmNlX2VmZmVjdF90aW1lIjogIjIwMjYtMDEtMDFUMDA6MDA6MDBaIiwgInZhbHVlIjogIjExMC40NyJ9LCAia2lkIjogIlliVnVSMXdKWkM3dzFaeVQiLCAic2lnbmF0dXJlIjogInJwZ2hpbm1BdlBpNnFmbGNadmVNN1FDYy9RL1hEQWE2YW9mMnFiTWpFcGtmWW5RNlBkMHpDc0hsaDJINGFaMlI4ZmhveXlXWjBwazBZNXZ1bU5Bc0F3PT0ifQ==",
+        "material_digest": "81ee738f6c5978ce77fb25a3b0d6aef19e673cc66e24c8f6418cee3c2170c32b",
+        "proof_type": "asymmetric_signature",
+        "schema": "evd/source-proof/v1",
+        "signature_context": "evd/source-webhook-body-jcs/v1",
+        "verified": false
+      }
+    ]
+  }
+}
