@@ -55,8 +55,8 @@ export function verify_b28_cwt(exchange, local_context, trust_pack, expected_tru
 }
 
 /**
- * Verify a bundle passed as a JSON string. Returns "VERIFIED" /
- * "NOT VERIFIED" / "ERROR: <reason>". For the file-drop static page.
+ * Verify a bundle and return the versioned browser result JSON. A
+ * VERIFIED result alone carries the recomputed target checkpoint hash.
  * @param {string} json
  * @returns {string}
  */
