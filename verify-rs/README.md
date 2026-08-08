@@ -57,8 +57,8 @@ Rust/WASM verifier; externally grounded trust must be supplied out of band.
 The B28 export accepts one deterministic-CBOR exchange, one local verification
 context, canonical trust-pack bytes and that pack's separately configured
 SHA-256 pin. It rejects JWT/JWS, algorithm negotiation, embedded keys and
-network discovery. The `1.1.0b1` profile converts every otherwise favourable
-candidate to `INDETERMINATE/PASS_DISABLED_BETA` with
+network discovery. The `1.1.0` profile converts every otherwise favourable
+candidate to `INDETERMINATE/PASS_NOT_ENABLED` with
 `should_execute=false`; the read-only WASM function does not consume replay
 state or authorize execution.
 

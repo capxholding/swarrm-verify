@@ -43,7 +43,7 @@ fn fresh_mutations_match_python_exactly_and_never_authorize() {
 
         let got: Value = serde_json::from_str(&verify_b28_cwt(&exchange, &context, &trust_pack, &TRUST_PACK_PIN)).expect("B28 verifier must always return JSON");
         assert_eq!(got, case["expected"], "{name}: Rust diverged from Python");
-        assert_ne!(got["verdict"], "PASS", "{name}: beta returned PASS");
+        assert_ne!(got["verdict"], "PASS", "{name}: verifier returned PASS");
         assert_eq!(got["should_execute"], false, "{name}: read-only verifier authorized execution");
     }
     assert_eq!(manifest["mutation_surface_count"].as_u64(), Some(surfaces.len() as u64));

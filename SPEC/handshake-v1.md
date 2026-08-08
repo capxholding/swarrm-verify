@@ -2,9 +2,9 @@
 
 # SPEC: handshake-v1 — Counterparty Assurance (B28)
 
-**Status: NORMATIVE BETA (`swarrm-b28/v1`).** The verifier evaluates the full
+**Status: NORMATIVE (`swarrm-b28/v1`).** The verifier evaluates the full
 vector, but every otherwise-favourable result is exported as
-`INDETERMINATE/PASS_DISABLED_BETA`; the public API exposes neither a score nor a
+`INDETERMINATE/PASS_NOT_ENABLED`; the public API exposes neither a score nor a
 `WOULD_PASS` result. Official `PASS` remains gated on the independent review,
 revocation drill and limited relying-party rollout in `docs/A_BUILD.md`.
 
@@ -248,9 +248,9 @@ action_id)`:
 - unavailable, non-shared or full store: `INDETERMINATE`;
 - a crash after consumption burns the ASA and never authorizes a second action.
 
-The beta replaces both favourable cases with
-`INDETERMINATE/PASS_DISABLED_BETA` and `should_execute=false`. This release
-cannot authorize execution.
+The current product release replaces both favourable cases with
+`INDETERMINATE/PASS_NOT_ENABLED` and `should_execute=false`. B28 cannot
+authorize execution until the external gates enable favourable `PASS`.
 
 Node/source/coverage/history and post-action evidence readiness are
 `NOT_EVALUATED_V1`. Any policy requiring one of them cannot receive `PASS`.
