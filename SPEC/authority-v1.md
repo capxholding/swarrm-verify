@@ -277,7 +277,7 @@ agent successor links and assumed-risk releases. A Passport Authority signature
 cannot widen or create those facts. A console account without a valid active
 `AdminBindingV1` has no selection authority.
 
-B28 Beta supports an offline, dual-controlled organisation-root successor
+B28 v1 supports an offline, dual-controlled organisation-root successor
 ceremony. It does not turn server administration into root recovery: the
 currently enrolled old root authorizes the exact successor core and the new
 root proves possession by signing those identical bytes. Loss of the old root
