@@ -11,15 +11,34 @@ const { derive_vector_json, verify_bundle_json, verify_certificate_cbor, verify_
 
 const dir = path.join(__dirname, "..", "..", "tests", "golden", "bundles");
 const expected = JSON.parse(fs.readFileSync(path.join(dir, "expected.json"), "utf8"));
+const RESULT_SCHEMA = "evd/browser-bundle-verification-result/v1";
+const VALID_E1_HASH = "faa0c83321debd2c295ea2c7e298a2a769fca5dd1c10ba38bba2be457a80d0ac";
+
+function parseBundleResult(raw) {
+  const result = JSON.parse(raw);
+  const fields = result && !Array.isArray(result) ? Object.keys(result).sort().join(",") : "";
+  if (fields !== "checkpoint_body_hash,error,schema,verdict" || result.schema !== RESULT_SCHEMA ||
+      !["VERIFIED", "NOT_VERIFIED", "ERROR"].includes(result.verdict)) {
+    throw new Error(`invalid browser verifier result: ${raw}`);
+  }
+  const hashOk = result.verdict === "VERIFIED"
+    ? /^[0-9a-f]{64}$/.test(result.checkpoint_body_hash)
+    : result.checkpoint_body_hash === null;
+  const errorOk = result.verdict === "ERROR"
+    ? typeof result.error === "string" && result.error.length > 0
+    : result.error === null;
+  if (!hashOk || !errorOk) throw new Error(`invalid browser verifier result: ${raw}`);
+  return result;
+}
 
 let failures = 0;
 for (const [name, want] of Object.entries(expected)) {
   const bundle = fs.readFileSync(path.join(dir, `${name}.json`), "utf8");
-  const got = verify_bundle_json(bundle); // "VERIFIED" | "NOT VERIFIED" | "ERROR: ..."
-  const norm = got === "VERIFIED" ? "VERIFIED" : "NOT_VERIFIED";
-  const ok = norm === want;
+  const got = parseBundleResult(verify_bundle_json(bundle));
+  const digestOk = name !== "valid_e1" || got.checkpoint_body_hash === VALID_E1_HASH;
+  const ok = got.verdict === want && digestOk;
   if (!ok) failures++;
-  console.log(`${ok ? "OK " : "XX "} ${name}: wasm=${got} expected=${want}`);
+  console.log(`${ok ? "OK " : "XX "} ${name}: wasm=${got.verdict} expected=${want}`);
 }
 for (const [name, fixture, mutate] of [
   ["boolean leaf index", "valid_e1.json", b => { b.entries[0].leaf_index = false; }],
@@ -28,10 +47,15 @@ for (const [name, fixture, mutate] of [
 ]) {
   const bundle = JSON.parse(fs.readFileSync(path.join(dir, fixture), "utf8"));
   mutate(bundle);
-  const ok = verify_bundle_json(JSON.stringify(bundle)) === "NOT VERIFIED";
+  const got = parseBundleResult(verify_bundle_json(JSON.stringify(bundle)));
+  const ok = got.verdict === "NOT_VERIFIED" && got.checkpoint_body_hash === null;
   if (!ok) failures++;
   console.log(`${ok ? "OK " : "XX "} hostile ${name}`);
 }
+const malformed = parseBundleResult(verify_bundle_json("{"));
+const malformedOk = malformed.verdict === "ERROR" && malformed.checkpoint_body_hash === null;
+if (!malformedOk) failures++;
+console.log(`${malformedOk ? "OK " : "XX "} malformed JSON result contract`);
 if (failures) {
   console.error(`\nPARITY FAILED: ${failures} fixture(s) disagree`);
   process.exit(1);

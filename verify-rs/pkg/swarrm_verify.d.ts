@@ -14,8 +14,8 @@ export function derive_vector_json(verdict_input_json: string, trust_json: strin
 export function verify_b28_cwt(exchange: Uint8Array, local_context: Uint8Array, trust_pack: Uint8Array, expected_trust_pack_digest: Uint8Array): string;
 
 /**
- * Verify a bundle passed as a JSON string. Returns "VERIFIED" /
- * "NOT VERIFIED" / "ERROR: <reason>". For the file-drop static page.
+ * Verify a bundle and return the versioned browser result JSON. A
+ * VERIFIED result alone carries the recomputed target checkpoint hash.
  */
 export function verify_bundle_json(json: string): string;
 
