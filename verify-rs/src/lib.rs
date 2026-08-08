@@ -1102,14 +1102,14 @@ pub(crate) fn verify_bundle_report(bundle: &Value) -> (bool, Option<bool>) {
 }
 
 #[cfg(any(test, feature = "wasm"))]
-const BROWSER_BUNDLE_RESULT_SCHEMA: &str = "evd/browser-bundle-verification-result/v1";
+const BROWSER_BUNDLE_RESULT_SCHEMA: &str = "evd/browser-bundle-verification-result/v2";
 
 #[cfg(any(test, feature = "wasm"))]
-fn browser_bundle_result(verdict: &str, checkpoint_body_hash: Option<String>, error: Option<&str>) -> String {
+fn browser_bundle_result(verdict: &str, bundle_digest: Option<String>, error: Option<&str>) -> String {
     serde_json::json!({
         "schema": BROWSER_BUNDLE_RESULT_SCHEMA,
         "verdict": verdict,
-        "checkpoint_body_hash": checkpoint_body_hash,
+        "bundle_digest": bundle_digest,
         "error": error,
     })
     .to_string()
@@ -1129,10 +1129,10 @@ fn browser_bundle_verification_result(json: &str) -> String {
     if !verify_bundle(&bundle) {
         return browser_bundle_result("NOT_VERIFIED", None, None);
     }
-    // This is the canonical signed checkpoint identifier used by links,
-    // manifests, anchors and timestamps. Never surface an unverified digest.
-    match bundle.get("target_checkpoint").and_then(checkpoint_body_hash) {
-        Some(digest) => browser_bundle_result("VERIFIED", Some(digest), None),
+    // Cite the exact verified bundle semantics, independent of JSON whitespace.
+    // Never surface a digest for bytes that did not pass the full verifier.
+    match jcs::canonical_checked(&bundle) {
+        Some(bytes) => browser_bundle_result("VERIFIED", Some(hex(&sha256(&bytes))), None),
         None => browser_bundle_result("NOT_VERIFIED", None, None),
     }
 }
@@ -1143,7 +1143,7 @@ mod wasm {
     use wasm_bindgen::prelude::*;
 
     /// Verify a bundle and return the versioned browser result JSON. A
-    /// VERIFIED result alone carries the recomputed target checkpoint hash.
+    /// VERIFIED result alone carries SHA-256 of the JCS-canonical full bundle.
     #[wasm_bindgen]
     pub fn verify_bundle_json(json: &str) -> String {
         super::browser_bundle_verification_result(json)
@@ -1155,7 +1155,7 @@ mod browser_bundle_result_tests {
     use super::*;
 
     const VALID: &str = include_str!("../../tests/golden/bundles/valid_e1.json");
-    const VALID_HASH: &str = "faa0c83321debd2c295ea2c7e298a2a769fca5dd1c10ba38bba2be457a80d0ac";
+    const VALID_DIGEST: &str = "473bd8c1bb3060cb5ff86b0d0bcebda51a5a32e6936b027b6a34d7a9f6f96440";
 
     fn result(input: &str) -> Value {
         serde_json::from_str(&browser_bundle_verification_result(input)).unwrap()
@@ -1164,33 +1164,33 @@ mod browser_bundle_result_tests {
     fn assert_closed_shape(value: &Value) {
         let object = value.as_object().unwrap();
         assert_eq!(object.len(), 4);
-        for field in ["schema", "verdict", "checkpoint_body_hash", "error"] {
+        for field in ["schema", "verdict", "bundle_digest", "error"] {
             assert!(object.contains_key(field), "missing {field}");
         }
     }
 
     #[test]
-    fn verified_result_carries_only_the_recomputed_canonical_checkpoint_hash() {
+    fn verified_result_carries_only_the_recomputed_canonical_bundle_digest() {
         let pretty = result(VALID);
         let compact = result(&serde_json::to_string(&serde_json::from_str::<Value>(VALID).unwrap()).unwrap());
         for got in [&pretty, &compact] {
             assert_closed_shape(got);
             assert_eq!(got["schema"], BROWSER_BUNDLE_RESULT_SCHEMA);
             assert_eq!(got["verdict"], "VERIFIED");
-            assert_eq!(got["checkpoint_body_hash"], VALID_HASH);
+            assert_eq!(got["bundle_digest"], VALID_DIGEST);
             assert!(got["error"].is_null());
         }
     }
 
     #[test]
-    fn every_non_verified_result_suppresses_the_checkpoint_hash() {
+    fn every_non_verified_result_suppresses_the_bundle_digest() {
         let mut tampered: Value = serde_json::from_str(VALID).unwrap();
         tampered["entries"][0]["leaf_index"] = Value::Bool(false);
         let cases = [result(&serde_json::to_string(&tampered).unwrap()), result("{"), result(&"x".repeat(MAX_BUNDLE_BYTES + 1))];
         for got in &cases {
             assert_closed_shape(got);
             assert_ne!(got["verdict"], "VERIFIED");
-            assert!(got["checkpoint_body_hash"].is_null());
+            assert!(got["bundle_digest"].is_null());
         }
         assert_eq!(cases[0]["verdict"], "NOT_VERIFIED");
         assert_eq!(cases[1]["verdict"], "ERROR");

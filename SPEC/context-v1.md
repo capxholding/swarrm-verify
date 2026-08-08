@@ -19,6 +19,7 @@ disclosable later by the payload holder) or must not exist anywhere.
 | `human.escalation_timeout` | waited_ms, escalation_target_role | escalation_target_id | — |
 | `payment.execute` | currency, amount_band, counterparty_class, mandate_present | amount_exact, counterparty_id, mandate_ref | amounts/counterparty in context |
 | `agent.deployed/config_changed/tool_granted/revoked` | change_kind, model_ref, tool_name (grants) | config blobs (prompt text etc. as commitments) | prompt text in context |
+| `agent.session_started` | upstream_base, hosted_url, tenant (a recorder's resolved routing config at startup — not secrets, `core/session_log.py`) | — | credentials of any kind |
 | `interaction.message` | sender, receiver, transport, rel_seq, bilateral; for bilateral B28 acceptance only: assurance_transcript_digest, challenge_envelope_hash, presentation_envelope_hash, asa_envelope_hash, acceptance_result_digest, assurance_message_digest, assurance_verdict | message (the canonical transported payload) | message content in context |
 | `policy.decision` | engine, engine_version, decision, policy_bundle_hash | policy_input, policy_output | io values in context |
 | `guardrail.blocked` | guardrail_name, rule_kind, action_taken | trigger_content | trigger content in context |

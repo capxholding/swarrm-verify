@@ -56,7 +56,7 @@ export function verify_b28_cwt(exchange, local_context, trust_pack, expected_tru
 
 /**
  * Verify a bundle and return the versioned browser result JSON. A
- * VERIFIED result alone carries the recomputed target checkpoint hash.
+ * VERIFIED result alone carries SHA-256 of the JCS-canonical full bundle.
  * @param {string} json
  * @returns {string}
  */
