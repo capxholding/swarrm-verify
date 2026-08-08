@@ -35,7 +35,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@06e5a564a0556e338780f5aecf2e7dcc9b267f07 # branch 1.90.0
         with:
-          toolchain: 1.90.0
           components: rustfmt, clippy
       - run: cargo fmt --manifest-path verify-rs/Cargo.toml --check
       - run: cargo test --locked --manifest-path verify-rs/Cargo.toml
@@ -51,7 +50,6 @@ jobs:
           node-version: "22.23.2"
       - uses: dtolnay/rust-toolchain@06e5a564a0556e338780f5aecf2e7dcc9b267f07 # branch 1.90.0
         with:
-          toolchain: 1.90.0
           targets: wasm32-unknown-unknown
       - name: Install the pinned wasm-pack release
         run: |
