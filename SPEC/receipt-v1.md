@@ -1,15 +1,16 @@
 <!-- Apache-2.0 -->
 # receipt/v1 — Action Receipt Specification
 
-Status: DRAFT (implemented by `core/receipt.py`; test vectors in `tests/`)
+Status: NORMATIVE v1 (implemented by `core/receipt.py`; test vectors in `tests/`)
 
 ## 1. Overview
 
-A **receipt** is a signed, canonical statement that an agent performed an
-action. Receipts are the atom of evidence: they are what gets logged,
-proven, exported, and verified. A receipt proves *activity and integrity*
-("this call happened; this record is unaltered") — it does not prove the
-payload was truthful (tamper-proof, not lie-proof).
+A **receipt** is a signed, canonical statement by its signing key about an
+action. Receipts are the atom of evidence: they are what gets logged, proven,
+exported, and verified. A valid receipt proves the integrity and attributed
+signature of the recorded bytes under the supplied trust material. It does not
+independently prove that the action occurred, that capture was complete, or
+that the recorded payload was truthful.
 
 ## 2. Encoding
 
