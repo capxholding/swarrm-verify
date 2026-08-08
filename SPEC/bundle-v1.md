@@ -106,7 +106,8 @@ carried; sparse proof is never rendered as a complete checkpoint-history export.
   alone cannot defeat an attacker who forges *everything including the
   keys*. Independently verified external anchor/TSA state can constrain that
   attack, but carried `anchor_records`/`tst_records` do not: the subject also
-  supplies them. The current release awards no E2 label (SPEC/anchor-v1.md).
+  supplies them. Offline verification awards no E2 label; the Evidence Report's
+  explicit live mode follows the receipt-coverage rule in SPEC/anchor-v1.md.
 - **A bundle without an export manifest makes no completeness claim.** Absence
   is not failure — bundles predate the manifest, and a replica holding no
   private key (`scripts/restore_check.py` reads a restored `.db` with public

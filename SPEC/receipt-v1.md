@@ -77,7 +77,8 @@ the Merkle leaf (see log-v1) and the value `parents` references.
 An envelope carries 1..n signatures over the same PAE bytes:
 
 - **E0/E1 and carried anchor/timestamp material**: the log's issuing key (per
-  tenant). No E2 label currently ships.
+  tenant). This signature alone never earns E2; only a covering checkpoint
+  successfully re-read by the Evidence Report's explicit live mode can do so.
 - **dual-attestation wire shape**: additionally, an edge-recorder key held at
   the *customer's* edge. Verifiers checking that shape MUST require both
   `keyid`s. The offline E3 assurance label is withdrawn: keys carried in the

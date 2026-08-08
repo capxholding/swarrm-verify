@@ -11,19 +11,19 @@ const { derive_vector_json, verify_bundle_json, verify_certificate_cbor, verify_
 
 const dir = path.join(__dirname, "..", "..", "tests", "golden", "bundles");
 const expected = JSON.parse(fs.readFileSync(path.join(dir, "expected.json"), "utf8"));
-const RESULT_SCHEMA = "evd/browser-bundle-verification-result/v1";
-const VALID_E1_HASH = "faa0c83321debd2c295ea2c7e298a2a769fca5dd1c10ba38bba2be457a80d0ac";
+const RESULT_SCHEMA = "evd/browser-bundle-verification-result/v2";
+const VALID_E1_DIGEST = "473bd8c1bb3060cb5ff86b0d0bcebda51a5a32e6936b027b6a34d7a9f6f96440";
 
 function parseBundleResult(raw) {
   const result = JSON.parse(raw);
   const fields = result && !Array.isArray(result) ? Object.keys(result).sort().join(",") : "";
-  if (fields !== "checkpoint_body_hash,error,schema,verdict" || result.schema !== RESULT_SCHEMA ||
+  if (fields !== "bundle_digest,error,schema,verdict" || result.schema !== RESULT_SCHEMA ||
       !["VERIFIED", "NOT_VERIFIED", "ERROR"].includes(result.verdict)) {
     throw new Error(`invalid browser verifier result: ${raw}`);
   }
   const hashOk = result.verdict === "VERIFIED"
-    ? /^[0-9a-f]{64}$/.test(result.checkpoint_body_hash)
-    : result.checkpoint_body_hash === null;
+    ? /^[0-9a-f]{64}$/.test(result.bundle_digest)
+    : result.bundle_digest === null;
   const errorOk = result.verdict === "ERROR"
     ? typeof result.error === "string" && result.error.length > 0
     : result.error === null;
@@ -35,7 +35,7 @@ let failures = 0;
 for (const [name, want] of Object.entries(expected)) {
   const bundle = fs.readFileSync(path.join(dir, `${name}.json`), "utf8");
   const got = parseBundleResult(verify_bundle_json(bundle));
-  const digestOk = name !== "valid_e1" || got.checkpoint_body_hash === VALID_E1_HASH;
+  const digestOk = name !== "valid_e1" || got.bundle_digest === VALID_E1_DIGEST;
   const ok = got.verdict === want && digestOk;
   if (!ok) failures++;
   console.log(`${ok ? "OK " : "XX "} ${name}: wasm=${got.verdict} expected=${want}`);
@@ -48,12 +48,12 @@ for (const [name, fixture, mutate] of [
   const bundle = JSON.parse(fs.readFileSync(path.join(dir, fixture), "utf8"));
   mutate(bundle);
   const got = parseBundleResult(verify_bundle_json(JSON.stringify(bundle)));
-  const ok = got.verdict === "NOT_VERIFIED" && got.checkpoint_body_hash === null;
+  const ok = got.verdict === "NOT_VERIFIED" && got.bundle_digest === null;
   if (!ok) failures++;
   console.log(`${ok ? "OK " : "XX "} hostile ${name}`);
 }
 const malformed = parseBundleResult(verify_bundle_json("{"));
-const malformedOk = malformed.verdict === "ERROR" && malformed.checkpoint_body_hash === null;
+const malformedOk = malformed.verdict === "ERROR" && malformed.bundle_digest === null;
 if (!malformedOk) failures++;
 console.log(`${malformedOk ? "OK " : "XX "} malformed JSON result contract`);
 if (failures) {

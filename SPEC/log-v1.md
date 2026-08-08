@@ -49,7 +49,7 @@ A checkpoint is a signed statement of the log's state:
 |---|---|---|
 | E0 | receipt exists, intact | DSSE signature |
 | E1 | a presented receipt is intact and included in the presented authenticated history | inclusion + consistency under signed checkpoints; no claim that every relevant action was captured/exported |
-| E2 | **withdrawn label**; carried anchor/timestamp material is a claim | any future release requires chain/TSA trust inputs supplied independently of the bundle |
+| E2 | a displayed receipt is covered by a checkpoint independently re-read from the public chain in this report run | the verifier's live checker under a caller-selected RPC and configured contract; never bundle-carried metadata |
 | E3 | **withdrawn label**; a second signature may verify without proving independence | any future release requires externally grounded counterparty identity/control, not keys carried by the subject |
 
 ## 5. Key transparency (NORMATIVE as of Build 4)
@@ -107,7 +107,10 @@ Rules (all normative):
 truncation) is not detectable purely offline in general; mid-history omissions
 are caught by the dense `_system` sequence. The customer's tail check is the
 out-of-band trust root plus checkpoint freshness and, where used, independently
-verified external anchor state. The current release awards no E2 label.
+verified external anchor state. Offline verification awards no E2 label. The
+Evidence Report's explicit live mode may derive E2 only for receipts covered by
+a checkpoint successfully re-read during that run; the report-wide level is the
+minimum earned by every displayed receipt.
 
 One case IS refutable from the bytes, and it is the case that mattered most.
 The JWKS is derived from ACTIVE keys, so a bundle whose `evd.key.revoked` entry

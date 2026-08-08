@@ -94,9 +94,11 @@ composes with `--json` identically — the JSON report gains a `live` object
 and the exit code reflects live failures the same as in text mode.
 
 A successful live result establishes those facts relative to the caller's
-chosen RPC and configured contract. It is reported separately; the current
-release still awards no E2 label. Trust in the RPC/chain selection is an input,
-not something the bundle can supply about itself.
+chosen RPC and configured contract. The CLI reports it separately. The
+Evidence Report's explicit live mode may derive E2 for a receipt only when a
+successfully re-read checkpoint covers that receipt; an offline report remains
+E1. Trust in the RPC/chain selection is an input, not something the bundle can
+supply about itself.
 
 Two non-failures, for symmetry with §4.1: a bundle with NO anchor records
 under `--live` has nothing to falsify (still valid E1, reported as such);
