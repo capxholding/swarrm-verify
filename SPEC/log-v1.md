@@ -48,9 +48,9 @@ A checkpoint is a signed statement of the log's state:
 | Level | Adds | Backed by |
 |---|---|---|
 | E0 | receipt exists, intact | DSSE signature |
-| E1 | cannot be silently altered/deleted | inclusion + consistency under signed checkpoints |
-| E2 | independent time + public commitment | checkpoint anchored (L2 tx) + RFC 3161 timestamp (a qualified TSP in production; non-qualified dev TSAs are always labeled as such) — *attachment format TBD in anchor-v1* |
-| E3 | non-repudiation for both operator & log; controls attested | edge co-signature (customer KMS) + policy attestation block |
+| E1 | a presented receipt is intact and included in the presented authenticated history | inclusion + consistency under signed checkpoints; no claim that every relevant action was captured/exported |
+| E2 | **withdrawn label**; carried anchor/timestamp material is a claim | any future release requires chain/TSA trust inputs supplied independently of the bundle |
+| E3 | **withdrawn label**; a second signature may verify without proving independence | any future release requires externally grounded counterparty identity/control, not keys carried by the subject |
 
 ## 5. Key transparency (NORMATIVE as of Build 4)
 
@@ -96,13 +96,18 @@ Rules (all normative):
    `ts`, and receipts signed by a key revoked before their `ts_server`,
    → NOT VERIFIED. Receipt, key-event `effective_ts`, and checkpoint times use
    receipt-v1's canonical extended UTC form; permissive ISO variants are not
-   comparable authority times and make the bundle NOT VERIFIED.
+   comparable authority times and make the bundle NOT VERIFIED. A receipt whose
+   `ts_server` exceeds by more than 300 seconds the signed `ts` of the first
+   chain checkpoint whose `tree_size` covers its leaf index → NOT VERIFIED (a
+   checkpoint proving the log already held a receipt refutes any later
+   admission claim; a leaf no presented checkpoint covers is unconstrained by
+   this rule).
 
 **Documented limitation:** omission of the LATEST key event (tail
 truncation) is not detectable purely offline in general; mid-history omissions
 are caught by the dense `_system` sequence. The customer's tail check is the
-out-of-band trust root plus checkpoint freshness (and, at E2, the anchored
-checkpoint chain).
+out-of-band trust root plus checkpoint freshness and, where used, independently
+verified external anchor state. The current release awards no E2 label.
 
 One case IS refutable from the bytes, and it is the case that mattered most.
 The JWKS is derived from ACTIVE keys, so a bundle whose `evd.key.revoked` entry

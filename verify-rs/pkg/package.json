@@ -1,7 +1,7 @@
 {
   "name": "swarrm-verify",
   "type": "module",
-  "description": "Independent Rust verifier for evd/bundle/v1 — second implementation, spec-hardening",
+  "description": "Independent Rust/WASM verifier for evidence bundles, certificates, and CWT/COSE-only B28 assurance",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "repository": {

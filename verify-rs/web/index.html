@@ -24,6 +24,9 @@
   and is never uploaded; verifying it makes no bundle-related network request. This is a second,
   independent verifier (Rust → WASM); it agrees with the reference verifier on the shared golden
   suite.</p>
+  <p class="note"><b>Bound:</b> it validates the checkpoint and key history presented here, not
+  whether that is the latest history. A terminal key-history event omitted with a matching JWKS is
+  undetectable offline; compare an independently obtained later checkpoint or key-log high-water.</p>
 
   <div id="drop">drop <code>bundle.json</code> or a <code>.cbor</code>/<code>.cert</code> certificate here, or click to choose
     <input id="file" type="file" accept=".json,.cbor,.cert,application/json" hidden />
@@ -37,16 +40,12 @@
   <p id="detail" class="note"></p>
 
   <div id="integrity">
-    verifier build sha256 (this page loaded): <code id="buildhash">…</code><br />
-    compare to <a href="./INTEGRITY.txt">INTEGRITY.txt</a> — rebuild from source to confirm
-    the verifier was not swapped.
+    verifier release WASM sha256 (checked before instantiation): <code id="buildhash">…</code><br />
+    module + WASM must match built-in release pins before execution. Compare to
+    <a href="./INTEGRITY.txt">INTEGRITY.txt</a> and rebuild from source to inspect that release.
   </div>
 
   <script type="module">
-    // NOTE: INTEGRITY.txt re-pins the wasm sha256 on every `make wasm`
-    // (wasm-pack) build — a page/wasm change without a re-pin is a red flag.
-    import init, { verify_bundle_json, verify_certificate_cbor } from "../pkg/swarrm_verify.js";
-
     const KNOWN_SCHEMA = "evd/bundle/v1";
     const MAX_INPUT_BYTES = 64 * 1024 * 1024;
     const drop = document.getElementById("drop");
@@ -58,19 +57,68 @@
     const flip = document.getElementById("flip");
     const requireManifest = document.getElementById("require-manifest");
     let currentText = null;
-
-    // load + hash the wasm ourselves so the page can display what it ran
-    const wasmUrl = new URL("../pkg/swarrm_verify_bg.wasm", import.meta.url);
-    const wasmBytes = await fetch(wasmUrl).then((r) => {
-      if (!r.ok) throw new Error(`WASM fetch failed: ${r.status}`);
-      return r.arrayBuffer();
+    let verifyBundleJson = null;
+    let verifyCertificateCbor = null;
+    let verifierReady = false;
+    // These are release pins, not values fetched from INTEGRITY.txt. A served
+    // asset has to match before JavaScript executes or WASM instantiates.
+    const EXPECTED_RELEASE_DIGESTS = Object.freeze({
+      module: "ef3b0f14dde59452b14a2c26da104fb2bfb540f0f63654c86efc3158f65bcffa",
+      wasm: "972f3ed654b8b38bd4a8951f557b9dafa2da49f4751ac59ef14e570e6652173d",
     });
-    const digest = await crypto.subtle.digest("SHA-256", wasmBytes);
-    document.getElementById("buildhash").textContent =
-      [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-    // Execute exactly the bytes whose digest is displayed. Passing no input
-    // would make wasm-bindgen fetch the mutable URL a second time.
-    const ready = init({ module_or_path: wasmBytes });
+
+    async function sha256Hex(bytes) {
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function fetchPinnedAsset(url, expected, label) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`${label} fetch failed: ${response.status}`);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const actual = await sha256Hex(bytes);
+      if (actual !== expected) throw new Error(`${label} release digest mismatch`);
+      return { bytes, actual };
+    }
+
+    async function importVerifiedModule(bytes) {
+      // Import the byte string we just checked. Importing the mutable path again
+      // would re-open a fetch/hash TOCTOU window before the glue executes.
+      const moduleUrl = URL.createObjectURL(new Blob([bytes], { type: "text/javascript" }));
+      try { return await import(moduleUrl); }
+      finally { URL.revokeObjectURL(moduleUrl); }
+    }
+
+    try {
+      const moduleAsset = await fetchPinnedAsset(
+        new URL("../pkg/swarrm_verify.js", import.meta.url),
+        EXPECTED_RELEASE_DIGESTS.module,
+        "verifier module",
+      );
+      const mod = await importVerifiedModule(moduleAsset.bytes);
+      if (
+        typeof mod.verify_bundle_json !== "function" ||
+        typeof mod.verify_certificate_cbor !== "function" ||
+        typeof mod.default !== "function"
+      ) throw new Error("verifier module exports are invalid");
+      const wasmAsset = await fetchPinnedAsset(
+        new URL("../pkg/swarrm_verify_bg.wasm", import.meta.url),
+        EXPECTED_RELEASE_DIGESTS.wasm,
+        "verifier WASM",
+      );
+      // Instantiate exactly the bytes whose digest passed the release pin; do
+      // not let wasm-bindgen fetch the mutable URL a second time.
+      await mod.default({ module_or_path: wasmAsset.bytes });
+      verifyBundleJson = mod.verify_bundle_json;
+      verifyCertificateCbor = mod.verify_certificate_cbor;
+      verifierReady = true;
+      document.getElementById("buildhash").textContent = wasmAsset.actual;
+    } catch (_error) {
+      document.getElementById("buildhash").textContent = "(verifier release rejected)";
+      verdict.textContent = "VERIFIER REFUSED";
+      verdict.className = "bad";
+      detail.textContent = "The verifier module or WASM did not match its built-in release digest.";
+    }
 
     function rejectInput(message) {
       currentText = null;
@@ -95,7 +143,7 @@
         detail.textContent = `this verifier only understands ${KNOWN_SCHEMA}`;
         return;
       }
-      const r = verify_bundle_json(text);
+      const r = verifyBundleJson(text);
       const manifestAbsent = bundle.export_manifest == null;
       const passed = r === "VERIFIED" && !(requireManifest.checked && manifestAbsent);
       verdict.textContent = "VERDICT: " + (passed ? "VERIFIED" : "NOT VERIFIED");
@@ -110,15 +158,21 @@
       const completeness = manifestAbsent
         ? " Export completeness is UNPROVEN: no signed export manifest."
         : " Signed export manifest confirms the carried receipt set.";
+      const checkpointScope = bundle.checkpoint_chain_profile === "evd/checkpoint-chain/sparse-proof-v1"
+        ? " Sparse signed-checkpoint proof checked; intermediate checkpoint history was not carried."
+        : " Complete checkpoint chain checked.";
       detail.textContent = passed
-        ? "signed receipts, key-log replay, Merkle proofs and checkpoint chain checked — base E1 only; anchor and timestamp fields remain claims." + completeness
+        ? "signed receipts, key-log replay and Merkle proofs checked — base E1 only; anchor and timestamp fields remain claims." + checkpointScope + completeness
         : requireManifest.checked && manifestAbsent
           ? "this relying party requires a signed export manifest; this bundle makes no completeness claim."
           : "at least one check failed; this bundle is not trustworthy as presented.";
     }
 
-    async function handle(text) {
-      await ready;
+    function handle(text) {
+      if (!verifierReady) {
+        rejectInput("The verifier release assets were refused; no bundle was checked.");
+        return;
+      }
       cert.innerHTML = "";
       currentText = text;
       show(text);
@@ -135,8 +189,10 @@
       if (!r.parse_ok) return ["not a certificate (CBOR parse failed)", "bad"];
       if (r.mark === null) return ["NOT VERIFIED", "bad"];
       if (r.mark === "NOT_RECOMPUTED" && r.cross_checks_ok) return ["MARK: NOT_RECOMPUTED", "mid"];
-      const ok = r.cross_checks_ok && (r.mark === "UNMARKED_ASSURANCE_WITHDRAWN" || r.mark === "UNMARKED_ASSURANCE_WITHDRAWN");
-      return ["MARK: " + r.mark, ok ? "ok" : "bad"];
+      if (r.mark === "UNMARKED_ASSURANCE_WITHDRAWN" && r.cross_checks_ok) {
+        return ["ASSURANCE MARK: WITHDRAWN", "mid"];
+      }
+      return ["MARK: " + r.mark, r.cross_checks_ok ? "mid" : "bad"];
     }
 
     function certBody(r) {
@@ -160,18 +216,21 @@
       return rows.map((x) => `<p>${x}</p>`).join("");
     }
 
-    async function handleCertificate(bytes) {
-      await ready;
+    function handleCertificate(bytes) {
+      if (!verifierReady) {
+        rejectInput("The verifier release assets were refused; no certificate was checked.");
+        return;
+      }
       currentText = null;
       controls.style.display = "none";
       let r;
-      try { r = JSON.parse(verify_certificate_cbor(bytes)); }
+      try { r = JSON.parse(verifyCertificateCbor(bytes)); }
       catch { verdict.textContent = "verifier error"; verdict.className = "bad"; cert.innerHTML = ""; return; }
       const [headline, cls] = certHeadline(r);
       verdict.textContent = headline;
       verdict.className = cls;
       detail.textContent = r.cross_checks_ok
-        ? "verified offline in this browser — core, embedded bundle and view cross-checks passed."
+        ? "integrity checks completed locally — core, embedded bundle and view cross-checks agree; no assurance mark is awarded."
         : "not verified — see the explicit errors and held-layer limits below.";
       cert.innerHTML = certBody(r);
     }

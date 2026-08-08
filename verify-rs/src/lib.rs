@@ -6,6 +6,7 @@
 //! evidence that the format is unambiguous. Verify-only, offline, no network.
 
 pub mod action;
+pub mod b28;
 #[allow(dead_code)] // Test-only canonical JSON adapter.
 mod cbor;
 pub mod certificate; // `verify_certificate_cbor` also serves the WASM export.
@@ -28,6 +29,7 @@ const RECEIPT_TYPE: &str = "application/vnd.evd.receipt.v1+json";
 const CHECKPOINT_TYPE: &str = "application/vnd.evd.checkpoint.v1+json";
 const EXPORT_MANIFEST_TYPE: &str = "application/vnd.evd.export-manifest.v1+json";
 const DISCLOSURE_SCHEMA: &str = "evd/disclosure/v1";
+const SPARSE_CHECKPOINT_CHAIN_PROFILE: &str = "evd/checkpoint-chain/sparse-proof-v1";
 const DOMAIN_PREFIX: &str = "evd/v1/";
 
 // Resource caps match `verify/verifier.py`: input over any cap is NOT VERIFIED
@@ -40,6 +42,13 @@ const MAX_INCLUSION_PROOF_LEN: usize = 64;
 const MAX_CHECKPOINT_CHAIN_LEN: usize = 100_000;
 const MAX_SIGNATURES_PER_ENVELOPE: usize = 9;
 const MAX_JSON_DEPTH: i64 = jcs::MAX_DEPTH; // 64 — whole bundle shares the JCS cap
+
+// A signed checkpoint whose tree_size covers a leaf is the log's own sworn
+// statement that it already HELD that receipt, so a receipt's ts_server may
+// exceed the FIRST covering checkpoint's signed ts by at most this many
+// seconds — anything later is the log contradicting itself. Same value and
+// semantics as verify/verifier.py::RECEIPT_CHECKPOINT_SKEW_S.
+const RECEIPT_CHECKPOINT_SKEW_S: i64 = 300;
 
 fn depth_exceeds(v: &Value, limit: i64) -> bool {
     // bounded recursion: bails at the first over-deep branch (limit+2 frames
@@ -205,7 +214,7 @@ fn decimal(bytes: &[u8]) -> Option<u32> {
     bytes.iter().try_fold(0, |n, c| c.is_ascii_digit().then_some(n * 10 + u32::from(*c - b'0')))
 }
 
-fn canonical_utc(s: &str) -> bool {
+pub(crate) fn canonical_utc(s: &str) -> bool {
     let b = s.as_bytes();
     if !(b.len() == 20 || (22..=27).contains(&b.len())) || b[4] != b'-' || b[7] != b'-' || b[10] != b'T' || b[13] != b':' || b[16] != b':' || *b.last().unwrap() != b'Z' || (b.len() > 20 && (b[19] != b'.' || decimal(&b[20..b.len() - 1]).is_none())) {
         return false;
@@ -214,6 +223,32 @@ fn canonical_utc(s: &str) -> bool {
     let leap = y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
     let days = [0, 31, 28 + u32::from(leap), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     y > 0 && (1..=12).contains(&m) && d > 0 && d <= days[m as usize] && h < 24 && n < 60 && sec < 60
+}
+
+/// Canonical extended UTC (per `canonical_utc`) → microseconds since the Unix
+/// epoch. The covering-checkpoint rule needs `checkpoint ts + 300 s`, which is
+/// ARITHMETIC — the lexicographic comparison `kid_valid_at` uses cannot add
+/// seconds, and `action::nts` only normalizes. So this reuses the strict
+/// grammar for validation (never `nts`'s permissive superset — the parser-gap
+/// lesson of `_not_before_checkpoint`) and does days-from-civil arithmetic on
+/// the already-validated parts, matching Python's `datetime` to the microsecond.
+fn utc_epoch_micros(ts: &str) -> Option<i64> {
+    if !canonical_utc(ts) {
+        return None;
+    }
+    let num = |a: usize, z: usize| ts[a..z].parse::<i64>().ok();
+    let (y, m, d) = (num(0, 4)?, num(5, 7)?, num(8, 10)?);
+    let (h, mi, s) = (num(11, 13)?, num(14, 16)?, num(17, 19)?);
+    let micros = if ts.len() > 20 { format!("{:0<6}", &ts[20..ts.len() - 1]).parse::<i64>().ok()? } else { 0 };
+    // days-from-civil (Hinnant): canonical_utc validated the calendar (y >= 1),
+    // so era arithmetic never sees a negative year.
+    let years = if m <= 2 { y - 1 } else { y };
+    let era = years / 400;
+    let yoe = years - era * 400;
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146097 + doe - 719468;
+    Some((days * 86_400 + h * 3_600 + mi * 60 + s) * 1_000_000 + micros)
 }
 
 fn forbidden_managed_edge_cosign(body: &Value, env: &Value) -> bool {
@@ -482,10 +517,10 @@ fn check_chain_consistency(prev: &Value, cp: &Value, entry: &Value, prev_size: u
     merkle::verify_consistency(prev_size, cur_size, &pr, &cr, &proof)
 }
 
-fn check_chain_link(prev: &Value, cp: &Value, entry: &Value) -> bool {
+fn check_chain_link(prev: &Value, cp: &Value, entry: &Value, sparse: bool) -> bool {
     let Some(prev_bh) = checkpoint_body_hash(prev) else { return false };
     let cur_prev = cp.get("body").and_then(|b| b.get("prev_hash")).and_then(|v| v.as_str()).unwrap_or("");
-    if cur_prev != prev_bh {
+    if (sparse && cur_prev.is_empty()) || (!sparse && cur_prev != prev_bh) {
         return false;
     }
     let prev_size = prev.get("body").and_then(|b| b.get("tree_size")).and_then(|v| v.as_u64()).unwrap_or(0);
@@ -505,7 +540,7 @@ fn check_chain_link(prev: &Value, cp: &Value, entry: &Value) -> bool {
     true
 }
 
-fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog) -> bool {
+fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog, sparse: bool) -> bool {
     // A presented chain is the complete history, never an arbitrary suffix.
     // Its first signed checkpoint must therefore be the genesis checkpoint.
     if chain.first().and_then(|cp| cp.get("body")).and_then(|body| body.get("prev_hash")).and_then(|v| v.as_str()) != Some("") {
@@ -520,7 +555,7 @@ fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog)
         if !kid_valid_at(kid, ts, &kl.revoked_at) {
             return false;
         }
-        if i > 0 && !check_chain_link(&chain[i - 1], cp, &chain_entries[i]) {
+        if i > 0 && !check_chain_link(&chain[i - 1], cp, &chain_entries[i], sparse) {
             return false;
         }
     }
@@ -567,7 +602,7 @@ fn check_entry_inclusion(e: &Value, payload: &[u8], size: u64, root: &[u8]) -> b
     merkle::verify_inclusion(&leaf_hash, leaf_index, size, &proof, root)
 }
 
-fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8]) -> bool {
+fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8], covers: &[(u64, i64)]) -> bool {
     let env = &e["envelope"];
     let Some(payload) = payload_of(env) else { return false };
     let body: Value = match serde_json::from_slice(&payload) {
@@ -583,6 +618,19 @@ fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8]) -> bool {
     let ts_client = body.get("ts_client").and_then(|v| v.as_str()).unwrap_or("");
     if !canonical_utc(ts_client) || !canonical_utc(ts_server) {
         return false;
+    }
+    // ts_server may not postdate the FIRST chain checkpoint whose tree_size
+    // covers this leaf by more than RECEIPT_CHECKPOINT_SKEW_S — the same rule,
+    // boundary and skew as verify/verifier.py::_check_entries. The chain's
+    // monotone tree_size is enforced by check_checkpoint_chain; a chain that
+    // fails there fails the bundle regardless of what partition_point saw
+    // here. A leaf no presented checkpoint covers keeps its prior behavior.
+    let leaf = e.get("leaf_index").and_then(Value::as_u64).unwrap_or(u64::MAX);
+    let first_cover = covers.partition_point(|(covered, _)| *covered <= leaf);
+    if let Some((_, deadline)) = covers.get(first_cover) {
+        if utc_epoch_micros(ts_server).is_none_or(|admitted| admitted > *deadline) {
+            return false;
+        }
     }
     let sigs = match env.get("signatures").and_then(|v| v.as_array()) {
         Some(s) if !s.is_empty() => s,
@@ -664,21 +712,38 @@ fn check_export_manifest(bundle: &Value, entries: &[Value], target: &Value, kl: 
 /// signed manifest saying which ones there should be, and per-agent sequence
 /// uniqueness. Split out of `check_checkpoints_and_entries` to keep that
 /// function within the §0.2·3a complexity ceiling.
-fn check_entry_set(bundle: &Value, entries: &[Value], target: &Value, kl: &KeyLog, complete: &mut Option<bool>) -> bool {
+fn check_entry_set(bundle: &Value, entries: &[Value], target: &Value, chain: &[Value], kl: &KeyLog, complete: &mut Option<bool>) -> bool {
     // seq GAPS are legitimate (subset exports); a duplicate (agent_id, seq) is
     // always forgery or corruption. The manifest answer is recorded BEFORE the
     // conjunction so a bundle that fails elsewhere still reports the same
     // tri-state Python reports — `_check_export_manifest` runs unconditionally.
     *complete = check_export_manifest(bundle, entries, target, kl);
-    check_entries(entries, target, kl) && *complete != Some(false) && check_seq_uniqueness(entries)
+    check_entries(entries, target, chain, kl) && *complete != Some(false) && check_seq_uniqueness(entries)
 }
 
-fn check_entries(entries: &[Value], target: &Value, kl: &KeyLog) -> bool {
+/// (tree_size, latest admissible ts_server in epoch µs) per chain checkpoint.
+/// None when any checkpoint lacks a usable tree_size or canonical ts — Python
+/// refuses such a chain at parse (`_check_chain`), so failing the entry set
+/// here lands both engines on the same NOT VERIFIED.
+fn checkpoint_cover_deadlines(chain: &[Value]) -> Option<Vec<(u64, i64)>> {
+    chain
+        .iter()
+        .map(|cp| {
+            let body = cp.get("body")?;
+            let size = body.get("tree_size")?.as_u64()?;
+            let ts = body.get("ts")?.as_str()?;
+            Some((size, utc_epoch_micros(ts)? + RECEIPT_CHECKPOINT_SKEW_S * 1_000_000))
+        })
+        .collect()
+}
+
+fn check_entries(entries: &[Value], target: &Value, chain: &[Value], kl: &KeyLog) -> bool {
     let size = target.get("body").and_then(|b| b.get("tree_size")).and_then(|v| v.as_u64()).unwrap_or(0);
     let root_hex = target.get("body").and_then(|b| b.get("root_hash")).and_then(|v| v.as_str()).unwrap_or("");
     let Some(root) = hex_to_bytes(root_hex) else { return false };
+    let Some(covers) = checkpoint_cover_deadlines(chain) else { return false };
     for e in entries {
-        if !check_entry(e, kl, size, &root) {
+        if !check_entry(e, kl, size, &root, &covers) {
             return false;
         }
     }
@@ -801,21 +866,18 @@ fn check_lineage(entries: &[Value]) -> bool {
     true
 }
 
-/// A checkpoint cannot be anchored before it was signed.
+/// A carried anchor/TST time must be canonical and cannot predate its signed checkpoint.
 ///
-/// `block_ts` is an unsigned string in an additive bundle member, never checked
-/// against a chain offline, yet authority-v1 §4 consumed it as verified time.
-/// Backdating it flipped an intent recorded 17 days AFTER its grant was revoked
-/// to authority VERIFIED. The checkpoint's own `ts` is signed, so an earlier
-/// claim is refutable from the bytes alone. A malformed
-/// `block_ts` is not an ordering violation — §4 already ignores it.
-fn anchor_not_before_checkpoint(rec: &Value, signed_ts: Option<&str>) -> bool {
-    let signed = Value::String(signed_ts.unwrap_or_default().to_string());
-    let (Some(anchored), Some(signed)) = (crate::action::nts(rec.get("block_ts").unwrap_or(&Value::Null)), crate::action::nts(&signed)) else { return true };
-    anchored >= signed
+/// `block_ts` and `gen_time` have equal standing as independent time. Their
+/// record member is unsigned, but the checkpoint's own `ts` is signed, so an
+/// earlier claim is refutable from the bytes alone. A malformed claimed time is
+/// a malformed carried claim, never an exemption from the ordering rule.
+fn record_not_before_checkpoint(rec: &Value, field: &str, signed_ts: &str) -> bool {
+    let claimed = rec.get(field).and_then(Value::as_str).and_then(utc_epoch_micros);
+    matches!((claimed, utc_epoch_micros(signed_ts)), (Some(claimed), Some(signed)) if claimed >= signed)
 }
 
-fn bound_record_ok(rec: &Value, required: &[&str], chain_ts: &BTreeMap<String, String>) -> bool {
+fn bound_record_ok(rec: &Value, required: &[&str], time_field: &str, chain_ts: &BTreeMap<String, String>) -> bool {
     let Some(obj) = rec.as_object() else { return false };
     if required.iter().any(|f| !obj.contains_key(*f)) {
         return false;
@@ -824,10 +886,10 @@ fn bound_record_ok(rec: &Value, required: &[&str], chain_ts: &BTreeMap<String, S
     let Some(signed) = chain_ts.get(bh) else {
         return false;
     }; // not a checkpoint in this chain
-    !obj.contains_key("block_ts") || anchor_not_before_checkpoint(rec, Some(signed.as_str()))
+    record_not_before_checkpoint(rec, time_field, signed)
 }
 
-fn check_bound_records(records: &Value, required: &[&str], chain: &[Value]) -> bool {
+fn check_bound_records(records: &Value, required: &[&str], time_field: &str, chain: &[Value]) -> bool {
     let Some(arr) = records.as_array() else { return false };
     let chain_ts: BTreeMap<String, String> = chain
         .iter()
@@ -837,11 +899,11 @@ fn check_bound_records(records: &Value, required: &[&str], chain: &[Value]) -> b
             Some((h, ts))
         })
         .collect();
-    arr.iter().all(|rec| bound_record_ok(rec, required, &chain_ts))
+    arr.iter().all(|rec| bound_record_ok(rec, required, time_field, &chain_ts))
 }
 
 fn check_tst_records(records: &Value, chain: &[Value]) -> bool {
-    if !check_bound_records(records, &["checkpoint_body_hash", "token_der_b64", "tsa_url", "gen_time", "cert_chain_pem", "qualified"], chain) {
+    if !check_bound_records(records, &["checkpoint_body_hash", "token_der_b64", "tsa_url", "gen_time", "cert_chain_pem", "qualified"], "gen_time", chain) {
         return false;
     }
     records.as_array().is_some_and(|items| {
@@ -871,7 +933,7 @@ fn check_attestation_records(bundle: &Value, chain: &[Value]) -> bool {
 
     // 8. anchor records (if present): each must bind to a chain checkpoint
     if let Some(anchors) = bundle.get("anchor_records").filter(|v| !v.is_null()) {
-        if !check_bound_records(anchors, &["checkpoint_body_hash", "chain_id", "tx_hash", "block_number", "block_ts", "contract"], chain) {
+        if !check_bound_records(anchors, &["checkpoint_body_hash", "chain_id", "tx_hash", "block_number", "block_ts", "contract"], "block_ts", chain) {
             return false;
         }
     }
@@ -902,10 +964,15 @@ fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog,
     // `_check_export_manifest` runs whatever else fails. Deferring it to the
     // tail would make a certificate over a chain-invalid bundle report
     // `export_complete: null` where Python reports the real answer.
-    if !check_entry_set(bundle, entries, target, kl, complete) {
+    if !check_entry_set(bundle, entries, target, &chain, kl, complete) {
         return false;
     }
-    if !check_checkpoint_chain(&chain, chain_entries, kl) {
+    let sparse = match bundle.get("checkpoint_chain_profile") {
+        None => false,
+        Some(Value::String(profile)) if profile == SPARSE_CHECKPOINT_CHAIN_PROFILE => true,
+        _ => return false,
+    };
+    if !check_checkpoint_chain(&chain, chain_entries, kl, sparse) {
         return false;
     }
     if !check_bundle_origin(bundle, target, &chain) {
@@ -1057,6 +1124,24 @@ mod wasm {
                 }
             }
             Err(e) => format!("ERROR: {e}"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod record_time_tests {
+    use super::record_not_before_checkpoint;
+
+    #[test]
+    fn anchor_and_tst_times_share_the_strict_signed_checkpoint_boundary() {
+        let signed = "2024-02-29T00:00:00Z";
+        for (field, record) in [("block_ts", serde_json::json!({"block_ts": "2024-02-29T00:00:00.000001Z"})), ("gen_time", serde_json::json!({"gen_time": "2024-02-29T00:00:00.000001Z"}))] {
+            assert!(record_not_before_checkpoint(&record, field, signed));
+            for bad in ["2024-02-29T00:00:00.Z", "2024-02-30T00:00:00Z", "2024-02-28T23:59:59Z"] {
+                let mut hostile = record.clone();
+                hostile[field] = serde_json::json!(bad);
+                assert!(!record_not_before_checkpoint(&hostile, field, signed), "{field}={bad}");
+            }
         }
     }
 }

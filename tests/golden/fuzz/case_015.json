@@ -5,17 +5,17 @@
         "body": {
           "origin": "evd://tenant/t_golden",
           "prev_hash": "",
-          "root_hash": "5bb9880d2bf08e7e370920ac84f35594e6433e33f8865b6a5ce790f49d8aaea3",
+          "root_hash": "6a021562e8c8c58f72f46d3d0250383d7785a62915145d076ef2ba5918345bf5",
           "schema": "evd/checkpoint/v1",
-          "tree_size": 3,
-          "ts": "2026-07-29T19:42:18.892675Z"
+          "tree_size": 5,
+          "ts": "2026-07-29T19:42:18.895113Z"
         },
         "kid": "Vkdap1RjR0wChd9d",
-        "sig": "qBH+Lla8LDkG/CYeHg2WgL6awIINAtfPBSj6XocOuhlvLU/OFoko/QBUown8XLsVUlvGn5KcJqMRH4lingxlAg=="
+        "sig": "UUSl+Uy4FYmI5ZTOVCdVLReY6UqOJ0ta4EV4rhTh8Fg/4/lcH/B39GyUKr/J0fZ6k6upU7pk4sQPXDPE76khAA=="
       }
     }
   ],
   "entries": [
     {
       "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJraW5kIjoiYWRvcHRlZCJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJkdXAtYWRvcHQtMSIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9nb2xkZ
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MH0sImlkZW1wb3RlbmN5X2tleSI6InByZS0wIiwicGFyZW50cyI6W10sI
