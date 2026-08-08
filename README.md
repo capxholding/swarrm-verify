@@ -3,7 +3,7 @@
 **Don't trust us. Verify it yourself.** This repository is the independent,
 open-source Rust/WASM verifier for [Swarrm](https://swarrm.ai) evidence
 bundles (`evd/bundle/v1`), certificates, and the CWT/COSE-only
-`swarrm-b28/v1` Counterparty Assurance beta — the same verifier that runs
+`swarrm-b28/v1` Counterparty Assurance profile — the same verifier that runs
 client-side at [swarrm.ai/verify](https://swarrm.ai/verify).
 
 A Swarrm evidence bundle is a self-contained file: signed receipts of AI-agent
@@ -18,9 +18,10 @@ The B28 verifier checks a nonce-bound exact action, organisation-root passport
 chain, current proof-bearing authority, and an action-specific authorization
 against a separately pinned local trust pack. The public WASM entry point is
 deliberately read-only: it does not durably consume replay state and therefore
-cannot authorize execution. During the `1.1.0b1` beta, every otherwise
-favourable candidate is forced to `INDETERMINATE/PASS_DISABLED_BETA` with
-`should_execute=false`. No trust score or `Swarrm Verified` mark ships.
+cannot authorize execution. The current product release forces every otherwise
+favourable candidate to `INDETERMINATE/PASS_NOT_ENABLED` with
+`should_execute=false` until its external gates close. No trust score or
+assurance mark ships.
 
 ## Why this exists
 

@@ -840,7 +840,7 @@
   },
   "expected_consume_first": {
     "reasons": [
-      "PASS_DISABLED_BETA"
+      "PASS_NOT_ENABLED"
     ],
     "should_execute": false,
     "vector": {
@@ -867,7 +867,7 @@
   },
   "expected_consume_retry": {
     "reasons": [
-      "PASS_DISABLED_BETA"
+      "PASS_NOT_ENABLED"
     ],
     "should_execute": false,
     "vector": {
