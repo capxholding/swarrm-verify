@@ -47,7 +47,7 @@ fn evaluate_and_consume(input: &InputContext, store: &mut dyn ReplayStore) -> Re
     let Some(context) = context else { return result };
     let mut vector = context.vector.clone();
     mark(&mut vector, &["replay"], "VERIFIED");
-    let acceptance = ResultValue::new("INDETERMINATE", "PASS_DISABLED_BETA", vector.clone());
+    let acceptance = ResultValue::new("INDETERMINATE", "PASS_NOT_ENABLED", vector.clone());
     match store.consume(&context, &acceptance) {
         ReplayOutcome::Stored(stored) => stored,
         ReplayOutcome::AsaConflict => {
@@ -113,7 +113,7 @@ fn unavailable_store_cannot_authorize() {
 fn action_id_claim_rejects_a_fresh_asa_or_changed_action() {
     let input = parse_fixture(include_bytes!("../../tests/golden/b28/verify-input.cbor"));
     let (_, Some(context)) = evaluate(&input) else { unreachable!() };
-    let acceptance = ResultValue::new("INDETERMINATE", "PASS_DISABLED_BETA", context.vector.clone());
+    let acceptance = ResultValue::new("INDETERMINATE", "PASS_NOT_ENABLED", context.vector.clone());
     let mut store = MemoryStore::default();
     assert!(matches!(store.consume(&context, &acceptance), ReplayOutcome::Stored(_)));
 

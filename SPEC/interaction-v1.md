@@ -38,8 +38,8 @@ is derived from the unordered relationship and semantic transcript digest. An
 exact retry returns the identical stored receipt; any changed signed binding or
 message digest fails.
 
-In beta, a favourable candidate is recorded only as
-`INDETERMINATE/PASS_DISABLED_BETA` with `should_execute=false`. The receipt is
+In the current product release, a favourable candidate is recorded only as
+`INDETERMINATE/PASS_NOT_ENABLED` with `should_execute=false`. The receipt is
 evidence of what both agents accepted about the exchange; it is not action
 authorization and does not pre-certify behavior.
 
