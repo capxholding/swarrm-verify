@@ -38,6 +38,7 @@
     <label><input id="require-manifest" type="checkbox" /> require a signed export manifest</label>
   </div>
   <p id="detail" class="note"></p>
+  <p id="checkpoint-digest" class="note" style="overflow-wrap:anywhere" hidden></p>
 
   <div id="integrity">
     verifier release WASM sha256 (checked before instantiation): <code id="buildhash">…</code><br />
@@ -47,12 +48,14 @@
 
   <script type="module">
     const KNOWN_SCHEMA = "evd/bundle/v1";
+    const VERIFICATION_RESULT_SCHEMA = "evd/browser-bundle-verification-result/v1";
     const MAX_INPUT_BYTES = 64 * 1024 * 1024;
     const drop = document.getElementById("drop");
     const file = document.getElementById("file");
     const verdict = document.getElementById("verdict");
     const cert = document.getElementById("cert");
     const detail = document.getElementById("detail");
+    const checkpointDigest = document.getElementById("checkpoint-digest");
     const controls = document.getElementById("controls");
     const flip = document.getElementById("flip");
     const requireManifest = document.getElementById("require-manifest");
@@ -63,8 +66,8 @@
     // These are release pins, not values fetched from INTEGRITY.txt. A served
     // asset has to match before JavaScript executes or WASM instantiates.
     const EXPECTED_RELEASE_DIGESTS = Object.freeze({
-      module: "ef3b0f14dde59452b14a2c26da104fb2bfb540f0f63654c86efc3158f65bcffa",
-      wasm: "a960fd6c71deff54f7b7a0f0c67faccaac0a32976cdf42535075e0c123ff4116",
+      module: "9e16ff965a8f6381c8bce9b0c6a43e38af0dccc2c7fe0833c9893181ac7818ed",
+      wasm: "7a88b9f38bc88b6ab8b7d12db864b8adbee2d8f9a65bb3c4dc8bc55783493b1e",
     });
 
     async function sha256Hex(bytes) {
@@ -87,6 +90,27 @@
       const moduleUrl = URL.createObjectURL(new Blob([bytes], { type: "text/javascript" }));
       try { return await import(moduleUrl); }
       finally { URL.revokeObjectURL(moduleUrl); }
+    }
+
+    function parseVerificationResult(raw) {
+      const parsed = JSON.parse(raw);
+      const fields = parsed && !Array.isArray(parsed) ? Object.keys(parsed).sort().join(",") : "";
+      const verdicts = new Set(["VERIFIED", "NOT_VERIFIED", "ERROR"]);
+      const digestIsValid = parsed?.verdict === "VERIFIED"
+        ? /^[0-9a-f]{64}$/.test(parsed.checkpoint_body_hash)
+        : parsed?.checkpoint_body_hash === null;
+      const errorIsValid = parsed?.verdict === "ERROR"
+        ? typeof parsed.error === "string" && parsed.error.length > 0
+        : parsed?.error === null;
+      if (fields !== "checkpoint_body_hash,error,schema,verdict" ||
+          parsed.schema !== VERIFICATION_RESULT_SCHEMA || !verdicts.has(parsed.verdict) ||
+          !digestIsValid || !errorIsValid) throw new Error("incompatible verifier result");
+      return parsed;
+    }
+
+    function clearCheckpointDigest() {
+      checkpointDigest.textContent = "";
+      checkpointDigest.hidden = true;
     }
 
     try {
@@ -122,6 +146,7 @@
 
     function rejectInput(message) {
       currentText = null;
+      clearCheckpointDigest();
       cert.innerHTML = "";
       controls.style.display = "none";
       verdict.textContent = "input refused";
@@ -135,6 +160,7 @@
     }
 
     function show(text) {
+      clearCheckpointDigest();
       let bundle;
       try { bundle = JSON.parse(text); } catch { verdict.textContent = "not JSON"; verdict.className = "bad"; return; }
       if (bundle.schema !== KNOWN_SCHEMA) {
@@ -143,9 +169,11 @@
         detail.textContent = `this verifier only understands ${KNOWN_SCHEMA}`;
         return;
       }
-      const r = verifyBundleJson(text);
+      let r;
+      try { r = parseVerificationResult(verifyBundleJson(text)); }
+      catch { rejectInput("The verifier returned an incompatible result and was refused."); return; }
       const manifestAbsent = bundle.export_manifest == null;
-      const passed = r === "VERIFIED" && !(requireManifest.checked && manifestAbsent);
+      const passed = r.verdict === "VERIFIED" && !(requireManifest.checked && manifestAbsent);
       verdict.textContent = "VERDICT: " + (passed ? "VERIFIED" : "NOT VERIFIED");
       verdict.className = passed ? "ok" : "bad";
       // This line is the whole claim a stranger reads, so it says what was
@@ -166,6 +194,10 @@
         : requireManifest.checked && manifestAbsent
           ? "this relying party requires a signed export manifest; this bundle makes no completeness claim."
           : "at least one check failed; this bundle is not trustworthy as presented.";
+      if (passed) {
+        checkpointDigest.textContent = "Verified checkpoint body hash: " + r.checkpoint_body_hash;
+        checkpointDigest.hidden = false;
+      }
     }
 
     function handle(text) {
@@ -222,6 +254,7 @@
         return;
       }
       currentText = null;
+      clearCheckpointDigest();
       controls.style.display = "none";
       let r;
       try { r = JSON.parse(verifyCertificateCbor(bytes)); }
