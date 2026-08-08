@@ -6,6 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { isDeepStrictEqual } = require("util");
 const { derive_vector_json, verify_bundle_json, verify_certificate_cbor, verify_b28_cwt } = require("../pkg-node/swarrm_verify.js");
 
 const dir = path.join(__dirname, "..", "..", "tests", "golden", "bundles");
@@ -205,6 +206,36 @@ for (const [name, item] of Object.entries(b28Expected.state_hostile)) {
   const ok = JSON.stringify(got) === JSON.stringify(item.expected);
   if (!ok) failures++;
   console.log(`${ok ? "OK " : "XX "} B28 hostile authority state ${name}`);
+}
+const b28DiffDir = process.env.SWARRM_B28_DIFF_DIR;
+if (b28DiffDir) {
+  const diffManifest = JSON.parse(fs.readFileSync(path.join(b28DiffDir, "manifest.json"), "utf8"));
+  if (diffManifest.schema !== "swarrm-b28/differential-corpus/v1" ||
+      diffManifest.case_count !== diffManifest.cases.length ||
+      diffManifest.seed_count < 90) {
+    throw new Error("malformed B28 differential manifest");
+  }
+  const mutatedSurfaces = new Set(diffManifest.cases.map(item => `${item.seed}\0${item.target}`));
+  if (mutatedSurfaces.size !== diffManifest.mutation_surface_count) {
+    throw new Error("B28 differential corpus omitted a declared seed surface");
+  }
+  for (const item of diffManifest.cases) {
+    const input = fs.readFileSync(path.join(b28DiffDir, item.exchange));
+    const context = fs.readFileSync(path.join(b28DiffDir, item.context));
+    const inputHash = crypto.createHash("sha256").update(input).digest("hex");
+    const contextHash = crypto.createHash("sha256").update(context).digest("hex");
+    const got = JSON.parse(verifyB28Exchange(input, context));
+    const exact = inputHash === item.exchange_sha256 &&
+      contextHash === item.context_sha256 && isDeepStrictEqual(got, item.expected);
+    const readOnly = got.verdict !== "PASS" && got.should_execute === false;
+    if (!exact || !readOnly) {
+      failures++;
+      console.log(`XX B28 differential ${item.name}`);
+    }
+  }
+  console.log(`WASM == Python on ${diffManifest.cases.length} fresh B28 mutations; read-only/no authorization`);
+} else {
+  console.log("B28 fresh differential skipped: SWARRM_B28_DIFF_DIR unset");
 }
 if (failures) {
   console.error(`\nPARITY FAILED: ${failures} fixture(s) disagree`);
