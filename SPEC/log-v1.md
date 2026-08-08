@@ -49,7 +49,7 @@ A checkpoint is a signed statement of the log's state:
 |---|---|---|
 | E0 | receipt exists, intact | DSSE signature |
 | E1 | a presented receipt is intact and included in the presented authenticated history | inclusion + consistency under signed checkpoints; no claim that every relevant action was captured/exported |
-| E2 | a displayed receipt is covered by a checkpoint independently re-read from the public chain in this report run | the verifier's live checker under a caller-selected RPC and configured contract; never bundle-carried metadata |
+| E2 | a displayed receipt is covered by a checkpoint independently re-read from Base (`8453`) or Base Sepolia (`84532`) in this report run | the verifier's live checker under a caller-selected RPC; never bundle-carried metadata or a local/unknown chain |
 | E3 | **withdrawn label**; a second signature may verify without proving independence | any future release requires externally grounded counterparty identity/control, not keys carried by the subject |
 
 ## 5. Key transparency (NORMATIVE as of Build 4)
