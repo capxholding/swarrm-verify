@@ -1,7 +1,7 @@
 <!-- Apache-2.0 -->
 # log/v1 — Tenant Transparency Log Specification
 
-Status: DRAFT (implemented by `core/merkle.py`, `core/checkpoint.py`,
+Status: NORMATIVE v1 (implemented by `core/merkle.py`, `core/checkpoint.py`,
 `core/store.py`)
 
 ## 1. Construction
