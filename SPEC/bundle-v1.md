@@ -1,7 +1,7 @@
 <!-- Apache-2.0 -->
 # bundle/v1 — Evidence Bundle Specification
 
-Status: DRAFT (implemented by `core/store.py::export_bundle`,
+Status: NORMATIVE v1 (implemented by `core/store.py::export_bundle`,
 `verify/verifier.py`)
 
 ## 1. Purpose
