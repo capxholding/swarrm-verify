@@ -104,8 +104,10 @@ context: `source_binding_id` · `effective_ts` · `org_root_kid` · `root_sig`.
 Written BEFORE submission. context: `action_id` (opaque, created before
 execution, reused across retries) · `action_class` · `grant_id` ·
 `grant_version` · `binding_id` · `policy_version` ·
-`assurance_transcript_digest` (optional, hex — B28 seam; frozen now because it
-changes signed bytes). commitments: `inputs` · `context_doc`.
+`assurance_transcript_digest` + `challenge_envelope_hash` +
+`presentation_envelope_hash` + `asa_envelope_hash` (optional as one all-or-none
+B28 group, lowercase SHA-256 hex; derived from the exact signed envelopes).
+commitments: `inputs` · `context_doc`.
 **subject id:** `intent_id` = receipt_hash.
 `action.intent` claims neither hidden reasoning nor a successful outcome.
 
@@ -250,3 +252,195 @@ No global identity service, wallet, reputation score or blockchain identity.
 No claim that a policy commitment proves the policy was followed. No runtime
 authentication: Birthtag remains lineage; the PrincipalBinding is the runtime
 link and it is time-bounded, root-approved and revocable.
+
+## 10. B28 proof-bearing authority profile
+
+The receipt forms above remain the historical evidence authority model. B28
+adds closed, deterministic-CBOR authority objects under the
+`swarrm-b28/*/v1` schemas; it does not reinterpret an ordinary evidence issuer
+as organisational authority.
+
+### 10.1 Closed principals
+
+| principal | permitted operation |
+|---|---|
+| Organisation Governance Root | sign every authority-state mutation |
+| Passport & Status Authority | issue a credential from active supplied state; sign a read-only status snapshot |
+| Action Authority | reserve capacity and issue an exact ASA inside an active root grant |
+| Admin passkey | authenticate and select an existing template within one root-bound role |
+| Agent key | registration PoP, holder proof, B28 messages, intents and receipts |
+| Tenant evidence issuer | evidence receipts/checkpoints only |
+
+Only the root creates, revises, supersedes or revokes templates,
+`AdminBindingV1` objects, mandates, limit grants, delegations, passports/agents,
+agent successor links and assumed-risk releases. A Passport Authority signature
+cannot widen or create those facts. A console account without a valid active
+`AdminBindingV1` has no selection authority.
+
+B28 Beta supports an offline, dual-controlled organisation-root successor
+ceremony. It does not turn server administration into root recovery: the
+currently enrolled old root authorizes the exact successor core and the new
+root proves possession by signing those identical bytes. Loss of the old root
+without a previously signed successor remains unrecoverable by the hosted
+service. Favourable `PASS` remains disabled independently of this continuity
+mechanism.
+
+### 10.2 Closed signed object set
+
+- `RootDelegationV1` binds tenant/root, delegation id, passport and action
+  authority keys, and validity. The two authority keys and their derived kids
+  MUST differ; a single delegated key cannot hold both roles.
+- `RootRotationV1` binds one tenant's current root/version to exactly one new
+  root, encrypted-bundle digest, prior-rotation digest and strictly increasing
+  effective time. It is carried in its dedicated deterministic-CBOR
+  dual-signature envelope, not a single-signer CWT.
+- `RegistrationTemplateV1` binds an immutable versioned template to owner,
+  purpose, mandate/config digests and validity.
+- `AdminBindingV1` binds tenant/root, binding id, WebAuthn credential id, exact
+  COSE public key, RP ID, closed role, validity and initial `ACTIVE` state.
+- `AdminSelectionV1` binds an active binding to the exact template/version and
+  proposed-agent digest, with a one-use WebAuthn challenge and assertion.
+- `AgentPoPV1` binds Birthtag/revision, dedicated agent kid, proposed-agent
+  digest and one-use challenge; the dedicated agent key signs it.
+- `AgentCredentialV1` binds tenant/root/delegation, Birthtag and revision,
+  dedicated agent key, owner, purpose, mandate/config commitments, template,
+  principal binding, selection/PoP digests, issuance checkpoint and validity.
+  Passport Authority and agent sign the same credential core.
+- `LimitGrantV1` binds exact actor/recipient, operation, fixed unit, kind,
+  ceiling/windows, validity and maximum unresolved exposure.
+- `AuthorityMutationV1`, `AuthorityCheckpointV1`, `StatusSnapshotV1` and
+  `AssumedRiskReleaseV1` have the state semantics below.
+
+All maps have exact key sets, unsigned epoch seconds and fixed-width byte
+identifiers. Text decimal quantities are canonical unsigned integers with no
+FX or float interpretation. A unit is exactly `iso4217:AAA:minor-N`
+(`AAA` uppercase, `N` one decimal digit), `ucum:TOKEN` or `count:TOKEN`
+(`TOKEN` 1..48 printable non-space ASCII bytes); action and grant strings must
+match byte-for-byte and are never converted. Ed25519 signatures are tagged
+COSE_Sign1 under exact protected headers; WebAuthn alone uses ES256/P-256.
+
+### 10.3 Root mutations and authenticated state
+
+Root succession is separate from authority-map mutation. `RootRotationV1`
+contains the tenant and organisation id, successor sequence (initial root is
+version 1), random rotation id, prior envelope digest (all-zero only for the
+first successor), old/new root public keys, kids and SHA-256 fingerprints,
+old/new encrypted-bundle digests, and effective time. The old and new Ed25519
+keys and their derived kids MUST differ. Both keys sign exactly:
+
+```text
+"swarrm-b28/root-rotation/v1\0" || deterministic-CBOR(RootRotationV1)
+```
+
+The envelope has exactly `schema`, `core`, `old_signature` and
+`new_signature`. A service starts from its already enrolled old key; embedded
+keys do not create trust. In one transaction it verifies both signatures,
+tenant/current-root/bundle binding, next sequence, previous envelope digest and
+strictly increasing effective time; appends the immutable envelope; and
+compare-and-swaps the current public root. Replays, stale records, forks,
+future-effective records and reuse of any historical root fail closed.
+The local continuity verifier starts from an independently pinned initial root
+and replays the complete gap-free sequence; dual signatures without that
+starting anchor prove possession but do not establish an organisation.
+
+Hosted state is root-versioned. After the compare-and-swap, an old cached
+authority is fenced before it can issue or import another artifact, and the
+new root begins with an empty authority map: delegations, grants, credentials
+and checkpoints must be newly authorized. Historical directories, rotation
+envelopes and pre-rotation evidence are retained. A relying party that retains
+the old anchor can continue to verify pre-rotation evidence; root succession
+does not rewrite or invalidate those historical signatures.
+
+State key:
+
+```text
+SHA-256("swarrm-authority-state/v1\0" || kind || "\0" || object_id)
+```
+
+The second NUL terminates the variable-length textual `kind`; it is part of the
+v1 domain separation and prevents a suffix of one kind from becoming a prefix
+of another kind's binary object identifier.
+
+The leaf value is deterministic CBOR over the key, closed state
+`ACTIVE|REVOKED|SUPERSEDED`, positive version and canonical object digest.
+Entries sort lexicographically by state key and use RFC 6962 leaf/node hashing.
+
+Before signing, the local root tool verifies the current append-only-log
+checkpoint, recomputes the complete supplied map, applies the exact sorted
+changes, and signs a mutation containing tenant/root, next sequence,
+previous/new map roots, changes and effective time. The service compares and
+commits sequence, previous root, event and new state in one transaction. It
+never accepts a caller-supplied partial map as the complete state.
+
+The hosted implementation persists a separate high-water pin for that state.
+Because the authenticated map and hosted registry are separate SQLite
+databases, every import first commits a `PREPARED` journal entry containing the
+exact prior and target checkpoint envelopes, their digests, the operation
+digest and, for a grant import, the exact grant accounting identity. Only then
+may it update the authority database. Recovery recognizes only the exact prior
+or exact target described by that journal: an exact prior remains pending for
+a byte-identical retry; a complete exact target is promoted; a partial grant
+target remains pending; and rollback, fork or any other divergence fails
+closed. While a journal entry is pending, passport signing, ASA reservation and
+all other authority mutations are refused. For a grant import, active capacity
+accounting is installed before the hosted grant material, and publication of
+that material and promotion of the high-water pin occur in one hosted-registry
+transaction. No database may infer completion merely because the other moved.
+
+Membership is a standard inclusion path. Non-membership requires an empty tree,
+a verified boundary neighbor, or verified adjacent predecessor/successor leaves
+which straddle the requested key. `AuthorityCheckpointV1` binds the root-signed
+map head to the append-only authority-log root and size. Rollback or a fork is a
+contradiction, never merely stale state.
+
+### 10.4 Status and passport issuance
+
+A Passport Authority receives the active root delegation, template,
+AdminBinding, verified AdminSelection, agent PoP and complete proofs. It may
+sign only a credential whose fields equal that supplied active state. A new
+mandate, revision or successor first requires a root mutation; an earlier
+credential is immutable.
+
+A status snapshot contains checkpoint and proof-set digests, state time and a
+short expiry. Its signature attests to those supplied proofs only. A B28
+presentation embeds the checkpoint, objects and proofs so the relying party can
+recompute them rather than trusting references or a server-side “not revoked”
+claim.
+
+Current authority is conjunctive: the presentation proves active membership
+for the credential's mandate and configuration commitments and for an
+`agent_head` keyed by Birthtag. The head value binds the exact credential
+digest, and its authenticated-state version equals the credential revision.
+An older passport cannot remain current after its mandate/config is revoked or
+its Birthtag head is superseded.
+
+Freshness is bounded: the proof is true at the signed checkpoint. A missing,
+expired or locally unregistered checkpoint is `INDETERMINATE`; a verified
+revocation, rollback or fork is `FAIL`. Existing Birthtags and evidence history
+are adopted additively and are never rewritten.
+
+### 10.5 WebAuthn selection
+
+WebAuthn v1 accepts ES256 on P-256 only. The verifier checks the exact RP ID
+hash, allowed HTTPS origin, type, one-use challenge, credential id, user
+presence and user verification flags and rejects attested-credential data,
+extension data and reserved flag bits. Backup eligibility and backup state are
+accepted, but backup state without backup eligibility is rejected. A zero/zero
+counter transition is treated only as “counter unsupported”; every other
+accepted transition must strictly increase.
+
+The organisation root signs those exact before/after counters and backup flags
+in `AdminConsumptionV1`, alongside the challenge, selection and credential
+digests, binding id and counter version. The same final root mutation updates
+the authenticated `admin_counter` state keyed by binding id to that exact core
+digest and version as the current head; earlier immutable per-challenge
+consumptions remain active. A presentation for an earlier agent proves its own
+consumption and requires the current head version to be no lower, rather than
+requiring the head to retain the historical digest. The local root tool derives the first-use zero counter from
+verified non-membership. For reuse, preparation carries the prior root-signed
+consumption; the local tool verifies its digest/version against the complete
+authenticated map, uses its exact `sign_count_after`, and atomically advances
+the counter version with the registration mutation. Omission, rollback and two
+concurrent branches from the same counter head fail closed. The verified
+selection must name the same active binding and template/version used in the
+issued credential.

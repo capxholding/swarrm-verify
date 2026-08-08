@@ -28,8 +28,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::action::{authority_facts, derive_vector_with_trust};
 use crate::cbor::{canonical_cbor, decode_cbor, MAX_BYTES, MAX_DEPTH};
-use crate::scitt::{hex_to_bytes, verify_scitt_receipt};
-use crate::{ed25519_verify, hex, key_from_jwk, replay_key_log, sha256};
+use crate::scitt::{hex_to_bytes, verified_scitt_pack_keys, verify_scitt_receipt_with_checkpoint};
+use crate::{ed25519_verify, hex, replay_key_log, sha256};
 
 const CORE_SCHEMA: &str = "evd/certificate/v1";
 const VIEW_SCHEMA: &str = "evd/certificate-view/v1";
@@ -46,7 +46,7 @@ const MAX_DISCLOSURES: usize = 256;
 /// Attacker text in the identity block earns no vector at all, so this is a
 /// GATE. `subject_ids` stays OPTIONAL — five weak families correctly carry
 /// none, because `authority_facts` yields them no identity block.
-const CORE_KEYS: [&str; 22] = ["schema", "subject", "bundle", "claim", "events", "event_matches", "source_identity", "control_evidence", "batch", "scan", "coverage_doc", "node_attestation", "open_findings", "proof_digests", "assurance_transcript_digest", "presentation_digest", "agent_context_digest", "verdict_input", "limitations", "current_through", "policy_version", "attachments"];
+const CORE_KEYS: [&str; 25] = ["schema", "subject", "bundle", "claim", "events", "event_matches", "source_identity", "control_evidence", "batch", "scan", "coverage_doc", "node_attestation", "open_findings", "proof_digests", "assurance_transcript_digest", "challenge_envelope_hash", "presentation_envelope_hash", "asa_envelope_hash", "presentation_digest", "agent_context_digest", "verdict_input", "limitations", "current_through", "policy_version", "attachments"];
 const SUBJECT_KEYS: [&str; 4] = ["action_id", "action_class", "origin", "subject_ids"];
 /// SPEC/certificate-v1.md §3 called these "closed text codes" and never
 /// enclosed the set; §3 now enumerates exactly these two. The unbound-coverage
@@ -536,18 +536,6 @@ fn view_checks(view: &C, id: &str, bundle: &J, mark: &J, errors: &mut Vec<&'stat
 
 // ------------------------------------------------- scitt override (SPEC §6)
 
-/// TS trust keys (kid → raw pubkey) from the pack's published ts_jwks.
-fn scitt_ts_keys(pack: &J) -> BTreeMap<String, [u8; 32]> {
-    let mut keys = BTreeMap::new();
-    let set = pack.get("ts_jwks").and_then(|j| j.get("keys")).and_then(J::as_array);
-    for jwk in set.map(Vec::as_slice).unwrap_or(&[]) {
-        if let Some((raw, kid)) = key_from_jwk(jwk) {
-            keys.insert(kid, raw);
-        }
-    }
-    keys
-}
-
 /// The certificate's own key-log keys — the issuer set §6.2 verifies the
 /// Signed Statement under; empty if the log is unsound.
 fn scitt_issuer_keys(bundle: &J) -> BTreeMap<String, [u8; 32]> {
@@ -560,11 +548,6 @@ fn scitt_issuer_keys(bundle: &J) -> BTreeMap<String, [u8; 32]> {
     }
 }
 
-/// SPEC §6: `scitt_receipt_valid` is VERIFIER-DERIVED. When the registration
-/// layer carries a scitt pack whose `certificate_id` matches, recompute the
-/// flag via `verify_scitt_receipt` and OVERRIDE any producer-supplied value
-/// BEFORE `derive_vector` — a producer can never self-assert REGISTERED, and a
-/// forged/mismatched pack forces the flag false. No pack → the field is untouched.
 /// SPEC §6: `scitt_receipt_valid` is VERIFIER-DERIVED — ALWAYS, not only when a
 /// pack happens to be carried.
 ///
@@ -576,24 +559,24 @@ fn scitt_issuer_keys(bundle: &J) -> BTreeMap<String, [u8; 32]> {
 /// same thing as a failed one (weak-claim). Python was corrected first; leaving
 /// this early return would have made the two engines disagree on every
 /// certificate that carries no pack — which, since nothing in production
-/// assembles one, is all of them.
-fn apply_scitt_override(vi: &mut J, id: &str, bundle: &J) {
-    let pack = match vi.get("registration").and_then(|r| r.get("scitt_pack")) {
-        Some(p) if p.is_object() => p.clone(),
-        _ => {
-            if vi.get("registration").map(J::is_object).unwrap_or(false) {
-                vi["registration"]["scitt_receipt_valid"] = json!(false);
-            }
-            return;
-        }
-    };
+/// assembles one, is all of them. A pack's JWKs do not anchor themselves: the
+/// registration's transparency-service name resolves through the separately
+/// supplied trust context, and that local root must sign the exact pack policy.
+fn scitt_pack_valid(pack: &J, id: &str, bundle: &J, root: Option<[u8; 32]>) -> bool {
+    let Some(root) = root else { return false };
     let ss = pack.get("signed_statement").and_then(J::as_str).and_then(hex_to_bytes);
     let rc = pack.get("receipt").and_then(J::as_str).and_then(hex_to_bytes);
-    let ok = pack.get("certificate_id").and_then(J::as_str) == Some(id)
-        && match (ss, rc) {
-            (Some(ss), Some(rc)) => verify_scitt_receipt(&ss, &rc, &scitt_ts_keys(&pack), &scitt_issuer_keys(bundle), id),
-            _ => false,
-        };
+    let (Some(ss), Some(rc), Some(checkpoint)) = (ss, rc, pack.get("checkpoint")) else { return false };
+    let roots = BTreeMap::from([(String::new(), root)]);
+    let Some(ts_keys) = verified_scitt_pack_keys(pack, &roots, &ss) else { return false };
+    pack.get("certificate_id").and_then(J::as_str) == Some(id) && verify_scitt_receipt_with_checkpoint(&ss, &rc, &ts_keys, &scitt_issuer_keys(bundle), id, checkpoint)
+}
+
+fn apply_scitt_override(vi: &mut J, id: &str, bundle: &J, trust: Option<&J>) {
+    let Some(registration) = vi.get("registration").filter(|value| value.is_object()) else { return };
+    let service = registration.get("scope_registration").and_then(|scope| scope.get("transparency_service")).and_then(J::as_str);
+    let root = crate::trust::key_for(trust, "scitt_ts_keys", service).and_then(|raw| <[u8; 32]>::try_from(raw).ok());
+    let ok = registration.get("scitt_pack").filter(|pack| pack.is_object()).is_some_and(|pack| scitt_pack_valid(pack, id, bundle, root));
     vi["registration"]["scitt_receipt_valid"] = json!(ok);
 }
 
@@ -609,6 +592,12 @@ fn core_shape_ok(j: &J) -> bool {
 fn core_keys_ok(j: &J) -> bool {
     let closed = |v: &J, allowed: &[&str]| v.as_object().is_some_and(|m| m.keys().all(|k| allowed.contains(&k.as_str())));
     closed(j, &CORE_KEYS) && closed(&j["subject"], &SUBJECT_KEYS)
+}
+
+fn b28_bindings_ok(j: &J) -> bool {
+    let names = ["assurance_transcript_digest", "challenge_envelope_hash", "presentation_envelope_hash", "asa_envelope_hash"];
+    let present = names.iter().filter_map(|name| j.get(*name)).collect::<Vec<_>>();
+    present.is_empty() || (present.len() == names.len() && present.iter().all(|value| value.as_str().is_some_and(|text| text.len() == 64 && text.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)))))
 }
 
 fn core_caps_ok(j: &J) -> bool {
@@ -650,6 +639,9 @@ fn verify_core(id: &str, core: &C, view: Option<&C>, trust: Option<&J>) -> J {
     if !core_keys_ok(&j) {
         return held(&["CORE_UNDECLARED_FIELD"]); // pinned gate order: malformed, undeclared, over-cap
     }
+    if !b28_bindings_ok(&j) {
+        return held(&["CORE_MALFORMED"]);
+    }
     if !core_caps_ok(&j) {
         return held(&["OVER_CAP"]);
     }
@@ -666,7 +658,7 @@ fn verify_core(id: &str, core: &C, view: Option<&C>, trust: Option<&J>) -> J {
         }
         vi["authority"]["integrity"] = json!("INVALID"); // never a partial pass
     }
-    apply_scitt_override(&mut vi, id, &bundle); // SPEC §6: DERIVE scitt_receipt_valid
+    apply_scitt_override(&mut vi, id, &bundle, trust); // SPEC §6: DERIVE scitt_receipt_valid
     let vector = derive_vector_with_trust(&vi, trust);
     // The DISPLAYED mark is cross-checked against the ANCHOR-FREE derivation:
     // a producer cannot know which roots a relying party will supply, and must
@@ -744,4 +736,28 @@ pub fn verify_certificate_cbor_with_trust(bytes: &[u8], trust: Option<&J>) -> St
         // unreachable for this value shape; fail closed rather than panic
         r#"{"parse_ok":false,"layers":[],"certificate_id":null,"core_present":false,"cross_checks_ok":false,"vector":null,"mark":null,"errors":["PARSE"],"export_complete":null}"#.into()
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{fs, path::PathBuf};
+
+    #[test]
+    fn scitt_override_resolves_the_named_local_root() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/scitt");
+        let core_bytes = fs::read(dir.join("registered_valid.core.cbor")).unwrap();
+        let core = cbor_to_json(&decode_cbor(&core_bytes, MAX_DEPTH as usize, MAX_CORE_BYTES).unwrap(), MAX_DEPTH).unwrap();
+        let bundle = core["bundle"].clone();
+        let mut vi = core["verdict_input"].clone();
+        vi["registration"]["scitt_pack"] = serde_json::from_str(&fs::read_to_string(dir.join("registered_valid.pack.json")).unwrap()).unwrap();
+        let id = hex(&sha256(&core_bytes));
+        // Fixed generator key supplied out of band, not copied from the pack.
+        let trust = json!({"scitt_ts_keys": {"ts-1": "2543b92ff1095511476adc8369db6ddc933665a11978dda1404ee1066ca9559d"}});
+
+        apply_scitt_override(&mut vi, &id, &bundle, Some(&trust));
+        assert_eq!(vi["registration"]["scitt_receipt_valid"], json!(true));
+        apply_scitt_override(&mut vi, &id, &bundle, None);
+        assert_eq!(vi["registration"]["scitt_receipt_valid"], json!(false));
+    }
 }

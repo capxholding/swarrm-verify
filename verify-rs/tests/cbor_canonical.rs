@@ -13,7 +13,7 @@
 #[path = "../src/cbor.rs"]
 mod cbor;
 
-use cbor::{canonical_cbor, canonical_from_json, decode_cbor, MAX_BYTES, MAX_DEPTH};
+use cbor::{canonical_cbor, canonical_from_json, decode_cbor, MAX_BYTES, MAX_DEPTH, MAX_ITEMS};
 use ciborium::value::Integer;
 use ciborium::Value;
 use std::fs;
@@ -208,4 +208,12 @@ fn decoder_byte_cap() {
     let payload = unhex("a1616b6176"); // {"k": "v"}
     assert!(decode_cbor(&payload, MAX_DEPTH as usize, payload.len()).is_some());
     assert!(decode_cbor(&payload, MAX_DEPTH as usize, payload.len() - 1).is_none());
+}
+
+#[test]
+fn decoder_item_cap_precedes_codec_materialization() {
+    let mut payload = vec![0x9a];
+    payload.extend_from_slice(&(MAX_ITEMS as u32).to_be_bytes());
+    payload.extend(std::iter::repeat_n(0xf4, MAX_ITEMS));
+    assert!(decode(&payload).is_none());
 }

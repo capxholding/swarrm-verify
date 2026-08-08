@@ -5,50 +5,41 @@
         "body": {
           "origin": "evd://tenant/t_golden",
           "prev_hash": "",
-          "root_hash": "5bb9880d2bf08e7e370920ac84f35594e6433e33f8865b6a5ce790f49d8aaea3",
+          "root_hash": "6a021562e8c8c58f72f46d3d0250383d7785a62915145d076ef2ba5918345bf5",
           "schema": "evd/checkpoint/v1",
-          "tree_size": 3,
-          "ts": "2026-07-29T19:42:18.892675Z"
+          "tree_size": 5,
+          "ts": "2026-07-29T19:42:18.895113Z"
         },
         "kid": "Vkdap1RjR0wChd9d",
-        "sig": "qBH+Lla8LDkG/CYeHg2WgL6awIINAtfPBSj6XocOuhlvLU/OFoko/QBUown8XLsVUlvGn5KcJqMRH4lingxlAg=="
+        "sig": "UUSl+Uy4FYmI5ZTOVCdVLReY6UqOJ0ta4EV4rhTh8Fg/4/lcH/B39GyUKr/J0fZ6k6upU7pk4sQPXDPE76khAA=="
       }
     }
   ],
   "entries": [
     {
       "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJraW5kIjoiYWRvcHRlZCJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJkdXAtYWRvcHQtMSIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MH0sImlkZW1wb3RlbmN5X2tleSI6InByZS0wIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X2dvbGRlbiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiJ9",
         "payloadType": "application/vnd.evd.receipt.v1+json",
         "signatures": [
           {
             "keyid": "Vkdap1RjR0wChd9d",
-            "sig": "66hE8D8PUZum9E2DFlw3tDMttQxvyVHfPdDyG6y6LnXU8c+QhPdztSdO2XXt+6eN/A05w0DSMvrZ2WVUEeLqAw=="
+            "sig": "nQAs/f9L31ZNW2KLElvm/2ZfX52iN9zK9FcRgSO+AYOEZQ7ChvxoP5DQmZQJ9WaL026o3Dhh6KMBy1QsevK+Ag=="
           }
         ]
       },
       "inclusion_proof": [
-        "c4b0d861b72947bfbbbcabb821e8b16d53a86c75710644d54ce927c163ebdd41"
-      ],
-      "leaf_index": 2
-    },
-    {
-      "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJraW5kIjoiYWRvcHRlZCJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJkdXAtYWRvcHQtMCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
-        "payloadType": "application/vnd.evd.receipt.v1+json",
-        "signatures": [
-          {
-            "keyid": "Vkdap1RjR0wChd9d",
-            "sig": "QXU4xXX+HoZ1HCuAU5VRzLcEdYekQlSPqx/NFYnJGheaESAM8TvAfsNwyd8UlklHQ3j6AhUIXx4qHO+WfatiAA=="
-          }
-        ]
-      },
-      "inclusion_proof": [
-        "f845e05e2b7e990250db8bf84d1c6831616631a32fcdd74b3401e29a56979e00",
-        "b795304e0ffbda2bd69aca0024ccecc1c457252220aa8193c14de98973aaf991"
+        "a6aca9c654a7c2bacf4162d54ee61ef4d02c065244b443137b6b957eb4cd6aa2",
+        "f199d627d662f3dff327b134340010a1a9fa106057a108ff3525072b82698150",
+        "847abd42d7bc99a790b40960323dd08ab9ea95bb15284c692c72a5900a0210a1"
       ],
       "leaf_index": 1
     },
     {
       "envelope": {
-        "payload": "eyJhY3Rpb25
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MX0sImlkZW1wb3RlbmN5X2tleSI6InByZS0xIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoyLCJ0ZW5hbnRfaWQiOiJ0X2dvbGRlbiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "k2VZiFbRfH2FURYUghr8mezX05muV3DlBTlKohfgY+q1lqRa93tbRb30qKK1L6b/sKIgxeStOwCXb4Y84DagCQ=="
+          }

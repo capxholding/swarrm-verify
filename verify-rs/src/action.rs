@@ -24,6 +24,9 @@ const GATED: [&str; 11] = ["identity", "authority", "intent", "integrity", "link
 const INTENT_CTX: [&str; 6] = ["action_id", "action_class", "grant_id", "grant_version", "binding_id", "policy_version"];
 const EST_TYPES: [&str; 2] = ["lineage.born", "lineage.adopted"];
 const ELIGIBLE_EXACT: [(&str, &str); 6] = [("identity", "VERIFIED"), ("authority", "VERIFIED"), ("intent", "RECORDED"), ("integrity", "VALID"), ("outcome", "CORROBORATED"), ("coverage", "CLOSED")];
+const MAX_SOURCE_PROOFS: usize = 128;
+const MAX_VERDICT_INPUT_BYTES: usize = 16 * 1024 * 1024;
+const MAX_TRUST_CONTEXT_BYTES: usize = 1024 * 1024;
 
 // ---------------------------------------------------------------- utilities
 
@@ -65,28 +68,16 @@ fn nonempty(v: &Value, k: &str) -> bool {
     truthy(v.get(k))
 }
 
-/// Normalize "YYYY-MM-DDTHH:MM:SS[.frac]Z" — fraction padded to 6 digits so
-/// normalized values compare lexicographically; None if malformed. ASCII-only,
-/// so byte length/index here mean the same thing as Python's codepoint tests.
+/// Normalize canonical RFC 3339 UTC — fraction padded to six digits so values
+/// compare lexicographically. The shared parser owns the Gregorian calendar
+/// and exact Z/fraction grammar for both verifier layers.
 pub(crate) fn nts(t: &Value) -> Option<String> {
     let t = t.as_str()?;
-    if !t.is_ascii() || t.len() < 20 || !t.ends_with('Z') || t.as_bytes().get(10) != Some(&b'T') {
+    if !crate::canonical_utc(t) {
         return None;
     }
     let base = &t[..t.len() - 1];
     let (whole, frac) = base.split_once('.').unwrap_or((base, ""));
-    if whole.len() != 19 || frac.len() > 6 || !frac.bytes().all(|c| c.is_ascii_digit()) {
-        return None;
-    }
-    let b = whole.as_bytes();
-    if [b[4], b[7], b[10], b[13], b[16]] != [b'-', b'-', b'T', b':', b':'] || b.iter().enumerate().any(|(i, c)| ![4, 7, 10, 13, 16].contains(&i) && !c.is_ascii_digit()) {
-        return None;
-    }
-    let number = |a, z| whole[a..z].parse::<u32>().ok();
-    let (y, m, d, h, min, sec) = (number(0, 4)?, number(5, 7)?, number(8, 10)?, number(11, 13)?, number(14, 16)?, number(17, 19)?);
-    if y == 0 || !(1..=12).contains(&m) || !(1..=31).contains(&d) || h > 23 || min > 59 || sec > 59 {
-        return None;
-    }
     Some(format!("{}.{:0<6}Z", whole, frac))
 }
 
@@ -167,28 +158,59 @@ fn authority_block(vi: &Value) -> (Value, Value) {
     (a, derived)
 }
 
-fn bound_kids(si: &Value) -> Result<Vec<Value>, Raise> {
+fn bound_source_keys(si: &Value) -> Result<Vec<Value>, Raise> {
     let keys = iter_items(if si.is_object() { si.get("keys") } else { None })?;
-    let mut kids = Vec::new();
     for k in keys.iter().filter(|k| k.is_object()) {
         let kid = g(k, "kid");
         if kid.is_array() || kid.is_object() {
             return Err(Raise); // an unhashable kid cannot enter Python's set
         }
-        kids.push(kid);
     }
-    Ok(kids)
+    Ok(keys)
 }
 
-fn asym_pre_bound(p: &Value, kids: &[Value]) -> Result<bool, Raise> {
-    if s(p, "proof_type") != Some("asymmetric_signature") {
-        return Ok(false);
+fn bound_source_key<'a>(keys: &'a [Value], kid: Option<&str>) -> Option<&'a Value> {
+    let mut matches = keys.iter().filter(|key| key.is_object() && s(key, "kid") == kid);
+    let first = matches.next()?;
+    if matches.next().is_some() {
+        None
+    } else {
+        Some(first)
     }
-    let ki = g(p, "key_identity");
-    if ki.is_array() || ki.is_object() {
-        return Err(Raise); // unhashable — Python set membership raises
+}
+
+fn bounded_source_proofs(vi: &Value) -> Option<&[Value]> {
+    let Some(value) = vi.get("source_proofs") else { return Some(&[]) };
+    let proofs = value.as_array()?;
+    if proofs.len() > MAX_SOURCE_PROOFS {
+        return None;
     }
-    Ok(kids.contains(&ki))
+    let mut total = 0usize;
+    for proof in proofs {
+        total = total.checked_add(source_proof_material_size(proof)?)?;
+        if total > crate::trust::MAX_SOURCE_PROOF_TOTAL_BYTES {
+            return None;
+        }
+    }
+    Some(proofs)
+}
+
+fn source_proof_material_size(proof: &Value) -> Option<usize> {
+    if !proof.is_object() {
+        return Some(0);
+    }
+    let material = proof.get("material");
+    let context = proof.get("signature_context");
+    if material.is_none() && context.is_none() {
+        return Some(0);
+    }
+    let attributive = matches!(s(proof, "proof_type"), Some("asymmetric_signature" | "mac"));
+    if attributive && (material.is_none() || context.and_then(Value::as_str) != Some(crate::trust::SOURCE_WEBHOOK_SIGNATURE_CONTEXT)) {
+        return None;
+    }
+    let text = material?.as_str()?;
+    let decoded = B64.decode(text).ok()?;
+    (B64.encode(&decoded) == text && decoded.len() <= crate::trust::MAX_SOURCE_PROOF_MATERIAL_BYTES).then_some(decoded.len())
 }
 
 /// Is `field` named in THIS view's withheld set? Shared by the per-view
@@ -208,21 +230,47 @@ fn source_signature(vi: &Value, trust: Option<&Value>) -> Result<&'static str, R
     if field_withheld(vi, "source_proofs")? {
         return Ok("NOT_RECOMPUTED");
     }
-    let kids = bound_kids(&g(vi, "source_identity"))?;
+    let keys = bound_source_keys(&g(vi, "source_identity"))?;
+    let Some(proofs) = bounded_source_proofs(vi) else { return Ok("NONE") };
     let mut has_mac = false;
-    for p in iter_items(vi.get("source_proofs"))? {
-        if !p.is_object() {
-            continue;
-        }
-        let kid = s(&p, "key_identity");
-        if asym_pre_bound(&p, &kids)? && crate::trust::verified(trust, "source_keys", kid, "source-proof", &p) {
+    for p in proofs {
+        let kind = source_proof_kind(p, &keys, trust);
+        if kind == "ASYMMETRIC" {
             return Ok("ASYMMETRIC");
         }
-        if s(&p, "proof_type") == Some("mac") {
-            has_mac = has_mac || crate::trust::mac_verified(trust, kid, "source-proof", &p);
-        }
+        has_mac = has_mac || kind == "MAC";
     }
     Ok(tri(has_mac, "SHARED_SECRET", false, "", "NONE")) // possession by SOME holder
+}
+
+fn source_proof_kind(p: &Value, keys: &[Value], trust: Option<&Value>) -> &'static str {
+    if !p.is_object() {
+        return "NOTHING";
+    }
+    let kid = s(p, "key_identity");
+    let key = bound_source_key(keys, kid);
+    if p.get("material").is_some() || p.get("signature_context").is_some() {
+        return full_source_proof_kind(p, key, kid, trust);
+    }
+    legacy_source_proof_kind(p, key, kid, trust)
+}
+
+fn full_source_proof_kind(p: &Value, key: Option<&Value>, kid: Option<&str>, trust: Option<&Value>) -> &'static str {
+    let family = key.and_then(|entry| s(entry, "algorithm_family"));
+    if key.is_none() || !crate::trust::source_webhook_verified(trust, kid, family, p) {
+        return "NOTHING";
+    }
+    tri(s(p, "proof_type") == Some("asymmetric_signature"), "ASYMMETRIC", true, "MAC", "")
+}
+
+fn legacy_source_proof_kind(p: &Value, key: Option<&Value>, kid: Option<&str>, trust: Option<&Value>) -> &'static str {
+    if s(p, "proof_type") == Some("asymmetric_signature") && key.is_some() && crate::trust::verified(trust, "source_keys", kid, "source-proof", p) {
+        return "ASYMMETRIC";
+    }
+    if s(p, "proof_type") == Some("mac") && crate::trust::mac_verified(trust, kid, "source-proof", p) {
+        return "MAC";
+    }
+    "NOTHING"
 }
 
 /// (source controller, operator controller) iff evidence complete (2.3).
@@ -805,6 +853,17 @@ pub fn derive_vector(verdict_input: &Value) -> Value {
 /// so the subject cannot supply its own anchors.
 pub fn derive_vector_with_trust(verdict_input: &Value, trust: Option<&Value>) -> Value {
     derive_inner(verdict_input, trust).unwrap_or_else(|_| derive_inner(&json!({}), None).ok().expect("weak derivation is total"))
+}
+
+/// JSON/WASM entry point for a verdict input plus the relying party's LOCAL
+/// trust context.  The contexts remain separate arguments; exchange data can
+/// never smuggle its own roots into the verification call.
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+pub fn derive_vector_json(verdict_input_json: &str, trust_json: &str) -> String {
+    let input = if verdict_input_json.len() <= MAX_VERDICT_INPUT_BYTES { serde_json::from_str::<Value>(verdict_input_json).ok() } else { None };
+    let trust = if trust_json.is_empty() || trust_json.len() > MAX_TRUST_CONTEXT_BYTES { None } else { serde_json::from_str::<Value>(trust_json).ok() };
+    let vector = derive_vector_with_trust(input.as_ref().unwrap_or(&Value::Null), trust.as_ref());
+    serde_json::to_string(&vector).expect("verdict vector is JSON")
 }
 
 // ------------------------------------------ authority_facts (authority-v1)

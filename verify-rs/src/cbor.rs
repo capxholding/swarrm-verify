@@ -25,6 +25,8 @@ pub(crate) const MAX_DEPTH: i64 = 64;
 /// Default byte cap: the complete offline pack budget (certificate-v1 §4.1).
 /// Callers verifying a bare core pass the tighter 1 MiB cap explicitly.
 pub(crate) const MAX_BYTES: usize = 16 * 1024 * 1024;
+/// Bound aggregate materialization, not only nesting and encoded bytes.
+pub(crate) const MAX_ITEMS: usize = 100_000;
 
 /// Emit a minimal CBOR item head.  COSE reuses this exact primitive for its
 /// integer-labelled headers, so envelope and certificate encodings cannot
@@ -179,43 +181,62 @@ pub(crate) fn read_head(data: &[u8], i: usize) -> Option<(u8, u64, usize)> {
 /// Iterative structural scan of ONE item; returns its end offset. Explicit
 /// stack of remaining-member counts — hostile nesting never touches the call
 /// stack; every claimed length must fit in the buffer, bounding allocations.
-fn scan(data: &[u8], max_depth: usize) -> Option<usize> {
+fn scan_string(data: &[u8], i: &mut usize, arg: u64) -> Option<()> {
+    let remaining = data.len().checked_sub(*i)?;
+    (arg <= remaining as u64).then_some(())?;
+    *i += arg as usize;
+    Some(())
+}
+
+fn scan_container(data: &[u8], i: usize, major: u8, arg: u64, stack: &mut Vec<u64>, max_depth: usize) -> Option<bool> {
+    let count = if major == 4 { arg } else { arg.checked_mul(2)? };
+    if count > (data.len() - i) as u64 {
+        return None; // every member needs >= 1 byte
+    }
+    if count == 0 {
+        return Some(false);
+    }
+    if stack.len() >= max_depth {
+        return None;
+    }
+    stack.push(count);
+    Some(true)
+}
+
+fn scan_item(data: &[u8], i: &mut usize, major: u8, arg: u64, stack: &mut Vec<u64>, max_depth: usize) -> Option<bool> {
+    match major {
+        2 | 3 => scan_string(data, i, arg).map(|()| false),
+        4 | 5 => scan_container(data, *i, major, arg, stack, max_depth),
+        _ => Some(false),
+    }
+}
+
+fn complete_item(stack: &mut Vec<u64>) -> bool {
+    while let Some(top) = stack.last_mut() {
+        *top -= 1;
+        if *top > 0 {
+            return false;
+        }
+        stack.pop();
+    }
+    true
+}
+
+pub(crate) fn structural_scan(data: &[u8], max_depth: usize, max_items: usize) -> Option<usize> {
     let mut stack: Vec<u64> = Vec::new();
     let mut i = 0usize;
+    let mut items = 0usize;
     loop {
+        items = items.checked_add(1)?;
+        if items > max_items {
+            return None;
+        }
         let (major, arg, next) = read_head(data, i)?;
         i = next;
-        match major {
-            2 | 3 => {
-                // string payload must fit
-                if arg > (data.len() - i) as u64 {
-                    return None;
-                }
-                i += arg as usize;
-            }
-            4 | 5 => {
-                let count = if major == 4 { arg } else { arg.checked_mul(2)? };
-                if count > (data.len() - i) as u64 {
-                    return None; // every member needs >= 1 byte
-                }
-                if count > 0 {
-                    if stack.len() >= max_depth {
-                        return None;
-                    }
-                    stack.push(count);
-                    continue;
-                }
-            }
-            _ => {}
+        if scan_item(data, &mut i, major, arg, &mut stack, max_depth)? {
+            continue;
         }
-        while let Some(top) = stack.last_mut() {
-            *top -= 1;
-            if *top > 0 {
-                break;
-            }
-            stack.pop();
-        }
-        if stack.is_empty() {
+        if complete_item(&mut stack) {
             return Some(i);
         }
     }
@@ -228,7 +249,7 @@ fn scan(data: &[u8], max_depth: usize) -> Option<usize> {
 /// the re-encode compare rejects duplicate or unsorted keys, out-of-range
 /// integers and non-minimal heads.
 pub(crate) fn decode_cbor(data: &[u8], max_depth: usize, max_bytes: usize) -> Option<Value> {
-    if data.len() > max_bytes || scan(data, max_depth)? != data.len() {
+    if data.len() > max_bytes || structural_scan(data, max_depth, MAX_ITEMS)? != data.len() {
         return None;
     }
     let value: Value = ciborium::de::from_reader(data).ok()?;

@@ -108,7 +108,13 @@ ConnectorHealth`. Vendor auth/pagination/mapping stay in the connector;
 reconciliation and verification contain no vendor branch.
 - **DeclarativeHttpsConnector** — config-driven paginated full-feed read
   (GET base_url + cursor/page params; `authenticated_read_transcript`
-  SourceProof over the response, digest-addressed).
+  SourceProof over the response, digest-addressed). It accepts only identity or
+  gzip content encoding and streams raw bytes before decoding: one page is at
+  most 2 MiB / 1,000 events, one scan at most 16 MiB / 10,000 events, JSON depth
+  32 / 20,000 values, any text value 64 KiB and any cursor 4 KiB. Duplicate
+  keys, floats, out-of-range integers, concatenated/invalid gzip and a crossing
+  of any cumulative limit produce an explicit scan gap; none is retained as a
+  valid page.
 - **SignedWebhookConnector** — inbound deliveries; verifies an asymmetric
   signature or MAC against the pre-bound `SourceIdentity.keys`;
   `SourceProof.proof_type` is `asymmetric_signature` or `mac` accordingly (a
@@ -123,6 +129,10 @@ reconciliation and verification contain no vendor branch.
   are streamed up to the cap, never buffered unbounded. Every known-source
   refusal raises `webhook_capture_failed`, degrades health and gaps coverage;
   capture failure is never swallowed as merely `verified=false`.
+  An inbound source MUST NOT use `auth.mode = "token_cmd"`: verification of
+  attacker-selected requests never has authority to launch a credential
+  subprocess. HMAC webhooks use an environment-backed secret; asymmetric
+  webhooks use only their pre-bound public source key.
 - **Emulator** (`node/emulator.py`) — ships WITH the Node: an in-process
   deterministic fake source (fixed seed; cursor pages; Ed25519-signed or MAC
   modes; injectable gaps/rollbacks/duplicates) so the whole loop runs before
@@ -152,10 +162,15 @@ request or in hosted storage.
 
 `auth.mode = "env"`: the credential lives in the named env var, read at scan
 time, never written to disk, receipts, logs, config or support bundles.
-`auth.mode = "token_cmd"`: a customer-supplied command mints a short-lived
-token per scan. The Node data dir and config contain no credential bytes
-(test-proven with a credential sentinel). Lost credentials degrade
+`auth.mode = "token_cmd"`: for outbound feed scans only, a customer-supplied
+command mints a short-lived token per scan. Signed-webhook sources reject this
+mode at configuration load. The Node data dir and config contain no credential
+bytes (test-proven with a credential sentinel). Lost credentials degrade
 `ConnectorHealth` (which degrades COVERAGE); they never block execution.
+The helper receives a scrubbed, explicitly allowed environment and at most
+64 KiB on stdin. Its process group is killed after ten seconds or once stdout
+crosses 16 KiB; stderr is discarded, output must reduce to one non-empty
+visible-ASCII bearer value, and no captured secret bytes enter exceptions.
 
 **A token command's argv is world-readable.** The command runs with
 `shell=False` and a list argv — that stops shell metacharacters in a config
@@ -166,8 +181,8 @@ accounting and container runtimes record. A secret written inline in the
 command (`vault-helper --token=hvs.CAESIJ…`) is therefore disclosed on every
 scan. Secret material reaches a token command by exactly two channels:
 
-- **environment** — the command inherits the Node's environment and reads its
-  own `$VAULT_TOKEN`/`$AWS_*`; nothing extra to configure;
+- **environment** — `auth.env_ref` and `auth.env_allow` explicitly name the
+  variables copied into the otherwise scrubbed helper environment;
 - **stdin** — `auth.stdin_ref` names an env var whose VALUE is written to the
   command's stdin and closed.
 
@@ -241,9 +256,11 @@ is stored.
   is `GAPPED`, never `CLOSED`.
 - **Recovery**: the customer-controlled durable Evidence Store/backup (the
   Node data dir: store + evidence vault + cursors + key) is a documented
-  deployment prerequisite. Restore from it loses nothing (drill-tested).
-  Without it, source effects backfill from the source and everything else
-  becomes an explicit `evd.gap.declared` — losing the nonce vault is an
+  deployment prerequisite. A restore succeeds only when the drill verifies the
+  semantic contents of every critical database and retained evidence object;
+  partial or skipped restoration is failure. Without a usable backup, source
+  effects may be backfilled where the source still exposes them and everything
+  else becomes an explicit `evd.gap.declared` — losing the nonce vault is an
   evidenced capability loss (no disclosure for those items), not a
   confidentiality breach.
 - **One volume, one tenant.** At first boot the Node atomically binds

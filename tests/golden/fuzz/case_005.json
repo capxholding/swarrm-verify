@@ -5,6 +5,3 @@
         "body": {
           "origin": "evd://tenant/t_golden",
           "prev_hash": "",
-          "root_hash": "52d8b24729f13330cdfdadf17cb5488e8769ee02bd035c92a35b3894e68998e2",
-          "schema": "evd/checkpoint/v1",
-          "tree_size": 3,

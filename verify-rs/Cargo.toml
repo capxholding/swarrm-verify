@@ -3,16 +3,17 @@
 name = "swarrm-verify"
 version = "0.1.0"
 edition = "2021"
-description = "Independent Rust verifier for evd/bundle/v1 — second implementation, spec-hardening"
+description = "Independent Rust/WASM verifier for evidence bundles, certificates, and CWT/COSE-only B28 assurance"
 # Declared, not merely stated in the header comment above: wasm-pack reads these
 # and every published artifact carries the licence it is actually under.
 license = "Apache-2.0"
 repository = "https://github.com/capxholding/swarrm-verify"
 
 [lib]
-crate-type = ["rlib", "cdylib"]  # cdylib for future wasm-pack
+crate-type = ["rlib", "cdylib"]  # cdylib is the browser/Node wasm-pack surface
 
 [dependencies]
+serde = "1"
 serde_json = "1"
 # `oid` feature: digest types carry AssociatedOid so rsa's Pkcs1v15Sign can
 # build the DigestInfo prefix (const-oid is already in the graph via der/p256).
@@ -24,7 +25,7 @@ p256 = "=0.13.2"
 # RSA and P-384 support RFC 3161/TSA certificate chains. These pure-Rust
 # dependencies and their exact pins are mirrored in ci/architecture_policy.json.
 p384 = "=0.13.1"
-rsa = "=0.9.8"
+rsa = "=0.9.10"
 # B24 CBOR primitives — owner sanction O·1 (§0.2·3): ciborium is the ONLY
 # Rust CBOR codec; the canonical emitter in src/cbor.rs owns determinism
 # (ciborium does not sort map keys). Exact pin mirrored in the policy file.

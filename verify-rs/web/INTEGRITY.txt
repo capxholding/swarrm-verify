@@ -8,18 +8,26 @@ to confirm the WASM you are served is the one built from this repo's source
 Reproduce and check:
 
     cd verify-rs
-    wasm-pack build --target web --features wasm
+    wasm-pack build --target web --features wasm --locked
     shasum -a 256 pkg/swarrm_verify_bg.wasm
+
+Expected sha256 of swarrm_verify.js (the canonical x86_64 Linux CI build
+from this source tree):
+
+    ef3b0f14dde59452b14a2c26da104fb2bfb540f0f63654c86efc3158f65bcffa
 
 Expected sha256 of swarrm_verify_bg.wasm (the canonical x86_64 Linux CI build
 from this source tree):
 
-    5429f832d366ed05ad958c2a4ee0919e631bc716799c49ab287a9502236a862a
+    972f3ed654b8b38bd4a8951f557b9dafa2da49f4751ac59ef14e570e6652173d
 
 This artifact was rebuilt on x86_64 Linux with the official wasm-pack 0.15.0
 release binary and Rust 1.90.0 from the Cargo.lock-pinned dependency graph.
 CI asserts exact-byte reproduction on that host; other host platforms can
 produce semantically equivalent but byte-different modules.
-The page displays the sha256 of the module it actually loaded; compare it to
-the value above. The verifier is client-side only — it never uploads your
-bundle — so trusting it reduces to trusting this hash, which you can rebuild.
+The page hardcodes both release digests and refuses to execute the JS glue or
+instantiate the WASM unless their bytes match. This file is reproducibility
+context, not the browser's source of expected values. The verifier is
+client-side only and does not upload a bundle you choose. The pins do not by
+themselves audit the source, authenticate the page that displays them,
+establish external trust roots, or prove capture completeness.

@@ -30,6 +30,8 @@
   "forged_anchor": "NOT_VERIFIED",
   "forged_duplicate_seq": "NOT_VERIFIED",
   "forged_tst": "NOT_VERIFIED",
+  "future_dated_receipt": "NOT_VERIFIED",
+  "future_dated_receipt_boundary": "VERIFIED",
   "legacy_custom_cosign": "VERIFIED",
   "legacy_edge_week_date": "NOT_VERIFIED",
   "lineage_adopted_midlife": "VERIFIED",

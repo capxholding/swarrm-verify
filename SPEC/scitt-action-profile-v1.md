@@ -88,9 +88,12 @@ body_hash, closing the loop to public time without the TS holding time itself.
 
 ## 6. Verification (both engines, byte-identical) — `verify_scitt_receipt`
 
-Given `signed_statement`, `receipt`, the TS trust keys, and the
-`certificate_id` the receipt claims to register, ALL must hold or the result
-is `scitt_receipt_valid = false` (fail-closed, hostile input never crashes):
+At the certificate boundary, the verifier first resolves the named
+Transparency Service to a locally supplied `scitt_ts_keys` trust anchor. The
+pack cannot supply that anchor. Given `signed_statement`, `receipt`, that local
+root, the certificate issuer key log and the `certificate_id`, ALL must hold or
+the result is `scitt_receipt_valid = false` (fail-closed, hostile input never
+crashes):
 1. Parse both as COSE_Sign1 (caps before crypto: ≤ 64 KiB each, depth ≤ 16).
 2. Issuer signature on `signed_statement` verifies under a key in the
    certificate's own bundle key-log; the protected profile is exact (`alg=-8`,
@@ -98,12 +101,20 @@ is `scitt_receipt_valid = false` (fail-closed, hostile input never crashes):
    lowercase-hex `certificate_id`, and an optional well-formed signed scope);
    its payload is exactly the same 32-byte `certificate_id`.
 3. `statement_digest = SHA-256(signed_statement)`.
-4. TS signature on `receipt` verifies under a pinned TS key (by kid).
-5. From the receipt: recompute `body_hash = SHA-256(JCS(checkpoint body))`;
+4. The exact root-signed registration policy in §7 verifies under the locally
+   selected root and authorizes the complete TS key set, origin, profile and
+   statement-size ceiling. The carried JWKS must equal that set exactly.
+5. The separately signed outer checkpoint verifies under a policy-authorized
+   TS key and names the policy's exact origin. TS signature on `receipt`
+   verifies under the same policy-authorized key set.
+6. From the receipt: recompute `body_hash = SHA-256(JCS(checkpoint body))`;
    it must equal the receipt payload.
-6. RFC 9162 inclusion: `statement_digest` at `leaf_index` in `tree_size`
+7. The receipt's inner checkpoint body must equal the signed outer checkpoint
+   body. The inclusion proof's `tree_size` must equal that checkpoint's size
+   and `leaf_index < tree_size`.
+8. RFC 9162 inclusion: `statement_digest` at `leaf_index` in `tree_size`
    proves to `checkpoint.root` via the audit path (`core/merkle.verify_inclusion`).
-7. (Trust pack, §7) the checkpoint body_hash carries an anchor and/or TST —
+9. The checkpoint body_hash may separately carry an anchor and/or TST —
    these UPGRADE (independent time), they never gate `scitt_receipt_valid`.
 
 **`scitt_receipt_valid` is VERIFIER-DERIVED at the certificate layer** — the
@@ -113,11 +124,27 @@ REGISTERED; the mark's registration axis is recomputed from the receipt bytes.
 
 ## 7. Offline trust pack (B25.5)
 
-`evd/scitt-pack/v1` = `{ signed_statement (bstr), receipt (bstr), checkpoint
-(the signed TS checkpoint), anchor_record?, tst_record?, registration_policy
-(the published, versioned TS policy + its digest), ts_jwks }`. It is
-everything needed to re-derive REGISTERED and its independent time OFFLINE,
-for the frozen historical verdict — with Swarrm gone.
+`evd/scitt-pack/v1` has the exact required fields `{ schema, certificate_id,
+signed_statement, receipt, checkpoint, registration_policy, ts_jwks }` and the
+only optional fields `{ anchor_record, tst_record }`. The certificate JSON
+carries the two COSE envelopes as hexadecimal text; `checkpoint` is an exact
+`SignedCheckpoint` (`body`, `kid`, `sig`). Unknown fields are rejected.
+
+`registration_policy` has exactly `{ schema, policy_version, ts_origin,
+accepted_profiles, max_statement_bytes, ts_keys, signature }`. Its schema is
+`evd/registration-policy/v1`; `accepted_profiles` is exactly
+`["scitt-action-profile-v1"]`; and `max_statement_bytes` is no greater than
+65,536 and no smaller than the carried statement. `signature` is the Ed25519
+signature by the locally configured TS root over RFC 8785 canonical JSON of
+the other fields. Each `ts_keys` entry binds one derived kid to one strict
+public Ed25519 JWK. The pack's `ts_jwks.keys` array must byte-for-data equal the
+policy's ordered JWK array; it cannot add, omit or substitute a key.
+
+This pack is self-contained only after the relying party supplies the named
+TS root out of band. Subject-carried JWKs never anchor themselves. With that
+local anchor it contains everything required to re-derive REGISTERED offline;
+optional independently verified anchor/time records may strengthen the
+separate time axis.
 
 ## 8. Transparency Service (B25.2) — the service, not the trust path
 
@@ -162,6 +189,32 @@ For managed admission the header scope MUST equal the protected signed
 `evd_scope_digest` claim before the entitlement gate runs. The endpoint streams
 the body under the policy's 64 KiB ceiling; `Content-Length` and chunked bodies
 over that ceiling are rejected with 413 before COSE parsing or signature work.
+
+### 8.1 Checkpoint boot audit, rollback pin and anchor target
+
+Opening the Transparency Service log is a cryptographic audit, not merely a
+SQLite integrity check. The implementation MUST reject a checkpoint history
+unless all of the following hold: checkpoint JSON and fields parse strictly;
+the `prev` chain is linear for the frozen TS origin; every checkpoint signature
+verifies under the configured TS key; stored body hashes equal their signed
+bodies; leaf indexes are dense and every leaf is exactly 32 bytes; and every
+checkpoint root recomputes from the exact retained leaf prefix named by its
+tree size. Anchors and RFC 3161 tokens MUST name a checkpoint retained by that
+audited chain.
+
+A production TS also requires an externally retained signed high-water
+checkpoint. The pin is supplied from a root/service-owned regular file outside
+`scitt.db`; it must be an exact member of the locally verified chain. A missing,
+invalid, rolled-back or forked pin fences every new managed registration. One
+empty-log registration is the only bootstrap exception, so the first signed
+head can be created and retained; exact historical registration retries remain
+recoverable because they append no new leaf or managed-registration tuple.
+
+Public anchoring uses the role-specific TS signer and database as an explicit
+`scitt` worker target. The worker MUST refuse a missing database rather than
+create a substitute history. Operations MUST alert separately when an enabled
+public-anchor path leaves the current TS checkpoint unanchored beyond the
+configured age and when a production TS head lacks its external rollback pin.
 
 ## 9. Claim boundary
 

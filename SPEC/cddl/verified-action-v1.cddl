@@ -1,6 +1,8 @@
 ; Apache-2.0 — ships with the public verifier repo.
 ; CDDL (RFC 8610) for verified-action-v1: contract objects, verdict input,
-; verdict vector. JSON-compatible subset: text keys, no tags, integers only.
+; verdict vector. The evidence/verdict objects are the JSON-compatible subset
+; (text keys, no tags, integers only). The separately labelled B28 section is
+; deterministic CBOR with byte strings; COSE_Sign1 is its external envelope.
 ; These shapes are FROZEN. Extending any enum or object requires updating
 ; ci/verdict_matrix.json, ci/verdict_input_schema.json, both engines and
 ; fixtures in the same commit (three-roles rule, A_BUILD §0.2).
@@ -39,6 +41,8 @@ assurance-linkage     = "DIRECT" / "DETERMINISTIC" / "AMBIGUOUS" / "NONE"
 scope-relation        = "RELATED" / "UNRELATED" / "UNKNOWN"
 population-status     = "PROVEN" / "INDETERMINATE"
 history-state         = "CLOSED_SINCE_BIRTH" / "NO_EVIDENCED_HISTORY_IN_PRESENTED_SCOPE"
+; Legacy certificate-matrix input/output only. This is not swarrm-b28/v1
+; authority, and no value in this enum can yield a favourable B28 result.
 authority-proof       = "ACTION_SPECIFIC_AUTHORIZATION" / "DISCLOSED_LIMIT" / "NONE"
 technical-eligibility = "ELIGIBLE" / "INELIGIBLE" / "NOT_RECOMPUTED"
 registration-status   = "REGISTERED" / "PENDING" / "UNREGISTERED"
@@ -115,6 +119,9 @@ SourceProof = {
   schema: "evd/source-proof/v1", proof_type: proof-type,
   material_digest: hex32,                                     ; digest-addressed, vault-retained
   key_identity: text, verified: bool,
+  ? signature: b64,                                           ; legacy source-proof statement
+  ? material: b64,                                            ; opt-in full view: exact retained raw bytes
+  ? signature_context: "evd/source-webhook-body-jcs/v1",     ; strict raw envelope -> JCS(body)
 }
 
 ; Cursor semantics: opaque, monotonic, source-defined; persisted only after the
@@ -190,34 +197,237 @@ VerificationViewManifest = {
   signature: b64,
 }
 
-; ---------- B28 seams (shapes frozen; handshake logic waits for B28) ----------
-AgentTrustChallengeV1 = {
-  schema: "evd/trust-challenge/v1", nonce: b64, action_description: text,
-  action_class: text, policy_digest: hex32, challenger_identity: text, expiry: ts,
+; ---------- B28 v1: one semantic profile, deterministic CBOR/COSE only ----------
+; Each signed object below is carried inside the exact CWT claim map in the
+; payload of tagged COSE_Sign1. The protected header is exactly
+; {1:-8, 3:"application/eat+cwt", 4:kid}; the unprotected map is empty.
+; Claim 265 is the EAT profile and -65537 is the IANA private-use typed core.
+; Every `uint` below is non-negative but bounded by 2^63-1, the shared
+; deterministic-CBOR signed-integer domain; values above that are malformed.
+bstr32 = bytes .size 32
+canonical-unsigned-decimal = text .regexp "0|[1-9][0-9]*"
+
+AgentRefV1 = {
+  schema: "swarrm-b28/agent-ref/v1", organisation_root: bstr32,
+  birthtag: bstr32, revision: uint, agent_kid: text,
+}
+ResourceRefV1 = {
+  schema: "swarrm-b28/resource-ref/v1", namespace: text,
+  identifier_digest: bstr32,
+}
+PartyRefV1 = {
+  schema: "swarrm-b28/party-ref/v1", party_id: text,
+  organisation_root: bstr32,
+}
+ActionCoreV1 = {
+  schema: "swarrm-b28/action-core/v1", action_id: bstr32, asa_id: bstr32,
+  actor: AgentRefV1, operation: text, parameter_schema: text,
+  parameter_digest: bstr32, value: canonical-unsigned-decimal, unit: text,
+  source: ResourceRefV1, destination: ResourceRefV1,
+  counterparty: PartyRefV1, recipient: AgentRefV1,
+  grant_id: bstr32, grant_version: uint, policy_version: text,
+  policy_digest: bstr32, nonce: bstr32, expires_at: uint,
+}
+ChallengeCoreV1 = {
+  schema: "swarrm-b28/challenge-core/v1",
+  profile: "https://swarrm.ai/spec/eat/b28/cwt/v1",
+  challenger: AgentRefV1, action: ActionCoreV1,
+  accepted_encodings: ["application/eat+cwt"],
+  required_dimensions: [* text], max_checkpoint_age: uint, issued_at: uint,
+}
+
+; Root succession is not a CWT: both roots sign the same domain-separated
+; deterministic-CBOR RootRotationV1 bytes in this exact public envelope.
+RootRotationV1 = {
+  schema: "swarrm-b28/root-rotation/v1", tenant: text,
+  organisation_id: text, sequence: uint, rotation_id: bstr32,
+  previous_rotation_digest: bstr32,
+  old_organisation_root: bstr32, old_root_kid: text,
+  old_root_public_key: bstr32, old_bundle_digest: bstr32,
+  new_organisation_root: bstr32, new_root_kid: text,
+  new_root_public_key: bstr32, new_bundle_digest: bstr32,
+  effective_at: uint,
+}
+RootRotationEnvelopeV1 = {
+  schema: "swarrm-b28/root-rotation-envelope/v1",
+  core: RootRotationV1, old_signature: bytes .size 64,
+  new_signature: bytes .size 64,
+}
+
+RootDelegationV1 = {
+  schema: "swarrm-b28/root-delegation/v1", tenant: text,
+  organisation_root: bstr32, delegation_id: bstr32,
+  passport_authority_kid: text, passport_authority_key: bstr32,
+  action_authority_kid: text, action_authority_key: bstr32,
+  valid_from: uint, valid_to: uint,
+}
+; Profile invariant: passport_authority_key/kid and action_authority_key/kid MUST differ.
+RegistrationTemplateV1 = {
+  schema: "swarrm-b28/registration-template/v1", tenant: text,
+  organisation_root: bstr32, template_id: bstr32, template_version: uint,
+  owner: text, purpose: text, mandate_digest: bstr32, config_digest: bstr32,
+  valid_from: uint, valid_to: uint,
+}
+AdminBindingV1 = {
+  schema: "swarrm-b28/admin-binding/v1", tenant: text,
+  organisation_root: bstr32, binding_id: bstr32, credential_id: bytes,
+  cose_public_key: bytes, rp_id: text,
+  role: "agent-registrar" / "security-admin" / "governance-admin",
+  valid_from: uint, valid_to: uint, initial_state: "ACTIVE",
+}
+AdminSelectionV1 = {
+  schema: "swarrm-b28/admin-selection/v1", tenant: text,
+  binding_id: bstr32, template_id: bstr32, template_version: uint,
+  proposed_agent_digest: bstr32, credential_id: bytes,
+  challenge_id: bstr32, challenge: bstr32,
+  client_data_json: bytes, authenticator_data: bytes, signature: bytes,
+  selected_at: uint,
+}
+AdminChallengeV1 = {
+  schema: "swarrm-b28/admin-challenge/v1", tenant: text,
+  organisation_root: bstr32, challenge_id: bstr32, binding_id: bstr32,
+  template_id: bstr32, template_version: uint,
+  proposed_agent_digest: bstr32, challenge: bstr32,
+  issued_at: uint, expires_at: uint,
+}
+AdminConsumptionV1 = {
+  schema: "swarrm-b28/admin-consumption/v1", tenant: text,
+  organisation_root: bstr32, binding_id: bstr32, challenge_id: bstr32,
+  challenge_digest: bstr32, selection_digest: bstr32,
+  credential_digest: bstr32,
+  counter_version: uint, sign_count_before: uint, sign_count_after: uint,
+  backup_eligible: bool, backup_state: bool, consumed_at: uint,
+}
+AgentPoPV1 = {
+  schema: "swarrm-b28/agent-pop/v1", tenant: text, birthtag: bstr32,
+  revision: uint, agent_kid: text, proposed_agent_digest: bstr32,
+  challenge: bstr32,
+}
+AgentCredentialV1 = {
+  schema: "swarrm-b28/agent-credential/v1", tenant: text,
+  organisation_root: bstr32, authority_delegation_id: bstr32,
+  birthtag: bstr32, revision: uint, agent_kid: text, agent_key: bstr32,
+  owner: text, purpose: text, mandate_digest: bstr32, config_digest: bstr32,
+  template_id: bstr32, template_version: uint, principal_binding_id: bstr32,
+  admin_selection_digest: bstr32, agent_pop_digest: bstr32,
+  agent_successor_digest: bstr32 / null,
+  issuance_checkpoint: bstr32, valid_from: uint, valid_to: uint,
+}
+AgentSuccessorV1 = {
+  schema: "swarrm-b28/agent-successor/v1", tenant: text,
+  organisation_root: bstr32, predecessor_birthtag: bstr32,
+  predecessor_revision: uint, predecessor_credential_digest: bstr32,
+  successor_birthtag: bstr32, successor_revision: 1,
+  successor_proposal_digest: bstr32, effective_at: uint,
+}
+LimitGrantV1 = {
+  schema: "swarrm-b28/limit-grant/v1", tenant: text,
+  organisation_root: bstr32, grant_id: bstr32, grant_version: uint,
+  authority_delegation_id: bstr32, actor_birthtag: bstr32,
+  recipient_organisation_root: bstr32, operation: text, unit: text,
+  action_scope_digest: bstr32,
+  kind: "ONE_SHOT" / "FLOW" / "STOCK", ceiling: canonical-unsigned-decimal,
+  window_start: uint, window_end: uint, valid_from: uint, valid_to: uint,
+  max_unresolved_exposure: canonical-unsigned-decimal,
+}
+
+AuthorityStateValueV1 = {
+  key: bstr32, state: "ACTIVE" / "REVOKED" / "SUPERSEDED",
+  version: uint, object_digest: bstr32,
+}
+AuthorityStateChangeV1 = {
+  ; key = SHA-256("swarrm-authority-state/v1\0" || kind || "\0" || object_id)
+  key: bstr32, kind: text, object_id: bytes,
+  state: "ACTIVE" / "REVOKED" / "SUPERSEDED", version: uint,
+  object_digest: bstr32,
+}
+AuthorityMutationV1 = {
+  schema: "swarrm-b28/authority-mutation/v1", tenant: text,
+  organisation_root: bstr32, sequence: uint, previous_root: bstr32,
+  new_root: bstr32, changes: [+ AuthorityStateChangeV1], effective_at: uint,
+}
+AuthorityCheckpointV1 = {
+  schema: "swarrm-b28/authority-checkpoint/v1", tenant: text,
+  organisation_root: bstr32, sequence: uint, authority_root: bstr32,
+  log_root: bstr32, log_size: uint, issued_at: uint,
+}
+AuthorityMembershipProofV1 = {
+  schema: "swarrm-b28/authority-membership-proof/v1", key: bstr32,
+  value: AuthorityStateValueV1, index: uint, tree_size: uint,
+  path: [* bstr32],
+}
+AuthorityNonMembershipProofV1 = {
+  schema: "swarrm-b28/authority-non-membership-proof/v1", key: bstr32,
+  tree_size: uint,
+  predecessor: AuthorityMembershipProofV1 / null,
+  successor: AuthorityMembershipProofV1 / null,
 }
 StatusSnapshotV1 = {
-  schema: "evd/status-snapshot/v1", revocation_state: text, grant_valid_from: ts,
-  grant_valid_to: ts, binding_state: text, continuity_unbroken: bool,
-  as_of_checkpoint: hex32, status_as_of: ts,
+  schema: "swarrm-b28/status-snapshot/v1", tenant: text,
+  organisation_root: bstr32, authority_delegation_id: bstr32,
+  checkpoint_digest: bstr32, proofs_digest: bstr32,
+  status_as_of: uint, expires_at: uint,
 }
-AgentTrustPresentationV1 = {
-  schema: "evd/trust-presentation/v1", birthtag_id: hex32, revision_id: hex32,
-  key_proof: b64, authority_proof_kind: authority-proof,
-  ? asa: { action_id: text, action_class: text, value: text, currency: text,
-      nonce: b64, authorising_party: text, subject_party: text,
-      grant_id: hex32, grant_version: uint, issued_at: ts, expiry: ts,
-      replay_id: text, root_sig: b64 },
-  ? disclosed_limit: { field: text, value: text, nonce_hex: text },
-  status: StatusSnapshotV1, ? transcript_digest: hex32,
-  non_assertion: text,                                        ; mandatory non-assertion block
+AssumedRiskReleaseV1 = {
+  schema: "swarrm-b28/assumed-risk-release/v1", tenant: text,
+  organisation_root: bstr32, authority_delegation_id: bstr32, asa_id: bstr32,
+  old_grant_id: bstr32, old_grant_version: uint,
+  new_grant_id: bstr32, new_grant_version: uint,
+  maximum_unresolved_exposure: canonical-unsigned-decimal, released_at: uint,
 }
-TrustPolicyV1 = {
-  schema: "evd/trust-policy/v1", required_action_class: text,
-  acceptable_source_signature: [* source-signature],
-  acceptable_control_domain: [* control-domain],
-  acceptable_node_integrity: [* node-integrity-basis],
-  max_staleness_seconds: uint, required_continuity: bool,
-  on_indeterminate: text,
+
+ASACoreV1 = {
+  schema: "swarrm-b28/asa-core/v1", tenant: text,
+  organisation_root: bstr32, authority_delegation_id: bstr32, asa_id: bstr32,
+  action_digest: bstr32, challenge_digest: bstr32,
+  grant_id: bstr32, grant_version: uint, reservation_state: "ISSUED_HELD",
+  issued_at: uint, expires_at: uint,
+}
+AuthorityProofV1 = AuthorityMembershipProofV1 / AuthorityNonMembershipProofV1
+PresentationCoreV1 = {
+  schema: "swarrm-b28/presentation-core/v1",
+  profile: "https://swarrm.ai/spec/eat/b28/cwt/v1",
+  challenge_envelope_hash: bstr32, challenge_digest: bstr32,
+  action_digest: bstr32, root_delegation: bytes,
+  registration_template: bytes, admin_binding: bytes,
+  admin_selection: bytes, admin_challenge: bytes, admin_consumption: bytes,
+  agent_pop: bytes, agent_successor: bytes / null, passport: bytes,
+  passport_holder_proof: bytes, limit_grant: bytes,
+  authority_checkpoint: bytes, issuance_consistency_proof: [* bstr32],
+  status_snapshot: bytes,
+  state_proofs: {
+    root_delegation: AuthorityProofV1,
+    registration_template: AuthorityProofV1,
+    mandate: AuthorityProofV1, agent_config: AuthorityProofV1,
+    admin_binding: AuthorityProofV1, admin_selection: AuthorityProofV1,
+    admin_challenge: AuthorityProofV1, admin_consumption: AuthorityProofV1,
+    admin_counter: AuthorityProofV1,
+    agent_pop: AuthorityProofV1, passport: AuthorityProofV1,
+    agent_head: AuthorityProofV1,
+    agent_successor: AuthorityProofV1 / null,
+    predecessor_head: AuthorityProofV1 / null,
+    limit_grant: AuthorityProofV1, grant_head: AuthorityProofV1,
+  },
+  asa: bytes, transcript_digest: bstr32,
+  non_assertion: "This proves identity, current proof-bearing authority and durable replay at a bounded checkpoint. It does not evaluate Node, source, coverage, history or post-action evidence readiness in v1, predict behaviour, certify an outcome, establish later evidence, or express a Swarrm opinion.",
+  created_at: uint,
+}
+RefusalCoreV1 = {
+  schema: "swarrm-b28/refusal-core/v1",
+  profile: "https://swarrm.ai/spec/eat/b28/cwt/v1",
+  challenge_envelope_hash: bstr32, challenge_digest: bstr32,
+  reason_code: text, created_at: uint,
+}
+B28TypedCoreV1 = ActionCoreV1 / ChallengeCoreV1 / ASACoreV1 /
+  PresentationCoreV1 / RefusalCoreV1 / RootDelegationV1 /
+  RegistrationTemplateV1 / AdminBindingV1 / AdminSelectionV1 /
+  AdminChallengeV1 / AdminConsumptionV1 / AgentPoPV1 / AgentCredentialV1 /
+  AgentSuccessorV1 /
+  LimitGrantV1 / AuthorityMutationV1 / AuthorityCheckpointV1 /
+  StatusSnapshotV1 / AssumedRiskReleaseV1
+B28CWTClaimsV1 = {
+  265 => "https://swarrm.ai/spec/eat/b28/cwt/v1",
+  -65537 => B28TypedCoreV1,
 }
 
 ; ---------- passport ----------
@@ -281,6 +491,8 @@ VerdictInput = {
       time_bounded: bool, externally_grounded: bool }] },
   ? assurance: { ? intent_digest: hex32, ? presented_transcript_digest: hex32,
       challenge_nonce_match: bool, candidates: uint },
+  ; Legacy certificate-matrix input only; it is not a B28 presentation or ASA
+  ; authority path and cannot yield a favourable B28 result.
   ? handshake_authority: { construction: authority-proof,
       ? asa_bindings_complete: bool, ? disclosed_limit_covers: bool },
   ? mandates: { presented_scope: ScopeDescriptor / hex32,
