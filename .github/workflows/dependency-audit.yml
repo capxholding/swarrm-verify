@@ -1,0 +1,28 @@
+name: dependency-audit
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rustsec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@06e5a564a0556e338780f5aecf2e7dcc9b267f07 # branch 1.90.0
+      - name: Install the pinned RustSec scanner
+        run: cargo install cargo-audit --version 0.22.2 --locked
+      - name: Audit the locked graph with the reviewed VEX exception
+        run: |
+          cargo audit --file verify-rs/Cargo.lock --ignore RUSTSEC-2023-0071
+          bash scripts/check-h22.sh

@@ -1,0 +1,37 @@
+name: OpenSSF Scorecard (private publication mode)
+
+on:
+  schedule:
+    - cron: "11 3 * * 6"
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Run the pinned Scorecard action without API publication
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4 / Scorecard v5.5.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: false
+          file_mode: git
+      - name: Retain findings in GitHub Code Scanning only
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          sarif_file: results.sarif
+          category: openssf-scorecard
+      - name: Remove the run-local report
+        if: always()
+        run: rm -f results.sarif

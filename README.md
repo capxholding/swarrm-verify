@@ -41,6 +41,8 @@ verify-rs/     the Rust crate (rlib + wasm cdylib)
   web/         the static drop-a-bundle page + parity test
 tests/golden/  shared fixtures: valid + adversarial bundles, expected verdicts
 SPEC/          the wire formats (receipt-v1, log-v1, bundle-v1, anchor-v1, …)
+fuzz/          bounded libFuzzer targets seeded from the hostile/golden corpus
+security/      H22 control boundary and machine-readable OpenVEX statement
 ```
 
 ## Verify a bundle
@@ -72,6 +74,12 @@ page at swarrm.ai/verify loads no external code and never uploads your file.
 For byte reproduction, follow the hash-checked wasm-pack 0.15.0 procedure in
 [`verify-rs/README.md`](verify-rs/README.md); CI also asserts that `Cargo.lock`
 does not change.
+
+Tagged releases use the same pinned rebuild, then publish checksummed source,
+browser and Node archives, a validated CycloneDX SBOM, a keyless Sigstore
+signature over `SHA256SUMS`, and GitHub-hosted SLSA provenance and SBOM
+attestations. See [`security/H22.md`](security/H22.md) for the exact control
+boundary and the gates that still require an independent human.
 
 ## What verification proves (and doesn't)
 

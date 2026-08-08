@@ -1,0 +1,45 @@
+[package]
+name = "swarrm-verify-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+serde_json = "1"
+sha2 = "0.10"
+swarrm-verify = { path = "../verify-rs" }
+
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "bundle_json"
+path = "fuzz_targets/bundle_json.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "certificate_cbor"
+path = "fuzz_targets/certificate_cbor.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "b28_exchange"
+path = "fuzz_targets/b28_exchange.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "tsa"
+path = "fuzz_targets/tsa.rs"
+test = false
+doc = false
+bench = false

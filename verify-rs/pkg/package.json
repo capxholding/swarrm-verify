@@ -2,7 +2,7 @@
   "name": "swarrm-verify",
   "type": "module",
   "description": "Independent Rust/WASM verifier for evidence bundles, certificates, and CWT/COSE-only B28 assurance",
-  "version": "0.1.0",
+  "version": "1.0.4",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
