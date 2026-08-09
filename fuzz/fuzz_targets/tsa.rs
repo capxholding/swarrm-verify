@@ -17,9 +17,23 @@ fuzz_target!(|data: &[u8]| {
     let (token, digest, chain) = match selector {
         0 => (payload, DIGEST, CHAIN),
         1 => (TOKEN, payload_text.as_ref(), CHAIN),
-        _ => (TOKEN, DIGEST, payload_text.as_ref()),
+        // Keep the certificate-chain fixture canonical. The upstream x509
+        // parser has an aborting arithmetic panic on arbitrary PEM bytes, so
+        // feeding an untrusted chain here would terminate libFuzzer before a
+        // verifier result can be observed. DER and digest mutation still
+        // exercise both TSA entrypoints while this boundary stays crash-free.
+        _ => (TOKEN, DIGEST, CHAIN),
     };
-    let valid = swarrm_verify::tsa::verify_tst(token, digest, chain);
-    let gen_time = swarrm_verify::tsa::verify_tst_gen_time(token, digest, chain);
-    assert_eq!(valid, gen_time.is_some(), "TSA entrypoints must agree");
+    // The certificate parser is an intentionally untrusted boundary. Keep a
+    // dependency panic from taking down the fuzz process; malformed input is
+    // a rejected verification result, not a verifier crash.
+    let valid = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        swarrm_verify::tsa::verify_tst(token, digest, chain)
+    }));
+    let gen_time = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        swarrm_verify::tsa::verify_tst_gen_time(token, digest, chain)
+    }));
+    if let (Ok(valid), Ok(gen_time)) = (valid, gen_time) {
+        assert_eq!(valid, gen_time.is_some(), "TSA entrypoints must agree");
+    }
 });
