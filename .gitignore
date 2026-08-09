@@ -1,3 +1,7 @@
 target/
 node_modules/
 .DS_Store
+# cargo-fuzz build output and generated corpora
+/fuzz/artifacts/
+/fuzz/corpus/
+/fuzz/target/

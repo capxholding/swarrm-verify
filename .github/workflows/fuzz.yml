@@ -1,0 +1,85 @@
+name: continuous-fuzz
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/fuzz.yml
+      - fuzz/**
+      - scripts/sync-fuzz-corpus.sh
+      - tests/golden/**
+      - verify-rs/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/fuzz.yml
+      - fuzz/**
+      - scripts/sync-fuzz-corpus.sh
+      - tests/golden/**
+      - verify-rs/**
+  schedule:
+    - cron: "23 2 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: bundle_json
+            max_len: 1048576
+          - target: certificate_cbor
+            max_len: 1048576
+          - target: b28_exchange
+            max_len: 2097153
+          - target: tsa
+            max_len: 262144
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the pinned nightly toolchain and cargo-fuzz
+        run: |
+          rustup toolchain install nightly-2026-08-01 --profile minimal --no-self-update
+          cargo +nightly-2026-08-01 install cargo-fuzz --version 0.13.2 --locked
+          cargo +nightly-2026-08-01 fuzz --version
+      - name: Derive corpus from committed hostile and golden fixtures
+        run: bash scripts/sync-fuzz-corpus.sh "$RUNNER_TEMP/fuzz-corpus"
+      - name: Run bounded libFuzzer target
+        env:
+          FUZZ_SECONDS: ${{ github.event_name == 'schedule' && '900' || '60' }}
+          TARGET: ${{ matrix.target }}
+          MAX_LEN: ${{ matrix.max_len }}
+        run: |
+          mkdir -p "fuzz/artifacts/$TARGET" "$RUNNER_TEMP/fuzz-logs"
+          set +e
+          cargo +nightly-2026-08-01 fuzz run --fuzz-dir fuzz "$TARGET" "$RUNNER_TEMP/fuzz-corpus/$TARGET" -- \
+            -artifact_prefix="fuzz/artifacts/$TARGET/" \
+            -jobs=1 \
+            -max_len="$MAX_LEN" \
+            -max_total_time="$FUZZ_SECONDS" \
+            -print_final_stats=1 \
+            -rss_limit_mb=2048 \
+            -timeout=10 2>&1 | tee "$RUNNER_TEMP/fuzz-logs/$TARGET.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          exit "$status"
+      - name: Retain corpus, logs, and crash material
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-${{ matrix.target }}-${{ github.sha }}
+          path: |
+            fuzz/artifacts/${{ matrix.target }}
+            ${{ runner.temp }}/fuzz-corpus/${{ matrix.target }}
+            ${{ runner.temp }}/fuzz-corpus/MANIFEST.sha256
+            ${{ runner.temp }}/fuzz-logs/${{ matrix.target }}.log
+          if-no-files-found: error
+          retention-days: 90

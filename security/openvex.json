@@ -1,0 +1,23 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/capxholding/swarrm-verify/security/openvex.json",
+  "author": "https://github.com/capxholding",
+  "role": "Document Creator",
+  "timestamp": "2026-08-08T23:35:47Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {
+        "@id": "https://rustsec.org/advisories/RUSTSEC-2023-0071"
+      },
+      "products": [
+        {
+          "@id": "pkg:cargo/swarrm-verify@1.0.4"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "swarrm-verify performs RSA public-key signature verification only. It never executes the RSA private-key operations affected by the Marvin timing attack. RSA verification remains required for existing RFC 3161 fixtures and is not removed or hidden; the locked graph is monitored by the scheduled RustSec workflow."
+    }
+  ]
+}

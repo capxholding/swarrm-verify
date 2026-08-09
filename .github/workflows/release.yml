@@ -1,0 +1,222 @@
+name: signed-release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build deterministic release assets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22.23.2"
+      - uses: dtolnay/rust-toolchain@06e5a564a0556e338780f5aecf2e7dcc9b267f07 # branch 1.90.0
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+      - name: Validate release identity and reviewed tag
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          bash scripts/check-h22.sh
+          version=$(awk -F '"' '/^version = "/ { print $2; exit }' verify-rs/Cargo.toml)
+          test -n "$version"
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            test "$REF_NAME" = "v$version"
+            test "$(git cat-file -t "refs/tags/$REF_NAME")" = tag
+            test "$(git rev-parse "refs/tags/$REF_NAME^{}")" = "$GITHUB_SHA"
+            git fetch origin main --no-tags
+            git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          fi
+          test -z "$(git status --short)"
+      - name: Install the checksummed wasm-pack release
+        run: |
+          archive="$RUNNER_TEMP/wasm-pack-v0.15.0.tar.gz"
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            --output "$archive" \
+            https://github.com/wasm-bindgen/wasm-pack/releases/download/v0.15.0/wasm-pack-v0.15.0-x86_64-unknown-linux-musl.tar.gz
+          echo "c09f971ecaed9a2efc80fdcea7a00ef6b53c7fadc8c57d1f61b53a6aa66b668a  $archive" | sha256sum --check -
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/wasm-pack-v0.15.0-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
+      - name: Test and reproduce the committed verifier
+        run: |
+          test "$(rustc --version | awk '{print $2}')" = "1.90.0"
+          test "$(node --version)" = "v22.23.2"
+          test "$(wasm-pack --version)" = "wasm-pack 0.15.0"
+          cargo fmt --manifest-path verify-rs/Cargo.toml --check
+          cargo test --locked --manifest-path verify-rs/Cargo.toml
+          cargo clippy --locked --manifest-path verify-rs/Cargo.toml --all-targets -- -D warnings
+          cp -R verify-rs/pkg "$RUNNER_TEMP/committed-pkg"
+          (
+            cd verify-rs
+            wasm-pack build --target web --features wasm --locked
+            diff -ru "$RUNNER_TEMP/committed-pkg" pkg
+            wasm-pack build --target nodejs --out-dir pkg-node --features wasm --locked
+          )
+          node verify-rs/web/test_parity.cjs
+          git diff --exit-code -- verify-rs/Cargo.lock verify-rs/pkg
+      - name: Install checksummed CycloneDX tools
+        run: |
+          mkdir -p "$RUNNER_TEMP/cyclonedx-bin"
+          cargo_cdx="$RUNNER_TEMP/cargo-cyclonedx.tar.xz"
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            --output "$cargo_cdx" \
+            https://github.com/CycloneDX/cyclonedx-rust-cargo/releases/download/cargo-cyclonedx-0.5.9/cargo-cyclonedx-x86_64-unknown-linux-gnu.tar.xz
+          echo "fb8dbee9f182173e062a64a387b21a0badc6fab8b2abf9294973f012972bf6d8  $cargo_cdx" | sha256sum --check -
+          tar -xJf "$cargo_cdx" -C "$RUNNER_TEMP/cyclonedx-bin"
+          cargo_cdx_dir=$(dirname "$(find "$RUNNER_TEMP/cyclonedx-bin" -type f -name cargo-cyclonedx -print -quit)")
+          test -x "$cargo_cdx_dir/cargo-cyclonedx"
+          cdx_cli="$RUNNER_TEMP/cyclonedx-bin/cyclonedx"
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            --output "$cdx_cli" \
+            https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-linux-x64
+          echo "bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746  $cdx_cli" | sha256sum --check -
+          chmod +x "$cdx_cli"
+          echo "$cargo_cdx_dir" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/cyclonedx-bin" >> "$GITHUB_PATH"
+      - name: Build deterministic archives, SBOM, context, and checksums
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          version=$(awk -F '"' '/^version = "/ { print $2; exit }' verify-rs/Cargo.toml)
+          tag="v$version"
+          epoch=$(git show -s --format=%ct "$GITHUB_SHA")
+          export SOURCE_DATE_EPOCH="$epoch"
+          mkdir -p dist "$RUNNER_TEMP/release-stage/swarrm-verify-$version-web" "$RUNNER_TEMP/release-stage/swarrm-verify-$version-node"
+
+          git archive --format=tar --prefix="swarrm-verify-$version/" "$GITHUB_SHA" | gzip -n > "dist/swarrm-verify-$version-source.tar.gz"
+          cp -R verify-rs/pkg/. "$RUNNER_TEMP/release-stage/swarrm-verify-$version-web/"
+          cp -R verify-rs/pkg-node/. "$RUNNER_TEMP/release-stage/swarrm-verify-$version-node/"
+          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+            -C "$RUNNER_TEMP/release-stage" -cf - "swarrm-verify-$version-web" | gzip -n > "dist/swarrm-verify-$version-web.tar.gz"
+          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+            -C "$RUNNER_TEMP/release-stage" -cf - "swarrm-verify-$version-node" | gzip -n > "dist/swarrm-verify-$version-node.tar.gz"
+
+          cargo cyclonedx --manifest-path verify-rs/Cargo.toml --format json \
+            --all-features --target all --spec-version 1.5 \
+            --override-filename "swarrm-verify-$version.cdx"
+          mv "verify-rs/swarrm-verify-$version.cdx.json" "dist/swarrm-verify-$version.cdx.json"
+          cyclonedx validate --input-file "dist/swarrm-verify-$version.cdx.json" --input-format json --fail-on-errors
+
+          VERSION="$version" TAG="$tag" EPOCH="$epoch" node <<'NODE'
+          const fs = require("fs");
+          const context = {
+            schema: "swarrm/release-context/v1",
+            repository: process.env.GITHUB_REPOSITORY,
+            commit: process.env.GITHUB_SHA,
+            tag: process.env.TAG,
+            version: process.env.VERSION,
+            source_date_epoch: Number(process.env.EPOCH),
+            toolchain: {
+              rust: "1.90.0",
+              node: "22.23.2",
+              wasm_pack: "0.15.0",
+              cargo_cyclonedx: "0.5.9",
+              cyclonedx_cli: "0.33.1"
+            },
+            workflow: ".github/workflows/release.yml"
+          };
+          fs.writeFileSync("dist/release-context.json", JSON.stringify(context, null, 2) + "\n");
+          NODE
+          (
+            cd dist
+            sha256sum "swarrm-verify-$version-source.tar.gz" \
+              "swarrm-verify-$version-web.tar.gz" \
+              "swarrm-verify-$version-node.tar.gz" \
+              "swarrm-verify-$version.cdx.json" \
+              release-context.json > SHA256SUMS
+            sha256sum --check SHA256SUMS
+          )
+      - name: Retain build output for the isolated publish job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-assets-${{ github.sha }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  publish:
+    name: Sign, attest, and publish reviewed tag
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets-${{ github.sha }}
+          path: dist
+      - name: Verify downloaded checksums
+        run: (cd dist && sha256sum --check SHA256SUMS)
+      - name: Install pinned Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
+      - name: Sign the checksum manifest keylessly
+        run: cosign sign-blob --yes --bundle dist/SHA256SUMS.sigstore.json dist/SHA256SUMS
+      - name: Resolve the versioned SBOM path
+        id: release
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          sbom="dist/swarrm-verify-$version.cdx.json"
+          test -f "$sbom"
+          echo "sbom=$sbom" >> "$GITHUB_OUTPUT"
+      - name: Generate SLSA build provenance
+        id: provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS
+          show-summary: false
+      - name: Retain the provenance Sigstore bundle
+        env:
+          BUNDLE_PATH: ${{ steps.provenance.outputs.bundle-path }}
+        run: cp "$BUNDLE_PATH" dist/SHA256SUMS.slsa-provenance.json
+      - name: Generate the CycloneDX SBOM attestation
+        id: sbom
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS
+          sbom-path: ${{ steps.release.outputs.sbom }}
+          show-summary: false
+      - name: Retain the SBOM Sigstore bundle and verify the signature
+        env:
+          BUNDLE_PATH: ${{ steps.sbom.outputs.bundle-path }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          cp "$BUNDLE_PATH" dist/SHA256SUMS.sbom-attestation.json
+          cosign verify-blob \
+            --bundle dist/SHA256SUMS.sigstore.json \
+            --certificate-identity "https://github.com/$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/tags/$GITHUB_REF_NAME" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            dist/SHA256SUMS
+          test -f "dist/swarrm-verify-$version.cdx.json"
+      - name: Publish immutable release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          test "$GITHUB_REF_NAME" = "v$version"
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "swarrm-verify $version" \
+            --generate-notes

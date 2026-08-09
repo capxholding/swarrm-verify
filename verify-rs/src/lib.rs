@@ -211,7 +211,12 @@ pub(crate) fn body_of(env: &Value) -> Option<Value> {
 }
 
 fn decimal(bytes: &[u8]) -> Option<u32> {
-    bytes.iter().try_fold(0, |n, c| c.is_ascii_digit().then_some(n * 10 + u32::from(*c - b'0')))
+    bytes.iter().try_fold(0u32, |n, c| {
+        if !c.is_ascii_digit() {
+            return None;
+        }
+        n.checked_mul(10)?.checked_add(u32::from(*c - b'0'))
+    })
 }
 
 pub(crate) fn canonical_utc(s: &str) -> bool {
@@ -1201,7 +1206,14 @@ mod browser_bundle_result_tests {
 
 #[cfg(test)]
 mod record_time_tests {
-    use super::record_not_before_checkpoint;
+    use super::{canonical_utc, record_not_before_checkpoint};
+
+    #[test]
+    fn malformed_timestamp_digits_fail_closed_without_underflow() {
+        for timestamp in ["2026-01-01T00:00:00.,000000Z", "2026-01-01T00:00:00.00000xZ", "2026-01-01T00:00:00.999999999999999999999999Z"] {
+            assert!(!canonical_utc(timestamp), "{timestamp} must be rejected");
+        }
+    }
 
     #[test]
     fn anchor_and_tst_times_share_the_strict_signed_checkpoint_boundary() {

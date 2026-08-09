@@ -1,0 +1,11 @@
+# H22: security-sensitive surfaces always request the repository owner.
+# A distinct qualified reviewer must still approve changes before merge; author
+# ownership is not independent review.
+/.github/      @mcf-capx
+/SPEC/         @mcf-capx
+/verify-rs/    @mcf-capx
+/fuzz/         @mcf-capx
+/scripts/      @mcf-capx
+/security/     @mcf-capx
+/CHANGELOG.md  @mcf-capx
+/SECURITY.md   @mcf-capx
