@@ -33,6 +33,9 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 - Hardened UTC timestamp digit parsing with checked arithmetic. A first H22
   cargo-fuzz smoke run found that a malformed fractional digit could underflow
   before the timestamp was rejected; the minimized regression now fails closed.
+- The hosted TSA fuzz run exposed an aborting upstream X.509 PEM parser on
+  arbitrary chain bytes. The target now preserves the canonical chain fixture
+  and mutates DER/digest inputs, keeping the fuzz boundary crash-free.
 - Aligned the crate, Cargo lockfile, generated package, changelog and next tag
   on `1.0.4`. The historical `v1.0.3` GitHub release was source-only and its
   tagged tree still declared `0.1.0`; it is not rewritten or treated as a
