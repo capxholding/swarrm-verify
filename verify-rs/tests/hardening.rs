@@ -143,6 +143,27 @@ fn unverified_timestamp_token_cannot_supply_temporal_authority() {
     assert!(!swarrm_verify::verify_bundle(&bundle), "a structurally bound but cryptographically invalid TST is not independent time");
 }
 
+#[test]
+fn timestamp_encoding_caps_and_duplicates_match_python() {
+    let mut tst = load_bundle("evidence_tst_trusted.json");
+    let encoded = tst["tst_records"][0]["token_der_b64"].as_str().unwrap().to_string();
+    assert!(encoded.ends_with("E="));
+    tst["tst_records"][0]["token_der_b64"] = Value::String(format!("{}F=", &encoded[..encoded.len() - 2]));
+    assert!(!swarrm_verify::verify_bundle(&tst), "nonzero base64 pad bits must refuse");
+
+    for field in ["anchor_records", "tst_records"] {
+        let mut over = load_bundle("valid_e1.json");
+        over[field] = Value::Array(vec![json!({}); 257]);
+        assert!(!swarrm_verify::verify_bundle(&over), "{field} must be capped at 256");
+    }
+    for (fixture, field) in [("b21_authority_valid.json", "anchor_records"), ("evidence_tst_trusted.json", "tst_records")] {
+        let mut duplicate = load_bundle(fixture);
+        let record = duplicate[field][0].clone();
+        duplicate[field].as_array_mut().unwrap().push(record);
+        assert!(!swarrm_verify::verify_bundle(&duplicate), "{field} duplicate checkpoint digest");
+    }
+}
+
 /// A newline spliced into a DSSE payload changes the bytes, so it must change
 /// the answer. Python's `standard_b64decode` discarded it and verified anyway,
 /// which also made "flip one byte and the bundle fails" false for that byte.

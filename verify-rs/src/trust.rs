@@ -28,7 +28,7 @@ pub(crate) const MAX_SOURCE_PROOF_TOTAL_BYTES: usize = 8 * 1024 * 1024;
 /// Every key category a derivation may appeal to. A category absent from the
 /// supplied context means this relying party named no root there, so every
 /// dimension grounded in it renders weak — never a favourable default.
-pub(crate) const KEY_CATEGORIES: [&str; 10] = ["source_keys", "mac_keys", "evaluator_keys", "node_keys", "node_roots", "temporal_keys", "population_keys", "accountability_keys", "scitt_ts_keys", "log_keys"];
+pub(crate) const KEY_CATEGORIES: [&str; 12] = ["source_keys", "mac_keys", "evaluator_keys", "node_keys", "node_roots", "temporal_keys", "population_keys", "accountability_keys", "scitt_ts_keys", "log_keys", "recorder_keys", "tsa_roots"];
 
 fn decode_b64(s: &str) -> Option<Vec<u8>> {
     use base64::{engine::general_purpose::STANDARD, Engine};
@@ -53,6 +53,15 @@ pub(crate) fn key_for(trust: Option<&Value>, category: &str, name: Option<&str>)
     }
     let table = trust?.get(category)?.as_object()?;
     decode_material(table.get(name?))
+}
+
+/// Concatenated PEM roots named for the E2 time leg (`tsa_roots` holds PEM
+/// text, never Ed25519 material — mirror of verify/trust.py::_tsa_roots_pem).
+/// Non-string values are dropped: a malformed root can only fail WEAK.
+pub(crate) fn tsa_roots_pem(trust: Option<&Value>) -> Option<String> {
+    let table = trust?.get("tsa_roots")?.as_object()?;
+    let pems: Vec<&str> = table.values().filter_map(Value::as_str).filter(|s| !s.trim().is_empty()).collect();
+    (!pems.is_empty()).then(|| pems.join("\n"))
 }
 
 /// Domain-separated JCS bytes — the exact material signed. Every

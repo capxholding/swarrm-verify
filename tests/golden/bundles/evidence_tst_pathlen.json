@@ -1,0 +1,88 @@
+{
+  "checkpoint_chain": [
+    {
+      "checkpoint": {
+        "body": {
+          "origin": "evd://tenant/t_golden",
+          "prev_hash": "",
+          "root_hash": "f4207ec1f3eba686351231645aa9602c7e2a8b54f3e8b5746b141ceced3949bb",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 2,
+          "ts": "2026-01-01T00:00:00.000000Z"
+        },
+        "kid": "Vkdap1RjR0wChd9d",
+        "sig": "fouSLam/XLs8IGEPUSwKq2mE6JcQeW1sfe4g6IIBJrAhe5Wgn/y4L+KpzDO/fLkVLKWuUPcj8AjqCVwE5xgmAg=="
+      }
+    }
+  ],
+  "entries": [
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MX0sImlkZW1wb3RlbmN5X2tleSI6ImlkZW0tMSIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "zU6K3afk7eDh5STWd6yAp+VWbMeJWjF9B2SfuDqSB35uXhzJ0JAx4N/gF+09p9rVX7F59MUnPYP2criYr5/XCQ=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "fd5ae5c122d3ed5d51bdf20538262797c98e71aa9388392946e8fecf4b877785"
+      ],
+      "leaf_index": 1
+    },
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "VBqI3aephPAuAxzMrr8a+1ejPItV4MNOjPrzKaTZsm9k4mhbNSt/mzRxTcezK5y+L4/nL35tY4mQbLevL8P8Dg=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "cdf98888d74e6cbb5fd47fd5ca6c10c581f8eb5160e8ef7fba320397451abc2a"
+      ],
+      "leaf_index": 0
+    }
+  ],
+  "jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "Vkdap1RjR0wChd9d",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+      }
+    ]
+  },
+  "origin": "evd://tenant/t_golden",
+  "schema": "evd/bundle/v1",
+  "target_checkpoint": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "prev_hash": "",
+      "root_hash": "f4207ec1f3eba686351231645aa9602c7e2a8b54f3e8b5746b141ceced3949bb",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 2,
+      "ts": "2026-01-01T00:00:00.000000Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "fouSLam/XLs8IGEPUSwKq2mE6JcQeW1sfe4g6IIBJrAhe5Wgn/y4L+KpzDO/fLkVLKWuUPcj8AjqCVwE5xgmAg=="
+  },
+  "tst_records": [
+    {
+      "cert_chain_pem": "-----BEGIN CERTIFICATE-----\nMIIBTDCB8qADAgECAgEWMAoGCCqGSM49BAMCMCYxJDAiBgNVBAMMG0dvbGRlbiBQ\nYXRoTGVuIEludGVybWVkaWF0ZTAeFw0yNjAxMDEwMDAwMDBaFw0zNjAxMDEwMDAw\nMDBaMB0xGzAZBgNVBAMMEkdvbGRlbiBQYXRoTGVuIFRTQTBZMBMGByqGSM49AgEG\nCCqGSM49AwEHA0IABJ959Zh6XUcUgse2LpMR5SK6Z0+pAUJRrbfbguFJDEWunKxA\nX7SFN/UEvhlVhigje4s7XFmyHy94uCZ/8dT4l8SjGjAYMBYGA1UdJQEB/wQMMAoG\nCCsGAQUFBwMIMAoGCCqGSM49BAMCA0kAMEYCIQDQt0/8Mzw4IBcgck4o7gwpP/4E\n0G94drldhxE6PAULigIhAIs1Ic/HUPPYoAD6lPyPrSIQHLolEQIlYJ18sG1LswCT\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBVTCB/KADAgECAgEVMAoGCCqGSM49BAMCMB4xHDAaBgNVBAMME0dvbGRlbiBQ\nYXRoTGVuIFJvb3QwHhcNMjYwMTAxMDAwMDAwWhcNMzYwMTAxMDAwMDAwWjAmMSQw\nIgYDVQQDDBtHb2xkZW4gUGF0aExlbiBJbnRlcm1lZGlhdGUwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAQme+E0RDfZ9Nl9KrBqZcR8SNlQgvJWasO//29gnk57xZFi\nDZim2Ey3jTtbw4EaROI1kF38OmHowYk4HRVf9UfNoyMwITAPBgNVHRMBAf8EBTAD\nAQH/MA4GA1UdDwEB/wQEAwIBBjAKBggqhkjOPQQDAgNIADBFAiAXyyC0pmuitI+M\nMblKUvpKrCwLmtBpstUGjqF9iplLXQIhAKE/ZHbhEO5KeUPzpRjPitUHmXZJ1WOi\nze61yVTATm6s\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBUDCB96ADAgECAgEUMAoGCCqGSM49BAMCMB4xHDAaBgNVBAMME0dvbGRlbiBQ\nYXRoTGVuIFJvb3QwHhcNMjYwMTAxMDAwMDAwWhcNMzYwMTAxMDAwMDAwWjAeMRww\nGgYDVQQDDBNHb2xkZW4gUGF0aExlbiBSb290MFkwEwYHKoZIzj0CAQYIKoZIzj0D\nAQcDQgAE2WdTo6Af3BQ5700SUINW9XblEjhDm/GKIog16mITO4ccxL+fABdsZ7pK\nXZJsS/rE6S1jCfbXaSPhNG+qsNiNy6MmMCQwEgYDVR0TAQH/BAgwBgEB/wIBADAO\nBgNVHQ8BAf8EBAMCAQYwCgYIKoZIzj0EAwIDSAAwRQIgGSO6sIMEA8vhWJB2pe5Q\nl1QjfYDLOZbxYcLSNmPHMU8CIQCy9X7eGSKRK+w9mJkUjxJnz5RyE8bKiR+9cJW2\n0yzYQw==\n-----END CERTIFICATE-----\n",
+      "checkpoint_body_hash": "3cdc6dd5e8f3a6e84272f241a75939e7fc8fca441e6e80a198cd480fe0cbb140",
+      "gen_time": "2026-07-17T21:38:25Z",
+      "qualified": false,
+      "token_der_b64": "MIICyQYJKoZIhvcNAQcCoIICujCCArYCAQMxDzANBglghkgBZQMEAgEFADBjBgsqhkiG9w0BCRABBKBUBFIwUAIBAQYEKgMEATAxMA0GCWCGSAFlAwQCAQUABCA83G3V6POm6EJy8kGnWTnn/I/KRB5ugKGYzUgP4MuxQAIBARgPMjAyNjA3MTcyMTM4MjVaoIIBUDCCAUwwgfKgAwIBAgIBFjAKBggqhkjOPQQDAjAmMSQwIgYDVQQDDBtHb2xkZW4gUGF0aExlbiBJbnRlcm1lZGlhdGUwHhcNMjYwMTAxMDAwMDAwWhcNMzYwMTAxMDAwMDAwWjAdMRswGQYDVQQDDBJHb2xkZW4gUGF0aExlbiBUU0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASfefWYel1HFILHti6TEeUiumdPqQFCUa2324LhSQxFrpysQF+0hTf1BL4ZVYYoI3uLO1xZsh8veLgmf/HU+JfEoxowGDAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDAKBggqhkjOPQQDAgNJADBGAiEA0LdP/DM8OCAXIHJOKO4MKT/+BNBveHa5XYcROjwFC4oCIQCLNSHPx1Dz2KAA+pT8j60iEBy6JRECJWCdfLBtS7MAkzGB5jCB4wIBATArMCYxJDAiBgNVBAMMG0dvbGRlbiBQYXRoTGVuIEludGVybWVkaWF0ZQIBFjANBglghkgBZQMEAgEFAKBNMBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAvBgkqhkiG9w0BCQQxIgQg9z+6fiuNVzyKTtuzxDK/8fOdYR+maxixgqAZIyhmfi8wCgYIKoZIzj0EAwIERzBFAiEA0MyajnWWXDfUE6SOFSDfgLtz52kwtmkhRFfyZL6E8FUCIAa+Jz9obw95eV9/oscWM/1/4JTBjFvUCXVbRoHHAR8V",
+      "tsa_url": "https://tsa.example"
+    }
+  ]
+}

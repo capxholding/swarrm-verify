@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Independent, offline B28 v1 verifier.
+//! Offline B28 v1 verifier in the public Rust second implementation.
 //!
 //! The host supplies pinned roots and typed local context separately; exchange
 //! bytes contain signed CWTs only and cannot nominate verifier state.
@@ -12,6 +12,8 @@ use serde_json::{Map as JsonMap, Value as J};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Cursor;
+
+use crate::merkle::{verify_consistency as merkle_consistency, verify_inclusion};
 
 const PROFILE: &str = "https://swarrm.ai/spec/eat/b28/cwt/v1";
 const MEDIA: &str = "application/eat+cwt";
@@ -768,47 +770,17 @@ fn state_key(kind: &str, object_id: &[u8]) -> [u8; 32] {
     sha(&[b"swarrm-authority-state/v1\0", kind.as_bytes(), b"\0", object_id])
 }
 
-fn state_meta(proof: &C, expected_key: &[u8], digest: &[u8], expected_state: &str, expected_version: Option<u64>) -> Option<(Vec<C>, u64, u64, [u8; 32])> {
-    let proof = document(proof, Some(MEMBERSHIP), "key value index tree_size path")?;
-    let value = document(&proof["value"], None, "key state version object_digest")?;
-    let (Some(index), Some(size), C::Array(path)) = (uint(&proof["index"]), positive(&proof["tree_size"]), &proof["path"]) else {
-        return None;
-    };
+fn verify_state(proof: &C, root: &[u8], expected_key: &[u8], digest: &[u8], expected_state: &str, expected_version: Option<u64>) -> bool {
+    let Some(proof) = document(proof, Some(MEMBERSHIP), "key value index tree_size path") else { return false };
+    let Some(value) = document(&proof["value"], None, "key state version object_digest") else { return false };
+    let (Some(index), Some(size), C::Array(path)) = (uint(&proof["index"]), positive(&proof["tree_size"]), &proof["path"]) else { return false };
     let checks = [index < size, path.len() <= 64, bytes(&proof["key"]) == Some(expected_key), value["key"] == proof["key"], text(&value["state"]) == Some(expected_state), positive(&value["version"]).is_some(), expected_version.is_none_or(|version| uint(&value["version"]) == Some(version)), bytes(&value["object_digest"]) == Some(digest)];
     if !checks.into_iter().all(|held| held) {
-        return None;
+        return false;
     }
-    let leaf = canonical(&proof["value"])?;
-    Some((path.clone(), index, size, sha(&[b"\0", &leaf])))
-}
-fn state_root(path: &[C], mut position: u64, mut last: u64, mut hash: [u8; 32], root: &[u8]) -> bool {
-    for sibling in path {
-        let Some(sibling) = fixed(sibling, 32) else { return false };
-        if last == 0 {
-            return false;
-        }
-        let left = [position & 1 == 1, position == last].into_iter().any(|held| held);
-        if left {
-            hash = sha(&[b"\x01", sibling, &hash]);
-            if position & 1 == 0 {
-                while position != 0 {
-                    if position & 1 != 0 {
-                        break;
-                    }
-                    position >>= 1;
-                    last >>= 1;
-                }
-            }
-        } else {
-            hash = sha(&[b"\x01", &hash, sibling]);
-        }
-        position >>= 1;
-        last >>= 1;
-    }
-    last == 0 && hash == root
-}
-fn verify_state(proof: &C, root: &[u8], expected_key: &[u8], digest: &[u8], expected_state: &str, expected_version: Option<u64>) -> bool {
-    state_meta(proof, expected_key, digest, expected_state, expected_version).is_some_and(|(path, index, size, hash)| state_root(&path, index, size - 1, hash, root))
+    let Some(siblings) = path.iter().map(|item| fixed(item, 32).and_then(|raw| raw.try_into().ok())).collect::<Option<Vec<[u8; 32]>>>() else { return false };
+    let Some(value) = canonical(&proof["value"]) else { return false };
+    verify_inclusion(&sha(&[b"\0", &value]), index, size, &siblings, root)
 }
 fn verify_counter_head(proof: &C, root: &[u8], binding_id: &[u8], minimum_version: u64) -> bool {
     let Some(doc) = document(proof, Some(MEMBERSHIP), "key value index tree_size path") else { return false };
@@ -816,57 +788,9 @@ fn verify_counter_head(proof: &C, root: &[u8], binding_id: &[u8], minimum_versio
     let (Some(version), Some(digest)) = (positive(&value["version"]), fixed(&value["object_digest"], 32)) else { return false };
     version >= minimum_version && verify_state(proof, root, &state_key("admin_counter", binding_id), digest, "ACTIVE", Some(version))
 }
-fn consistency_seed<'a>(old: u64, first_root: &[u8], items: &mut impl Iterator<Item = &'a [u8; 32]>) -> Option<[u8; 32]> {
-    let mut seed = [0u8; 32];
-    if old == 0 {
-        if first_root.len() != 32 {
-            return None;
-        }
-        seed.copy_from_slice(first_root);
-    } else if let Some(item) = items.next() {
-        seed = *item;
-    } else {
-        return None;
-    }
-    Some(seed)
-}
-fn consistency_hashes<'a>(mut old: u64, mut new: u64, seed: [u8; 32], items: impl Iterator<Item = &'a [u8; 32]>) -> Option<([u8; 32], [u8; 32], u64)> {
-    let (mut first_hash, mut second_hash) = (seed, seed);
-    for item in items {
-        if new == 0 {
-            return None;
-        }
-        if old & 1 == 1 || old == new {
-            first_hash = sha(&[b"\x01", item, &first_hash]);
-            second_hash = sha(&[b"\x01", item, &second_hash]);
-            while old != 0 && old & 1 == 0 {
-                old >>= 1;
-                new >>= 1;
-            }
-        } else {
-            second_hash = sha(&[b"\x01", &second_hash, item]);
-        }
-        old >>= 1;
-        new >>= 1;
-    }
-    Some((first_hash, second_hash, new))
-}
 fn verify_consistency(value: &C, first: u64, second: u64, first_root: &[u8], second_root: &[u8]) -> bool {
     let Some(path) = array(value, 64).and_then(|path| path.iter().map(|item| fixed(item, 32).and_then(|raw| raw.try_into().ok())).collect::<Option<Vec<[u8; 32]>>>()) else { return false };
-    if first > second || first == 0 {
-        return false;
-    }
-    if first == second {
-        return path.is_empty() && first_root == second_root;
-    }
-    let (mut old, mut new) = (first - 1, second - 1);
-    while old & 1 == 1 {
-        old >>= 1;
-        new >>= 1;
-    }
-    let mut items = path.iter();
-    let Some(seed) = consistency_seed(old, first_root, &mut items) else { return false };
-    matches!(consistency_hashes(old, new, seed, items), Some((a, b, 0)) if a == first_root && b == second_root)
+    merkle_consistency(first, second, first_root, second_root, &path)
 }
 
 fn map_value(items: Vec<(&str, C)>) -> C {

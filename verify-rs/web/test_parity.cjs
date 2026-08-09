@@ -12,7 +12,7 @@ const { derive_vector_json, verify_bundle_json, verify_certificate_cbor, verify_
 const dir = path.join(__dirname, "..", "..", "tests", "golden", "bundles");
 const expected = JSON.parse(fs.readFileSync(path.join(dir, "expected.json"), "utf8"));
 const RESULT_SCHEMA = "evd/browser-bundle-verification-result/v2";
-const VALID_E1_DIGEST = "473bd8c1bb3060cb5ff86b0d0bcebda51a5a32e6936b027b6a34d7a9f6f96440";
+const VALID_E1_DIGEST = "c3c85b1143c937cacf692eb37377b72be4d53941055262623c022c64916e8239";
 
 function parseBundleResult(raw) {
   const result = JSON.parse(raw);

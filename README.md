@@ -1,7 +1,7 @@
 # swarrm-verify — the open Swarrm verifier
 
-**Don't trust us. Verify it yourself.** This repository is the independent,
-open-source Rust/WASM verifier for [Swarrm](https://swarrm.ai) evidence
+**Don't trust us. Verify it yourself.** This repository is the public,
+open-source Rust/WASM second implementation for [Swarrm](https://swarrm.ai) evidence
 bundles (`evd/bundle/v1`), certificates, and the CWT/COSE-only
 `swarrm-b28/v1` Counterparty Assurance profile — the same verifier that runs
 client-side at [swarrm.ai/verify](https://swarrm.ai/verify).
@@ -26,10 +26,11 @@ assurance mark ships.
 ## Why this exists
 
 Evidence you can only verify by asking the vendor is not evidence. Swarrm
-maintains **two independent verifier implementations** (this Rust one and a
+maintains **two separately implemented verifier paths** (this Rust one and a
 Python one shipped in the `swarrm` PyPI package) that run the same shared
 golden-fixture suite (`tests/golden/`). Divergence between them is treated as
-a spec bug — this cross-check has already caught a real one (a missing
+a spec bug. Agreement is divergence evidence, not independent external
+assurance; the cross-check has already caught a real defect (a missing
 RFC 6962 leaf prefix).
 
 ## Layout

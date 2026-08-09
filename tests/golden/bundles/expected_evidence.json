@@ -1,0 +1,151 @@
+{
+  "_note": "B29 cross-engine evidence-level rows: for each fixture, verify with trust_evidence.json and with no trust context; recorder_attested lists leaf indexes whose co-signature verifies under the NAMED recorder key, trusted_tst_checkpoints lists checkpoint digests whose token chains to the SUPPLIED root. evidence_tst_forged_ca (unrelated self-signed CA) and evidence_tst_leaf_issuer (a NON-CA leaf under the real root that mints its own signer) are THE audit fixtures: each satisfies the carried-chain gate (VERIFIED) and must never satisfy the supplied root.",
+  "evidence_tst_decoy_a": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": [
+        "3cdc6dd5e8f3a6e84272f241a75939e7fc8fca441e6e80a198cd480fe0cbb140"
+      ]
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_decoy_b": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": [
+        "3cdc6dd5e8f3a6e84272f241a75939e7fc8fca441e6e80a198cd480fe0cbb140"
+      ]
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_expired_issuer": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_forged_ca": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_leaf_issuer": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_multiple_eku": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_name_constraints": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_noncritical_eku": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_pathlen": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_trusted": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": [
+        "3cdc6dd5e8f3a6e84272f241a75939e7fc8fca441e6e80a198cd480fe0cbb140"
+      ]
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_unknown_critical_ca": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "evidence_tst_unknown_critical_ee": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "legacy_custom_cosign": {
+    "with_trust": {
+      "recorder_attested": [
+        2
+      ],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  },
+  "valid_e1": {
+    "with_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    },
+    "without_trust": {
+      "recorder_attested": [],
+      "trusted_tst_checkpoints": []
+    }
+  }
+}

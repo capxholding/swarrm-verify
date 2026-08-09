@@ -5,13 +5,13 @@
         "body": {
           "origin": "evd://tenant/t_golden",
           "prev_hash": "",
-          "root_hash": "0e0883759ec7b4d144877e683c1969960809bcdebf9ab876dff940ec6fe3eef3",
+          "root_hash": "e9356523a73d11ccc943f2d9ff2c0fd4d6d82024ba722e8baba1030cc111d9c9",
           "schema": "evd/checkpoint/v1",
           "tree_size": 4,
-          "ts": "2026-08-05T13:53:25.299954Z"
+          "ts": "2026-01-01T00:00:00.000000Z"
         },
         "kid": "Vkdap1RjR0wChd9d",
-        "sig": "DQbSmuNa493emJM6WrevPo5gEkq+oFwENOKGDQIW2NrF0THP57Dc8dhgSrmjJ4lhrRxX4U8KKxLieswlsY81AA=="
+        "sig": "lh2GzRGWQY4QU0qMULWF0zMy1nDiO9kkk8E90SEkqSK7hroizcoBbyODOrIeQqQIvkhZ+Un8/2qKzP/vFv7PAQ=="
       }
     }
   ],
@@ -29,18 +29,18 @@
       },
       "inclusion_proof": [
         "d92759a1046f6fbcb84d914d247624c9c590605c11b837de556cd132723cd826",
-        "aa69d71157f4b7a84eec2b28f89f25c3a6742cd5b9b83236d757ec2a47cfe3ec"
+        "950caa02c3bdc32610ce253ac5be7a6ca5c68f8780ea9f8604b2903a2e6ad36e"
       ],
       "leaf_index": 2
     },
     {
       "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTA4LTA1VDEzOjUzOjI1LjI5ODM4MFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTA4LTA1VDEzOjUzOjI1LjI5ODUxMloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTA4LTA1VDEzOjUzOjI1LjI5ODUxMloifQ==",
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
         "payloadType": "application/vnd.evd.receipt.v1+json",
         "signatures": [
           {
             "keyid": "Vkdap1RjR0wChd9d",
-            "sig": "cvcIyQNIaVRcmzY+/w0fX46iw29sekwNv718/PVoVOrWD3yrFxzNR2OAbbotiBMsJ8kUBnSPM9I9QdhU+bAFBA=="
+            "sig": "VBqI3aephPAuAxzMrr8a+1ejPItV4MNOjPrzKaTZsm9k4mhbNSt/mzRxTcezK5y+L4/nL35tY4mQbLevL8P8Dg=="
           }
         ]
       },
@@ -55,15 +55,15 @@
     "body": {
       "origin": "evd://tenant/t_golden",
       "receipt_hashes": [
-        "86cf831c2ff9cf13523aa62919775c6f6553c91b15092b09db2eb118873b495e",
-        "bd9beba815f2cca6031fa52175e9d00683aad6a552df8d2e571037e233bf152b"
+        "58724dcbfaa106906423f6718dba7d4cc714c95e5d07996d64504a27b36c209d",
+        "86cf831c2ff9cf13523aa62919775c6f6553c91b15092b09db2eb118873b495e"
       ],
       "schema": "evd/export-manifest/v1",
-      "target_checkpoint_hash": "65ab651b7fab6eb98abe5cb7f8b99cb271b8567e7590dd52455e66cd4d7fc2a0",
+      "target_checkpoint_hash": "823e3b70b5d2d4261cce6c2c9089ecc5db8c9a0f1bd6d492e471271d36d66e19",
       "ts": "not-a-timestamp"
     },
     "kid": "Vkdap1RjR0wChd9d",
-    "sig": "QcUFxSaWeQoWLwkcuQJlz3+Aw36EZgh+Z+GcicxvM6M0mgFyUYEyfif7djAxPig9LBcTMyRq9fVFngqrRkTMCA=="
+    "sig": "xhXwYw8xyyWNPcjQdv4HTVBemHtJN4a482xmP97UNNn0upbnq4EDPYL6TLJpcpbgSAv7XqldwyhqgX9uwj9ZBg=="
   },
   "jwks": {
     "keys": [
@@ -83,12 +83,12 @@
     "body": {
       "origin": "evd://tenant/t_golden",
       "prev_hash": "",
-      "root_hash": "0e0883759ec7b4d144877e683c1969960809bcdebf9ab876dff940ec6fe3eef3",
+      "root_hash": "e9356523a73d11ccc943f2d9ff2c0fd4d6d82024ba722e8baba1030cc111d9c9",
       "schema": "evd/checkpoint/v1",
       "tree_size": 4,
-      "ts": "2026-08-05T13:53:25.299954Z"
+      "ts": "2026-01-01T00:00:00.000000Z"
     },
     "kid": "Vkdap1RjR0wChd9d",
-    "sig": "DQbSmuNa493emJM6WrevPo5gEkq+oFwENOKGDQIW2NrF0THP57Dc8dhgSrmjJ4lhrRxX4U8KKxLieswlsY81AA=="
+    "sig": "lh2GzRGWQY4QU0qMULWF0zMy1nDiO9kkk8E90SEkqSK7hroizcoBbyODOrIeQqQIvkhZ+Un8/2qKzP/vFv7PAQ=="
   }
 }
