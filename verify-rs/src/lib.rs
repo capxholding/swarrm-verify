@@ -201,7 +201,7 @@ pub(crate) fn body_of(env: &Value) -> Option<Value> {
 }
 
 fn decimal(bytes: &[u8]) -> Option<u32> {
-    bytes.iter().try_fold(0, |n, c| c.is_ascii_digit().then_some(n * 10 + u32::from(*c - b'0')))
+    bytes.iter().try_fold(0, |n, c| c.is_ascii_digit().then(|| n * 10 + u32::from(*c - b'0')))
 }
 
 pub(crate) fn canonical_utc(s: &str) -> bool {

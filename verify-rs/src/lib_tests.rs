@@ -58,6 +58,13 @@ fn anchor_and_tst_times_share_the_strict_signed_checkpoint_boundary() {
 }
 
 #[test]
+fn canonical_utc_rejects_non_decimal_components_without_panicking() {
+    for hostile in ["202x-01-01T00:00:00Z", "2026-0x-01T00:00:00Z", "2026-01-01T00:00:0xZ", "2026-01-01T00:00:00.00000xZ"] {
+        assert!(!canonical_utc(hostile), "accepted {hostile}");
+    }
+}
+
+#[test]
 fn genesis_has_no_role_and_delegated_roles_only_apply_to_creation() {
     assert!(key_role_ok(0, "evd.key.created", &serde_json::json!({"role": null})));
     for role in ["recorder", "scitt-issuer"] {

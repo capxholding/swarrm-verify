@@ -27,13 +27,13 @@ fuzz_target!(|data: &[u8]| {
     // The certificate parser is an intentionally untrusted boundary. Keep a
     // dependency panic from taking down the fuzz process; malformed input is
     // a rejected verification result, not a verifier crash.
-    let valid = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let first = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         swarrm_verify::tsa::verify_tst(token, digest, chain)
     }));
-    let gen_time = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        swarrm_verify::tsa::verify_tst_gen_time(token, digest, chain)
+    let second = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        swarrm_verify::tsa::verify_tst(token, digest, chain)
     }));
-    if let (Ok(valid), Ok(gen_time)) = (valid, gen_time) {
-        assert_eq!(valid, gen_time.is_some(), "TSA entrypoints must agree");
+    if let (Ok(first), Ok(second)) = (first, second) {
+        assert_eq!(first, second, "TSA verification must be deterministic");
     }
 });
