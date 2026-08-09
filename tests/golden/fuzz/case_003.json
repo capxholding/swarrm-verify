@@ -5,13 +5,13 @@
         "body": {
           "origin": "evd://tenant/t_golden",
           "prev_hash": "",
-          "root_hash": "0e0883759ec7b4d144877e683c1969960809bcdebf9ab876dff940ec6fe3eef3",
+          "root_hash": "e9356523a73d11ccc943f2d9ff2c0fd4d6d82024ba722e8baba1030cc111d9c9",
           "schema": "evd/checkpoint/v1",
           "tree_size": 4,
-          "ts": "2026-08-05T13:53:25.299954Z"
+          "ts": "2026-01-01T00:00:00.000000Z"
         },
         "kid": "Vkdap1RjR0wChd9d",
-        "sig": "DQbSmuNa493emJM6WrevPo5gEkq+oFwENOKGDQIW2NrF0THP57Dc8dhgSrmjJ4lhrRxX4U8KKxLieswlsY81AA=="
+        "sig": "lh2GzRGWQY4QU0qMULWF0zMy1nDiO9kkk8E90SEkqSK7hroizcoBbyODOrIeQqQIvkhZ+Un8/2qKzP/vFv7PAQ=="
       }
     }
   ],
@@ -24,15 +24,13 @@
           {
             "keyid": "Vkdap1RjR0wChd9d",
             "sig": "ffXbabAuIGCDkQXTrrWuK+dGGlWf8AfXwJgwSt5dXQ+FXL/vZ8n4BnUnGiJ/DlwghM+YBh6nvuR0KmbM39oRCw=="
+          },
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
           }
         ]
       },
       "inclusion_proof": [
         "d92759a1046f6fbcb84d914d247624c9c590605c11b837de556cd132723cd826",
-        "aa69d71157f4b7a84eec2b28f89f25c3a6742cd5b9b83236d757ec2a47cfe3ec"
-      ],
-      "leaf_index": 2
-    },
-    {
-      "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlY
+        "950caa02c3b

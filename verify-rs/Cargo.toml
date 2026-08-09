@@ -3,7 +3,7 @@
 name = "swarrm-verify"
 version = "1.0.4"
 edition = "2021"
-description = "Independent Rust/WASM verifier for evidence bundles, certificates, and CWT/COSE-only B28 assurance"
+description = "Public Rust/WASM second implementation for evidence bundles, certificates, and CWT/COSE-only B28 assurance"
 # Declared, not merely stated in the header comment above: wasm-pack reads these
 # and every published artifact carries the licence it is actually under.
 license = "Apache-2.0"

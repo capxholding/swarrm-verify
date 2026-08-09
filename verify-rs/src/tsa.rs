@@ -37,7 +37,7 @@ use p256::ecdsa::signature::hazmat::PrehashVerifier; // shared trait; p384 keys 
 use rsa::pkcs1::DecodeRsaPublicKey;
 use rsa::{Pkcs1v15Sign, RsaPublicKey};
 use sha2::{Digest, Sha256, Sha384, Sha512};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use x509_cert::attr::Attributes;
 use x509_cert::spki::SubjectPublicKeyInfoOwned;
 use x509_cert::Certificate;
@@ -58,6 +58,11 @@ const OID_RSA_ENCRYPTION: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.8
 const OID_SHA256_RSA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.11");
 const OID_SHA384_RSA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.12");
 const OID_SHA512_RSA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.13");
+const OID_KEY_USAGE: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.15");
+const OID_SUBJECT_ALT_NAME: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.17");
+const OID_BASIC_CONSTRAINTS: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.19");
+const OID_NAME_CONSTRAINTS: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.30");
+const OID_EXTENDED_KEY_USAGE: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.37");
 
 /// The TSTInfo fields the checks need; trailing optional fields (accuracy,
 /// ordering, nonce, tsa, extensions) are skipped like the Python parser
@@ -77,17 +82,6 @@ fn hash_bytes(oid: &ObjectIdentifier, data: &[u8]) -> Option<Vec<u8>> {
     }
 }
 
-/// Signature-algorithm OID -> hash OID, for the sanctioned families: ECDSA
-/// (P-256 / P-384) and RSASSA-PKCS1-v1_5. Any other family is None.
-fn sig_hash_oid(sig_alg: &ObjectIdentifier) -> Option<ObjectIdentifier> {
-    match *sig_alg {
-        OID_ECDSA_SHA256 | OID_SHA256_RSA => Some(OID_SHA256),
-        OID_ECDSA_SHA384 | OID_SHA384_RSA => Some(OID_SHA384),
-        OID_ECDSA_SHA512 | OID_SHA512_RSA => Some(OID_SHA512),
-        _ => None,
-    }
-}
-
 /// Verify `sig` over `data` with the signer's SPKI. The FAMILY is chosen by the
 /// public KEY type (RSA vs ECDSA) — exactly like pyca on the Python side — so a
 /// signature under the BARE `rsaEncryption` OID (the AlfaSign / qtsa.eu
@@ -97,29 +91,19 @@ fn sig_hash_oid(sig_alg: &ObjectIdentifier) -> Option<ObjectIdentifier> {
 /// algorithm). ECDSA backends truncate an over-long prehash to the field size
 /// (bits2field) as pyca does. Any unsupported key / curve / hash is false.
 fn verify_sig(spki: &SubjectPublicKeyInfoOwned, sig_alg: &ObjectIdentifier, digest_hint: &ObjectIdentifier, sig: &[u8], data: &[u8]) -> bool {
-    let hash_oid = sig_hash_oid(sig_alg).unwrap_or(*digest_hint);
+    let hash_oid = match *sig_alg {
+        OID_ECDSA_SHA256 | OID_SHA256_RSA => OID_SHA256,
+        OID_ECDSA_SHA384 | OID_SHA384_RSA => OID_SHA384,
+        OID_ECDSA_SHA512 | OID_SHA512_RSA => OID_SHA512,
+        _ => *digest_hint,
+    };
     let Some(digest) = hash_bytes(&hash_oid, data) else { return false };
     if spki.algorithm.oid == OID_RSA_ENCRYPTION {
-        verify_rsa(spki, sig, &digest, &hash_oid)
+        matches!(*sig_alg, OID_RSA_ENCRYPTION | OID_SHA256_RSA | OID_SHA384_RSA | OID_SHA512_RSA) && verify_rsa(spki, sig, &digest, &hash_oid)
     } else if spki.algorithm.oid == OID_EC_PUBLIC_KEY {
-        verify_ecdsa(spki, sig, &digest)
+        matches!(*sig_alg, OID_ECDSA_SHA256 | OID_ECDSA_SHA384 | OID_ECDSA_SHA512) && verify_ecdsa(spki, sig, &digest)
     } else {
         false
-    }
-}
-
-/// ECDSA over the SPKI's named curve (P-256 or P-384). `sig` is a DER
-/// ECDSA-Sig-Value; `digest` is the prehash.
-fn verify_ecdsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8]) -> bool {
-    if spki.algorithm.oid != OID_EC_PUBLIC_KEY {
-        return false;
-    }
-    let curve = spki.algorithm.parameters.as_ref().and_then(|p| p.decode_as::<ObjectIdentifier>().ok());
-    let Some(key_bytes) = spki.subject_public_key.as_bytes() else { return false };
-    match curve {
-        Some(c) if c == OID_PRIME256V1 => verify_p256(key_bytes, sig, digest),
-        Some(c) if c == OID_SECP384R1 => verify_p384(key_bytes, sig, digest),
-        _ => false,
     }
 }
 
@@ -133,11 +117,19 @@ macro_rules! verify_ecdsa_curve {
     }};
 }
 
-fn verify_p256(key: &[u8], sig: &[u8], digest: &[u8]) -> bool {
-    verify_ecdsa_curve!(p256, key, sig, digest)
-}
-fn verify_p384(key: &[u8], sig: &[u8], digest: &[u8]) -> bool {
-    verify_ecdsa_curve!(p384, key, sig, digest)
+/// ECDSA over the SPKI's named curve (P-256 or P-384). `sig` is a DER
+/// ECDSA-Sig-Value; `digest` is the prehash.
+fn verify_ecdsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8]) -> bool {
+    if spki.algorithm.oid != OID_EC_PUBLIC_KEY {
+        return false;
+    }
+    let curve = spki.algorithm.parameters.as_ref().and_then(|p| p.decode_as::<ObjectIdentifier>().ok());
+    let Some(key_bytes) = spki.subject_public_key.as_bytes() else { return false };
+    match curve {
+        Some(c) if c == OID_PRIME256V1 => verify_ecdsa_curve!(p256, key_bytes, sig, digest),
+        Some(c) if c == OID_SECP384R1 => verify_ecdsa_curve!(p384, key_bytes, sig, digest),
+        _ => false,
+    }
 }
 
 /// RSASSA-PKCS1-v1_5 with the SPKI's RSA key over the prehash `digest`.
@@ -249,38 +241,74 @@ fn find_signer_cert<'a>(sd: &'a SignedData, si: &SignerInfo) -> Option<&'a Certi
 }
 
 fn cert_sig_valid(current: &Certificate, issuer: &Certificate, tbs_der: &[u8]) -> bool {
+    if current.signature_algorithm != current.tbs_certificate.signature {
+        return false;
+    }
     let Some(sig) = current.signature.as_bytes() else { return false };
     verify_sig(&issuer.tbs_certificate.subject_public_key_info, &current.signature_algorithm.oid, &current.signature_algorithm.oid, sig, tbs_der)
 }
 
-/// Chains the signer cert to a pinned self-signed root (`_verify_chain`).
-fn verify_chain(signer: &Certificate, cert_chain_pem: &str) -> bool {
-    let pinned = match Certificate::load_pem_chain(cert_chain_pem.as_bytes()) {
-        Ok(p) if !p.is_empty() => p,
-        _ => return false,
-    };
-    let mut current = signer;
-    let mut seen: BTreeSet<Vec<u8>> = BTreeSet::new();
-    loop {
-        let tbs = match current.tbs_certificate.to_der() {
-            Ok(t) => t,
-            Err(_) => return false,
-        };
-        if !seen.insert(tbs.clone()) {
-            return false; // certificate chain contains a loop
+const OID_ID_KP_TIME_STAMPING: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.3.6.1.5.5.7.3.8");
+
+/// RFC 5280 path constraint: a cert may sign another only if basicConstraints
+/// cA is TRUE and keyUsage asserts keyCertSign. Without this, a subject holding
+/// ANY end-entity leaf under a supplied root could mint its own TSA signer and
+/// forge the timestamp. A missing extension is not a CA. Mirror of
+/// verify/tsa.py::_is_ca.
+fn ca_constraint(cert: &Certificate) -> Option<Option<u8>> {
+    use x509_cert::ext::pkix::{BasicConstraints, KeyUsage};
+    let Ok(Some((_, bc))) = cert.tbs_certificate.get::<BasicConstraints>() else { return None };
+    let Ok(Some((_, ku))) = cert.tbs_certificate.get::<KeyUsage>() else { return None };
+    (bc.ca && ku.key_cert_sign()).then_some(bc.path_len_constraint)
+}
+
+/// RFC 3161 §2.3: the TST signer cert MUST carry EKU id-kp-timeStamping.
+/// Mirror of verify/tsa.py::_is_timestamping_signer.
+fn is_timestamping_signer(cert: &Certificate) -> bool {
+    use x509_cert::ext::pkix::ExtendedKeyUsage;
+    matches!(cert.tbs_certificate.get::<ExtendedKeyUsage>(), Ok(Some((true, eku))) if eku.0.as_slice() == [OID_ID_KP_TIME_STAMPING])
+}
+
+fn path_candidate_ok(current: &Certificate, issuer: &Certificate, tbs: &[u8], supplied: bool, at: Option<&GeneralizedTime>, below: usize) -> bool {
+    let constraint = if supplied { ca_constraint(issuer) } else { Some(None) };
+    let profile_ok = |cert: &Certificate| cert.tbs_certificate.extensions.as_ref().is_none_or(|extensions| extensions.iter().all(|ext| ext.extn_id != OID_NAME_CONSTRAINTS && (!ext.critical || matches!(ext.extn_id, OID_KEY_USAGE | OID_SUBJECT_ALT_NAME | OID_BASIC_CONSTRAINTS | OID_EXTENDED_KEY_USAGE))));
+    (!supplied || profile_ok(current) && profile_ok(issuer)) && constraint.is_some() && at.is_none_or(|time| gen_time_in_validity(time, issuer)) && constraint.flatten().is_none_or(|limit| below <= usize::from(limit)) && cert_sig_valid(current, issuer, tbs)
+}
+
+/// Shared path builder for the carried-chain gate and supplied-root upgrade.
+/// The gate preserves first-subject-match semantics and ends at a self-signed
+/// carried issuer. The upgrade tries every CA candidate, roots first, and ends
+/// only at a certificate byte-identical to a relying-party-supplied root.
+fn walk_chain<'a>(signer: &'a Certificate, pool: &'a [Certificate], roots: Option<&'a [Certificate]>, at: Option<&GeneralizedTime>) -> bool {
+    let supplied = roots.is_some();
+    let roots = roots.unwrap_or(&[]);
+    let root_ders: BTreeSet<Vec<u8>> = roots.iter().filter_map(|c| c.to_der().ok()).collect();
+    let (mut stack, mut seen) = (vec![(signer, 0usize)], BTreeMap::<Vec<u8>, usize>::new());
+    while let Some((current, ca_below)) = stack.pop() {
+        let Ok(current_der) = current.to_der() else { continue };
+        if supplied && root_ders.contains(&current_der) {
+            return true;
         }
-        let issuer = match pinned.iter().find(|c| c.tbs_certificate.subject == current.tbs_certificate.issuer) {
-            Some(c) => c,
-            None => return false, // does not chain to the pinned TSA root
-        };
-        if !cert_sig_valid(current, issuer, &tbs) {
-            return false;
+        if seen.get(&current_der).is_some_and(|best| *best <= ca_below) {
+            continue;
         }
-        if issuer.tbs_certificate.subject == issuer.tbs_certificate.issuer {
-            return true; // self-signed root reached
+        seen.insert(current_der, ca_below);
+        let below = ca_below + usize::from(ca_constraint(current).is_some() && current.tbs_certificate.subject != current.tbs_certificate.issuer);
+        let Ok(tbs) = current.tbs_certificate.to_der() else { return false };
+        let subject_matches = |c: &&Certificate| c.tbs_certificate.subject == current.tbs_certificate.issuer;
+        let mut candidates: Vec<_> = roots.iter().chain(pool).filter(subject_matches).filter_map(|cert| cert.to_der().ok().map(|der| (cert, der))).collect();
+        candidates.sort_by(|a, b| a.1.cmp(&b.1));
+        for (issuer, _) in candidates.into_iter().rev() {
+            if !path_candidate_ok(current, issuer, &tbs, supplied, at, below) {
+                continue;
+            }
+            if !supplied && issuer.tbs_certificate.subject == issuer.tbs_certificate.issuer {
+                return true;
+            }
+            stack.push((issuer, below));
         }
-        current = issuer;
     }
+    false
 }
 
 fn gen_time_in_validity(gen_time: &GeneralizedTime, cert: &Certificate) -> bool {
@@ -295,7 +323,7 @@ fn gen_time_in_validity(gen_time: &GeneralizedTime, cert: &Certificate) -> bool 
 /// extraction are a Python-report concern). Signatures verify under ECDSA
 /// P-256/P-384 and RSASSA-PKCS1-v1_5. Malformed or hostile input is false,
 /// never a panic.
-fn verified_gen_time(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> Option<GeneralizedTime> {
+pub(crate) fn verified_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str, roots_pem: Option<&str>) -> Option<(GeneralizedTime, bool)> {
     let (sd, tst_der, tst) = parse_token(token_der)?;
     // 2. message imprint: SHA-256 over exactly the expected digest (string
     // compare on lowercase hex, exactly like the Python verifier)
@@ -312,22 +340,16 @@ fn verified_gen_time(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem
     if !verify_sig(spki, &si.signature_algorithm.oid, &si.digest_alg.oid, si.signature.as_bytes(), &attrs_der) {
         return None;
     }
-    // 5. chain to a pinned self-signed root
-    if !verify_chain(signer, cert_chain_pem) {
+    let pool = Certificate::load_pem_chain(cert_chain_pem.as_bytes()).ok()?;
+    let trusted = roots_pem.and_then(|pem| Certificate::load_pem_chain(pem.as_bytes()).ok()).is_some_and(|roots| is_timestamping_signer(signer) && walk_chain(signer, &pool, Some(&roots), Some(&tst.gen_time)));
+    // 5. chain to a carried self-signed root
+    if !walk_chain(signer, &pool, None, None) {
         return None;
     }
     // 6. genTime within the signer certificate's validity window
-    gen_time_in_validity(&tst.gen_time, signer).then_some(tst.gen_time)
-}
-
-/// Verify an RFC 3161 token and return its verifier-derived RFC 3339 genTime.
-/// The displayed record time must equal this value before it may carry temporal
-/// authority; accepting a structurally bound token without this check would let
-/// a caller choose its own clock.
-pub fn verify_tst_gen_time(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> Option<String> {
-    verified_gen_time(token_der, expected_digest_hex, cert_chain_pem).map(|time| time.to_date_time().to_string())
+    gen_time_in_validity(&tst.gen_time, signer).then_some((tst.gen_time, trusted))
 }
 
 pub fn verify_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> bool {
-    verified_gen_time(token_der, expected_digest_hex, cert_chain_pem).is_some()
+    verified_tst(token_der, expected_digest_hex, cert_chain_pem, None).is_some()
 }

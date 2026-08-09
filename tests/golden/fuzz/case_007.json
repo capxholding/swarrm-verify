@@ -1,1 +1,21 @@
-{"anchor_records": [{"block_number": 1, "block_ts": "2026-01-01T00:00:00Z", "chain_id": 84532, "checkpoint_body_hash": "d82f38ff9b166acbc186d31473cc7ea954e85b3899710669eec4fbe7d44249fd", "contract": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd", "tx_hash": "0xabababababababababababababababababababababababababababababababab"}, {"block_number": 1, "block_ts": "2026-01-01T01:00:00Z", "chain_id": 84532, "checkpoint_body_hash": "f60fa9ea199d899528a48072db9129c0f574efa1a1703a77ad312dea934a27d3", "contract": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd", "tx_hash": "0xabababababababababababababababababababababababababababababababab"}], "checkpoint_chain": [{"checkpoint": {"body": {"origin": "evd://tenant/t_golden", "prev_hash": "", "root_hash": "a089d1be315a3bbe068adf55929d9b906f28f7bcd7468d5431499e355b112cdd", "schema": "evd/checkpoint/v1", "tree_size": 6, "ts": "2026-01-01T00:00:00.000000Z"}, "kid": "Vkdap1RjR0wChd9d", "sig": "2rCZzxR+yEG9pjruPfWXH57u/U6VMYoFxk7bpjefFbtON6pcBfXTaeGAMRVZrLNjmzvg0mrbwQDHeIXB9w+jDQ=="}}, {"checkpoint": {"body": {"origin": "evd://tenant/t_golden", "prev_hash": "d82f38ff9b166acbc186d31473cc7ea954e85b3899710669eec4fbe7d44249fd", "root_hash": "f9fcc66953e72c66371783bcc7fb8639a502a55d467e18886faba32df0b30201", "schema": "evd/checkpoint/v1", "tree_size": 7, "ts": "2026-01-01T00:00:00.000000Z"}, "kid": "Vkdap1RjR0wChd9d", "sig": "q5TOm4TeY4tYxzsLVTjjTxk+oT6CsayGz5RoILwk64dI5rNZaPTK1Iqth6WMG6Lvfgh9qRFf45zaenZ26v2WAQ=="}, "consistency_from_prev": ["a85cb94fd64202bafcfe76bfddc6ee9a053d0f2afc3465b83b295d437a3ed982", "10795d455bce2a9e02c47791b0859bed68b613f3b9aa875425d0cb20050c85b2", "759803ec54b33438d10b1da32519c6067a6ad33ce4c87e7855fcb4413699b2fb"]}], "entries": "swapped", "jwks": {"keys": [{"alg": "EdDSA", "crv": "Ed25519", "kid": "Vkdap1RjR0wChd9d", "kty": "OKP", "use": "sig", "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"}, {"alg": "EdDSA", "crv": "Ed25519", "kid": "aIlNWPGPLDTUnrL0", "kty": "OKP", "use": "sig", "x": "F0VTtFbd38aQjsqxwQH-arIeK6oGF3lbfUOmNIKZP9U"}]}, "origin": "evd://tenant/t_golden", "schema": "evd/bundle/v1", "target_checkpoint": {"body": {"origin": "evd://tenant/t_golden", "prev_hash": "d82f38ff9b166acbc186d31473cc7ea954e85b3899710669eec4fbe7d44249fd", "root_hash": "f9fcc66953e72c66371783bcc7fb8639a502a55d467e18886faba32df0b30201", "schema": "evd/checkpoint/v1", "tree_size": 7, "ts": "2026-01-01T00:00:00.000000Z"}, "kid": "Vkdap1RjR0wChd9d", "sig": "q5TOm4TeY4tYxzsLVTjjTxk+oT6CsayGz5RoILwk64dI5rNZaPTK1Iqth6WMG6Lvfgh9qRFf45zaenZ26v2WAQ=="}}
+{
+  "anchor_records": [
+    {
+      "block_number": 1,
+      "block_ts": "2026-01-01T00:00:00Z",
+      "chain_id": 84532,
+      "checkpoint_body_hash": "8f523e2bf7a0c9fe9e63d97b4f517ecaa14ae6c7a82b5786855957c2d7bb7042",
+      "contract": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "tx_hash": "0xabababababababababababababababababababababababababababababababab"
+    },
+    {
+      "block_number": 1,
+      "block_ts": "2026-01-01T01:00:00Z",
+      "chain_id": 84532,
+      "checkpoint_body_hash": "ad144956a6d016ef167701a5fce2955f7b2c4723e5c67ffd8df020f097e62aaf",
+      "contract": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "tx_hash": "0xabababababababababababababababababababababababababababababababab"
+    }
+  ],
+  "checkpoint_chain": [
+    {

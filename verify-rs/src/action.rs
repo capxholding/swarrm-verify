@@ -12,7 +12,7 @@ use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{body_of, checkpoint_body_hash, ed25519_verify, hex, jcs, key_from_jwk, receipt_hash_hex, replay_key_log, sha256, verify_bundle};
+use crate::{body_of, checkpoint_body_hash, ed25519_verify, hex, jcs, key_active, key_from_jwk, receipt_hash_hex, replay_key_log, sha256, verify_bundle};
 
 const ID_VALS: [&str; 3] = ["VERIFIED", "NOT_VERIFIED", "CONFLICT"];
 const INTENT_VALS: [&str; 3] = ["RECORDED", "NOT_RECORDED", "CONFLICT"];
@@ -1160,13 +1160,8 @@ fn transfer_sig_ok(passport_bundle: &Value, transfer: &Value) -> bool {
         return false;
     }
     let eff = g(transfer, "effective_ts");
-    pkl.keys.iter().any(|(kid, pub_)| {
-        let unrevoked = match pkl.revoked_at.get(kid) {
-            None => true,
-            Some(r) => matches!((nts(&eff), nts(&json!(r))), (Some(e), Some(rr)) if e <= rr),
-        };
-        unrevoked && dsig_ok(pub_, b"evd/v1/passport/transfer\x00", transfer, transfer.get("transfer_sig"))
-    })
+    let size = passport_bundle.get("target_checkpoint").and_then(|cp| cp.get("body")).and_then(|body| body.get("tree_size")).and_then(Value::as_u64).unwrap_or(0);
+    pkl.keys.iter().any(|(kid, pub_)| key_active(&pkl, kid, eff.as_str().unwrap_or(""), size) && dsig_ok(pub_, b"evd/v1/passport/transfer\x00", transfer, transfer.get("transfer_sig")))
 }
 
 /// §7: passport bundle verifies standalone; birthtag_id is its establishment

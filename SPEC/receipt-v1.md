@@ -72,18 +72,21 @@ the Merkle leaf (see log-v1) and the value `parents` references.
   (`domain ‖ 0x00 ‖ nonce ‖ 0x00` then chunks); the result MUST equal the
   one-shot computation.
 
-## 5. Signatures & dual attestation (wire profile; E3 label withdrawn)
+## 5. Signatures & cumulative independently rooted dual attestation
 
 An envelope carries 1..n signatures over the same PAE bytes:
 
 - **E0/E1 and carried anchor/timestamp material**: the log's issuing key (per
   tenant). This signature alone never earns E2; only a covering checkpoint
-  successfully re-read by the Evidence Report's explicit live mode can do so.
+  successfully re-read by the Evidence Report's explicit live mode **and** a
+  timestamp chain ending at a relying-party-supplied root can do so.
 - **dual-attestation wire shape**: additionally, an edge-recorder key held at
   the *customer's* edge. Verifiers checking that shape MUST require both
-  `keyid`s. The offline E3 assurance label is withdrawn: keys carried in the
-  same bundle do not independently establish counterparty identity or control
-  domain merely because both signatures verify.
+  `keyid`s. An E3 award requires every E2 condition and additionally requires
+  the relying party to supply the recorder key out of band. Keys carried in
+  the same bundle do not
+  independently establish counterparty identity or control merely because
+  both signatures verify.
   Neither party alone can then forge or repudiate a receipt.
 
 **Which kid is which, and the flow (normative):**
@@ -104,11 +107,25 @@ An envelope carries 1..n signatures over the same PAE bytes:
    applies the ordered law below and only then COUNTER-SIGNS with the tenant
    issuer key and appends. The appended envelope carries the edge and issuer
    signatures.
-4. **Dual-signature verification rule** — the two-signature wire condition holds iff
-   `verify_envelope(env, log_keys, require_kids={issuer_kid, recorder_kid})`
-   passes, with both kids drawn from the LOG's key history (log-v1 §5) and
-   valid at the receipt's `ts_server`. This does not award E3 or establish that
-   the named key holders are independent.
+4. **Verification rule (amended, B29)** — the in-log rule above is the
+   NECESSARY half: `verify_envelope(env, log_keys, require_kids={issuer_kid,
+   recorder_kid})` with both kids drawn from the LOG's key history (log-v1
+   §5) and valid at the receipt's `ts_server`. It is never sufficient for an
+   E3 AWARD, because E3 is cumulative on E2 and the log is the subject's own
+   artifact — the subject's
+   log vouching for the subject's recorder is the defect the 2026-08-03
+   audit withdrew. An E3 award requires every E2 condition and additionally
+   requires the co-signature bytes to verify under a recorder key the RELYING
+   PARTY supplied out of band (`trust["recorder_keys"]`, keyed by kid), the
+   co-signing kid to be an active NON-ISSUER key registered with the
+   `recorder` role in the replayed log, and an issuer signature beside it. A
+   verified recorder attestation without E2 remains an inspectable fact and
+   never awards E3. This recorder-attestation fact proves possession of the
+   exact relying-party-named recorder key; it does not by itself prove legal,
+   organisational, or operational independence between the signers. E3 is a
+   post-action evidence level, separate from the B28 Counterparty Assurance
+   handshake; neither the fact nor the level supplies a B28 authority or
+   replay verdict.
 
 **Legacy privileged-co-signature rule.** Offline verifiers MUST reject a
 multi-signed receipt when `agent_id` begins `_`, or when `action_type` begins

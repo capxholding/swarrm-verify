@@ -8,7 +8,9 @@ Status: NORMATIVE v1 (implemented by `core/store.py::export_bundle`,
 
 A bundle is a **self-contained, offline-verifiable** evidence package. An
 auditor with the bundle and the open-source verifier needs nothing else —
-no API access, no cooperation from the log operator, no network.
+no API access, no cooperation from the log operator, no network — to verify its
+base E1 integrity. E2/E3 require the explicit external trust inputs defined in
+§4 and therefore are never awarded by this self-contained offline path.
 
 ## 2. Structure
 
@@ -106,8 +108,15 @@ carried; sparse proof is never rendered as a complete checkpoint-history export.
   alone cannot defeat an attacker who forges *everything including the
   keys*. Independently verified external anchor/TSA state can constrain that
   attack, but carried `anchor_records`/`tst_records` do not: the subject also
-  supplies them. Offline verification awards no E2 label; the Evidence Report's
-  explicit live mode follows the receipt-coverage rule in SPEC/anchor-v1.md.
+  supplies them. Offline verification awards no E2 label. Under the explicit
+  live profile, a displayed receipt earns E2 only when a covering checkpoint is
+  re-read from Base (`8453`) or Base Sepolia (`84532`) in that run and its RFC
+  3161 token terminates at a TSA root the relying party supplied out of band;
+  see SPEC/anchor-v1.md. E3 is cumulative: every E2 condition must hold, both
+  issuer and recorder signatures must verify, the recorder must be active in
+  authenticated log state under the non-issuer `recorder` role, and the relying
+  party must supply that recorder key out of band. Verified recorder possession
+  without E2 remains an inspectable fact and awards no level.
 - **A bundle without an export manifest makes no completeness claim.** Absence
   is not failure — bundles predate the manifest, and a replica holding no
   private key (`scripts/restore_check.py` reads a restored `.db` with public
@@ -132,4 +141,7 @@ carried; sparse proof is never rendered as a complete checkpoint-history export.
   specific commitment; the verifier recomputes and compares (§receipt-v1).
 - Legacy dual-attestation blocks may be carried in `commitments`/`context` and
   their two signatures can be checked. They do not establish independent
-  counterparty control, and the current release awards no E3 label.
+  counterparty control and never award E3. The only E3 route is the cumulative
+  receipt-envelope profile above. E1/E2/E3 are post-action evidence levels and
+  are separate from the B28 Counterparty Assurance handshake; no evidence level
+  supplies a B28 identity, authority, exact-action or replay verdict.

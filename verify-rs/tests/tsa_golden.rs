@@ -42,6 +42,9 @@ fn tsa_malformed_input_is_false_never_a_panic() {
     assert!(!swarrm_verify::tsa::verify_tst(&[0x30, 0x03, 0x02, 0x01, 0x01], &digest, &chain));
     assert!(!swarrm_verify::tsa::verify_tst(&[0xffu8; 64], &digest, &chain));
     assert!(!swarrm_verify::tsa::verify_tst(&token[..token.len() / 2], &digest, &chain));
+    let mut suffixed = token.clone();
+    suffixed.push(0);
+    assert!(!swarrm_verify::tsa::verify_tst(&suffixed, &digest, &chain));
     assert!(!swarrm_verify::tsa::verify_tst(&token, "not-hex", &chain));
     assert!(!swarrm_verify::tsa::verify_tst(&token, "", &chain));
     assert!(!swarrm_verify::tsa::verify_tst(&token, &digest, ""));
@@ -50,6 +53,5 @@ fn tsa_malformed_input_is_false_never_a_panic() {
     let expected: Value = serde_json::from_str(&fs::read_to_string(golden_dir().join("expected_tsa.json")).unwrap()).unwrap();
     let real = expected["tsa_p256_valid"]["digest"].as_str().unwrap();
     assert!(swarrm_verify::tsa::verify_tst(&token, real, &chain));
-    assert_eq!(swarrm_verify::tsa::verify_tst_gen_time(&token, real, &chain).as_deref(), Some("2026-07-17T21:38:25Z"));
     assert!(!swarrm_verify::tsa::verify_tst(&token, &real.to_uppercase(), &chain));
 }
