@@ -6,6 +6,12 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ## [Unreleased]
 
+### Security
+
+- Require every signed receipt payload to be strict JSON whose bytes are
+  already in exact RFC 8785 canonical form; duplicate members, trailing bytes
+  and alternate-but-equivalent encodings now fail before claim evaluation.
+
 ## [1.0.4] - 2026-08-09
 
 ### Added

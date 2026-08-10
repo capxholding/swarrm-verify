@@ -191,13 +191,16 @@ fn payload_of(env: &Value) -> Option<Vec<u8>> {
 
 pub(crate) fn receipt_hash_hex(env: &Value) -> Option<String> {
     // receipt_hash = sha256 of the decoded DSSE payload bytes (receipt-v1)
-    let b64 = env.get("payload")?.as_str()?;
-    let bytes = base64::engine::general_purpose::STANDARD.decode(b64).ok()?;
-    Some(hex(&sha256(&bytes)))
+    Some(hex(&sha256(&payload_of(env)?)))
 }
 
 pub(crate) fn body_of(env: &Value) -> Option<Value> {
-    serde_json::from_slice(&payload_of(env)?).ok()
+    canonical_body(&payload_of(env)?)
+}
+
+fn canonical_body(raw: &[u8]) -> Option<Value> {
+    let body = serde_json::from_slice(raw).ok()?;
+    (jcs::canonical_checked(&body)?.as_slice() == raw).then_some(body)
 }
 
 fn decimal(bytes: &[u8]) -> Option<u32> {
@@ -526,7 +529,7 @@ fn check_target_checkpoint(target: &Value, kl: &KeyLog) -> bool {
     let target_ts = target.get("body").and_then(|b| b.get("ts")).and_then(|v| v.as_str()).unwrap_or("");
     let target_size = target.get("body").and_then(|b| b.get("tree_size")).and_then(Value::as_u64).unwrap_or(0);
     let target_kid = target.get("kid").and_then(|v| v.as_str()).unwrap_or("");
-    key_active(kl, target_kid, target_ts, target_size)
+    !kl.state.get(target_kid).is_some_and(|state| state.non_issuer) && key_active(kl, target_kid, target_ts, target_size)
 }
 
 fn check_chain_consistency(prev: &Value, cp: &Value, entry: &Value, prev_size: u64, cur_size: u64) -> bool {
@@ -576,7 +579,7 @@ fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog,
         let ts = cp.get("body").and_then(|b| b.get("ts")).and_then(|v| v.as_str()).unwrap_or("");
         let size = cp.get("body").and_then(|b| b.get("tree_size")).and_then(Value::as_u64).unwrap_or(0);
         let kid = cp.get("kid").and_then(|v| v.as_str()).unwrap_or("");
-        if !key_active(kl, kid, ts, size) {
+        if kl.state.get(kid).is_some_and(|state| state.non_issuer) || !key_active(kl, kid, ts, size) {
             return false;
         }
         if i > 0 && !check_chain_link(&chain[i - 1], cp, &chain_entries[i], sparse) {
@@ -634,10 +637,7 @@ fn check_entry_inclusion(e: &Value, payload: &[u8], size: u64, root: &[u8]) -> b
 fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8], covers: &[(u64, i64)]) -> bool {
     let env = &e["envelope"];
     let Some(payload) = payload_of(env) else { return false };
-    let body: Value = match serde_json::from_slice(&payload) {
-        Ok(b) => b,
-        Err(_) => return false,
-    };
+    let Some(body) = canonical_body(&payload) else { return false };
     // schema
     if body.get("schema").and_then(|v| v.as_str()) != Some("evd/receipt/v1") {
         return false;
@@ -992,9 +992,6 @@ fn checkpoint_facts(chain: &[Value]) -> Option<CheckpointFacts> {
 fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog, trust: Option<&Value>, facts: &mut BundleFacts) -> bool {
     // 2. target checkpoint
     let Some(target) = bundle.get("target_checkpoint") else { return false };
-    if !check_target_checkpoint(target, kl) {
-        return false;
-    }
 
     // 3. chain: signatures, linkage, monotonic, same origin, consistency
     let Some(chain_entries) = bundle.get("checkpoint_chain").and_then(|v| v.as_array()) else { return false };
@@ -1014,6 +1011,9 @@ fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog,
     // tail would make a certificate over a chain-invalid bundle report
     // `export_complete: null` where Python reports the real answer.
     if !check_entry_set(bundle, entries, target, &chain, kl, trust, facts) {
+        return false;
+    }
+    if !check_target_checkpoint(target, kl) {
         return false;
     }
     let sparse = match bundle.get("checkpoint_chain_profile") {
@@ -1080,7 +1080,7 @@ fn disclosure_commitment(domain: &str, payload: &[u8], nonce: &[u8]) -> Option<S
 }
 
 fn disclosure_committed_value(raw: &[u8], field: &str) -> Option<String> {
-    let body: Value = serde_json::from_slice(raw).ok()?;
+    let body = canonical_body(raw)?;
     body.get("commitments")?.get(field)?.as_str().map(String::from)
 }
 

@@ -45,6 +45,20 @@ fn every_non_verified_result_suppresses_the_bundle_digest() {
 }
 
 #[test]
+fn receipt_payloads_are_exact_jcs_in_both_verifier_engines() {
+    let canonical = br#"{"action_type":"llm.chat","seq":1}"#;
+    let envelope = |raw: &[u8]| {
+        serde_json::json!({
+            "payload": B64.encode(raw), "payloadType": RECEIPT_TYPE, "signatures": []
+        })
+    };
+    assert!(body_of(&envelope(canonical)).is_some());
+    for hostile in [br#"{"action_type":"shadow","action_type":"llm.chat","seq":1}"#.as_slice(), br#"{"seq":1,"action_type":"llm.chat"}"#, br#"{"action_type":"llm.chat","seq":1.0}"#, br#"{"action_type":"llm.chat","seq":1}\n"#] {
+        assert!(body_of(&envelope(hostile)).is_none());
+    }
+}
+
+#[test]
 fn anchor_and_tst_times_share_the_strict_signed_checkpoint_boundary() {
     let signed = "2024-02-29T00:00:00Z";
     for (field, record) in [("block_ts", serde_json::json!({"block_ts": "2024-02-29T00:00:00.000001Z"})), ("gen_time", serde_json::json!({"gen_time": "2024-02-29T00:00:00.000001Z"}))] {
