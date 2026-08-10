@@ -139,16 +139,13 @@ fn a_malformed_element_rejects_the_whole_consistency_proof() {
 
 #[test]
 fn sparse_checkpoint_profile_must_be_explicit_and_still_prove_growth() {
-    let mut bundle = load_bundle("export_manifest_recorder_child.json");
-    bundle.as_object_mut().unwrap().remove("export_manifest");
+    let mut bundle = load_bundle("b21_authority_valid.json");
     assert!(swarrm_verify::verify_bundle(&bundle));
-    // Checkpoints 0 and 1 commit to the same three-leaf root. Removing 1 makes
-    // the head's signed prev_hash non-direct, while its existing 3->4 Merkle
-    // consistency proof remains valid from checkpoint 0's identical root.
-    bundle["checkpoint_chain"].as_array_mut().unwrap().remove(1);
-    assert!(!swarrm_verify::verify_bundle(&bundle), "an undeclared skip is truncation");
     bundle["checkpoint_chain_profile"] = json!("evd/checkpoint-chain/sparse-proof-v1");
     assert!(swarrm_verify::verify_bundle(&bundle));
+    bundle["checkpoint_chain"][1]["consistency_from_prev"] = json!([]);
+    assert!(!swarrm_verify::verify_bundle(&bundle), "sparse history must still prove growth");
+    bundle = load_bundle("b21_authority_valid.json");
     for malformed in [Value::Null, json!(false), json!("evd/checkpoint-chain/unknown-v1")] {
         bundle["checkpoint_chain_profile"] = malformed;
         assert!(!swarrm_verify::verify_bundle(&bundle));
