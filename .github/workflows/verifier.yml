@@ -1,7 +1,10 @@
 name: verifier
 
 on:
+  # Pull requests already cover feature-branch heads.  Run push only after a
+  # main update so one commit never spends two identical verifier matrices.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
