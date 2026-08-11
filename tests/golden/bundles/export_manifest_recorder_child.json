@@ -19,34 +19,34 @@
         "body": {
           "origin": "evd://tenant/t_golden",
           "prev_hash": "8957b5c6b187908964a5f9cec9b09f7706fff32c1b701af925d0f10740d99880",
-          "root_hash": "848cf92b7dd606e93076f36d9ba1aed20682dfb4cb702a41267ec2091427c163",
-          "schema": "evd/checkpoint/v1",
-          "tree_size": 3,
-          "ts": "2026-01-01T00:00:00.000000Z"
-        },
-        "kid": "JPbtasv-EAnAMNfK",
-        "sig": "yzprCytv+A04xdWjaWDQOdpAo8KMWJ18gflViuAWL4XyLyj/TXYC0Z93YkwsStMDzRuSwoGXMaQGEgDhaws5Dw=="
-      },
-      "consistency_from_prev": []
-    },
-    {
-      "checkpoint": {
-        "body": {
-          "origin": "evd://tenant/t_golden",
-          "prev_hash": "ca391b78c737359de1e436073191d0a660deef22241634e02fc3fb9b982f6cce",
           "root_hash": "73275b1aca5c1a9dd6eec674ef38a83aab3a3f4532c503b2a2e13d58dd1c8d4a",
           "schema": "evd/checkpoint/v1",
           "tree_size": 4,
           "ts": "2026-01-01T00:00:00.000000Z"
         },
-        "kid": "UZyuk-k60BHXhTVY",
-        "sig": "fPrGckjMmB1K+8sRbA8b1ZngFfe0O4GsF2pMnsj4ssFPiXFm47OSbnI8TGoQoYw+XA5MuzprZz6OxDk1JDtCCA=="
+        "kid": "Vkdap1RjR0wChd9d",
+        "sig": "0i6bKcvbNcVJyFF832qV9JdVLzSLD5gTQOB8/leeEX7aCBzTDio1UtPiW07LOCSqr5cjAUSVKbQUfmkFaPj8CA=="
       },
       "consistency_from_prev": [
         "62bdc7cdf984ed3d32f3546add9200a3614e627c5b79c7c071d209aac52d7689",
         "83e526f30b0f956142a4ae722643a2875bdb912f06f571405f2a0f4c213f0f1a",
         "a380a07b032c1cbad8d566b26231bf2022a12c31f2299baf8bb5869eca2c422d"
       ]
+    },
+    {
+      "checkpoint": {
+        "body": {
+          "origin": "evd://tenant/t_golden",
+          "prev_hash": "d1db950a1f67ec4f689bf94333ac216f0c6f0a69240c4b0da509085a278c1b00",
+          "root_hash": "73275b1aca5c1a9dd6eec674ef38a83aab3a3f4532c503b2a2e13d58dd1c8d4a",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 4,
+          "ts": "2026-01-01T00:00:00.000000Z"
+        },
+        "kid": "UZyuk-k60BHXhTVY",
+        "sig": "Gkizf+Xe0zKzPHVpF3gV9qPOTfF7dCaUAhzUbzDWs47Adgy2zTdp+JJ9MuyRC0TzDsunLd/5AHZVvSRycwIBBQ=="
+      },
+      "consistency_from_prev": []
     }
   ],
   "entries": [
@@ -129,11 +129,11 @@
         "a7eecd976bfa94752fb8047d1f72b80554f940cd62a1b2459013d5b8c7e1f78b"
       ],
       "schema": "evd/export-manifest/v1",
-      "target_checkpoint_hash": "0eb4be68daf5126b0abde9c44685b316c19e4df16a03b163676b26ba016d8884",
+      "target_checkpoint_hash": "bede2eb9c947be04367d47122ee5f1e1737a693e70134e277061c4d5e241e0ac",
       "ts": "2026-01-01T00:00:00.000000Z"
     },
     "kid": "UZyuk-k60BHXhTVY",
-    "sig": "qMuDt2Ciln//xO9i6J6dLyuIbSSmJ70nvIn7SlfmmNOxrKZ/PB1JVj47qxkXbD7lYpF9YOsM15yHbqHtJFK/AA=="
+    "sig": "O8odiGW0mXoF1p8Qvj8CtMuTOJkACF6+knQ46bcVafWEpbtdX5q+RKxE+HLVSFlKINZfyWJotmklB+YBu6G+AA=="
   },
   "jwks": {
     "keys": [
@@ -168,13 +168,13 @@
   "target_checkpoint": {
     "body": {
       "origin": "evd://tenant/t_golden",
-      "prev_hash": "ca391b78c737359de1e436073191d0a660deef22241634e02fc3fb9b982f6cce",
+      "prev_hash": "d1db950a1f67ec4f689bf94333ac216f0c6f0a69240c4b0da509085a278c1b00",
       "root_hash": "73275b1aca5c1a9dd6eec674ef38a83aab3a3f4532c503b2a2e13d58dd1c8d4a",
       "schema": "evd/checkpoint/v1",
       "tree_size": 4,
       "ts": "2026-01-01T00:00:00.000000Z"
     },
     "kid": "UZyuk-k60BHXhTVY",
-    "sig": "fPrGckjMmB1K+8sRbA8b1ZngFfe0O4GsF2pMnsj4ssFPiXFm47OSbnI8TGoQoYw+XA5MuzprZz6OxDk1JDtCCA=="
+    "sig": "Gkizf+Xe0zKzPHVpF3gV9qPOTfF7dCaUAhzUbzDWs47Adgy2zTdp+JJ9MuyRC0TzDsunLd/5AHZVvSRycwIBBQ=="
   }
 }

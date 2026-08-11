@@ -6,7 +6,7 @@ type ActionKey = (String, Vec<u8>, Vec<u8>);
 type ReplayRecord = (Vec<u8>, Vec<u8>, ResultValue);
 
 fn fixture_trust() -> BTreeMap<String, RootAnchor> {
-    let pack = include_bytes!("../../tests/golden/b28/trust-pack.cbor");
+    let pack = include_bytes!("../../../tests/golden/b28/trust-pack.cbor");
     parse_pinned_trust_pack(pack, &sha(&[pack])).unwrap()
 }
 
@@ -86,9 +86,9 @@ impl ReplayStore for MemoryStore {
 
 #[test]
 fn durable_consume_is_idempotent_and_conflicts_fail() {
-    let valid = parse_fixture(include_bytes!("../../tests/golden/b28/verify-input.cbor"));
-    let changed = parse_fixture(include_bytes!("../../tests/golden/b28/replay-conflict-input.cbor"));
-    let expected: J = serde_json::from_str(include_str!("../../tests/golden/b28/manifest.json")).unwrap();
+    let valid = parse_fixture(include_bytes!("../../../tests/golden/b28/verify-input.cbor"));
+    let changed = parse_fixture(include_bytes!("../../../tests/golden/b28/replay-conflict-input.cbor"));
+    let expected: J = serde_json::from_str(include_str!("../../../tests/golden/b28/manifest.json")).unwrap();
     let mut store = MemoryStore::default();
     assert_eq!(evaluate_and_consume(&valid, &mut store).json(), expected["expected_consume_first"]);
     assert_eq!(evaluate_and_consume(&valid, &mut store).json(), expected["expected_consume_retry"]);
@@ -103,7 +103,7 @@ fn unavailable_store_cannot_authorize() {
             ReplayOutcome::Unavailable
         }
     }
-    let input = parse_fixture(include_bytes!("../../tests/golden/b28/verify-input.cbor"));
+    let input = parse_fixture(include_bytes!("../../../tests/golden/b28/verify-input.cbor"));
     let result = evaluate_and_consume(&input, &mut Unavailable);
     assert_eq!(result.reason, "DURABLE_REPLAY_STORE_UNAVAILABLE");
     assert_eq!(result.verdict, "INDETERMINATE");
@@ -111,7 +111,7 @@ fn unavailable_store_cannot_authorize() {
 
 #[test]
 fn action_id_claim_rejects_a_fresh_asa_or_changed_action() {
-    let input = parse_fixture(include_bytes!("../../tests/golden/b28/verify-input.cbor"));
+    let input = parse_fixture(include_bytes!("../../../tests/golden/b28/verify-input.cbor"));
     let (_, Some(context)) = evaluate(&input) else { unreachable!() };
     let acceptance = ResultValue::new("INDETERMINATE", "PASS_NOT_ENABLED", context.vector.clone());
     let mut store = MemoryStore::default();
@@ -129,21 +129,21 @@ fn action_id_claim_rejects_a_fresh_asa_or_changed_action() {
 
 #[test]
 fn semantic_digests_match_the_cross_language_manifest() {
-    let expected: J = serde_json::from_str(include_str!("../../tests/golden/b28/manifest.json")).unwrap();
-    let challenge = inspect_cwt(include_bytes!("../../tests/golden/b28/challenge.cwt"), CHALLENGE).unwrap();
-    let presentation = inspect_cwt(include_bytes!("../../tests/golden/b28/presentation.cwt"), PRESENTATION).unwrap();
+    let expected: J = serde_json::from_str(include_str!("../../../tests/golden/b28/manifest.json")).unwrap();
+    let challenge = inspect_cwt(include_bytes!("../../../tests/golden/b28/challenge.cwt"), CHALLENGE).unwrap();
+    let presentation = inspect_cwt(include_bytes!("../../../tests/golden/b28/presentation.cwt"), PRESENTATION).unwrap();
     let challenge_doc = plain(&challenge.core).unwrap();
     let presentation_doc = plain(&presentation.core).unwrap();
     let hex = |raw: &[u8]| raw.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
     let digests = &expected["semantic_digests"];
     assert_eq!(hex(&core_digest(&challenge.core_bytes)), digests["challenge_core_digest"]);
     assert_eq!(hex(&core_digest(&canonical(&challenge_doc["action"]).unwrap())), digests["action_core_digest"]);
-    assert_eq!(hex(&sha(&[include_bytes!("../../tests/golden/b28/presentation.cwt")])), digests["presentation_envelope_hash"]);
+    assert_eq!(hex(&sha(&[include_bytes!("../../../tests/golden/b28/presentation.cwt")])), digests["presentation_envelope_hash"]);
     assert_eq!(hex(bytes(&presentation_doc["transcript_digest"]).unwrap()), digests["transcript_digest"]);
 }
 
 fn fixture_challenge_core() -> C {
-    let raw = include_bytes!("../../tests/golden/b28/challenge.cwt");
+    let raw = include_bytes!("../../../tests/golden/b28/challenge.cwt");
     let C::Array(items) = decode(&raw[1..], MAX_CWT).unwrap() else { unreachable!() };
     let C::Bytes(payload) = &items[2] else { unreachable!() };
     let payload = decode(payload, MAX_CWT).unwrap();
@@ -155,7 +155,7 @@ fn fixture_challenge_core() -> C {
 }
 
 fn fixture_presentation_core() -> C {
-    let raw = include_bytes!("../../tests/golden/b28/presentation.cwt");
+    let raw = include_bytes!("../../../tests/golden/b28/presentation.cwt");
     let C::Array(items) = decode(&raw[1..], MAX_CWT).unwrap() else { unreachable!() };
     let C::Bytes(payload) = &items[2] else { unreachable!() };
     let C::Map(claims) = decode(payload, MAX_CWT).unwrap() else { unreachable!() };
@@ -274,7 +274,7 @@ fn local_action_lifetime_is_closed_and_enforced_before_presentation_use() {
     set_member(&mut context, "max_action_lifetime_s", C::Integer(1.into()));
     let bytes = canonical(&context).unwrap();
     let Ok(LocalContext::Presentation(local)) = parse_local_context(&bytes) else { unreachable!() };
-    let input = parse_input(include_bytes!("../../tests/golden/b28/verify-input.cbor"), local, &fixture_trust()).unwrap();
+    let input = parse_input(include_bytes!("../../../tests/golden/b28/verify-input.cbor"), local, &fixture_trust()).unwrap();
     let (result, _) = evaluate(&input);
     assert_eq!(result.reason, "ACTION_LIFETIME_EXCEEDS_LOCAL_POLICY");
     for value in [C::Integer(0.into()), C::Integer(301.into()), C::Text("60".to_owned())] {
@@ -292,7 +292,7 @@ fn challenge_must_be_current_before_expiry_or_lifetime() {
     set_member(&mut context, "max_action_lifetime_s", C::Integer(300.into()));
     set_member(&mut context, "now", C::Integer((issued_at - 1).into()));
     let Ok(LocalContext::Presentation(local)) = parse_local_context(&canonical(&context).unwrap()) else { unreachable!() };
-    let input = parse_input(include_bytes!("../../tests/golden/b28/verify-input.cbor"), local, &fixture_trust()).unwrap();
+    let input = parse_input(include_bytes!("../../../tests/golden/b28/verify-input.cbor"), local, &fixture_trust()).unwrap();
     let (result, _) = evaluate(&input);
     assert_eq!(result.verdict, "INDETERMINATE");
     assert_eq!(result.reason, "CHALLENGE_NOT_CURRENT");
@@ -340,7 +340,7 @@ fn webauthn_origin_is_exact_canonical_https_host() {
 
 #[test]
 fn exchange_cannot_supply_or_replace_root_trust() {
-    let clean = include_bytes!("../../tests/golden/b28/verify-input.cbor");
+    let clean = include_bytes!("../../../tests/golden/b28/verify-input.cbor");
     let context = presentation_context_bytes();
     assert!(parse_input(clean, presentation_context(), &fixture_trust()).is_some());
 
@@ -350,7 +350,7 @@ fn exchange_cannot_supply_or_replace_root_trust() {
     let supplied = canonical(&C::Map(entries)).unwrap();
     assert!(parse_input(&supplied, presentation_context(), &fixture_trust()).is_none());
 
-    let pack = include_bytes!("../../tests/golden/b28/trust-pack.cbor");
+    let pack = include_bytes!("../../../tests/golden/b28/trust-pack.cbor");
     let rejected: J = serde_json::from_str(&verify_b28_cwt(&supplied, &context, pack, &sha(&[pack]))).unwrap();
     assert_eq!(rejected["verdict"], "INDETERMINATE");
     assert_eq!(rejected["reasons"], serde_json::json!(["VERIFIER_CONTEXT_INVALID"]));

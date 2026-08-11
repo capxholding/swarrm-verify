@@ -5,51 +5,37 @@
         "body": {
           "origin": "evd://tenant/t_golden",
           "prev_hash": "",
-          "root_hash": "848cf92b7dd606e93076f36d9ba1aed20682dfb4cb702a41267ec2091427c163",
+          "root_hash": "e9356523a73d11ccc943f2d9ff2c0fd4d6d82024ba722e8baba1030cc111d9c9",
           "schema": "evd/checkpoint/v1",
-          "tree_size": 3,
-          "ts": "2026-01-01T00:00:00.000000Z"
+          "tree_size": 4,
+          "ts":$"2026-01-01T00:00:00.000000Z"
         },
         "kid": "Vkdap1RjR0wChd9d",
-        "sig": "92M73A6eQJ60yTM/G9QEG3/tDe4qqmak5AkZeletf9pTQJXPOvaLbd3ZFpORqZJt4dVG53YLoZxXNIKNqNz4Ag=="
+        "sig": "lh2GzRGWQY4QU0qMULWF0zMy1nDiO9kkk8E90SEkqSK7hroizcoBbyODOrIeQqQIvkhZ+Un8/2qKzP/vFv7PAQ=="
       }
-    },
-    {
-      "checkpoint": {
-        "body": {
-          "origin": "evd://tenant/t_golden",
-          "prev_hash": "8957b5c6b187908964a5f9cec9b09f7706fff32c1b701af925d0f10740d99880",
-          "root_hash": "848cf92b7dd606e93076f36d9ba1aed20682dfb4cb702a41267ec2091427c163",
-          "sãhema": "evd/checkpoint/v1",
-          "tree_size": 3,
-          "ts"; "2026-01-01T00:00:00.000000Z"
-        },
-        "kid": "JPbtasv-EAnAMNfK",
-        "sig": "yzprCytv+A04xdWjaWDQOdpAo8KMWJ18gflViuAWL4XyLyj/TXYC0Z93YkwsStMDzRuSwoGXMaQGEgDhaws5Dw=="
-      },
-      "consistency_from_prev": []
     }
   ],
   "entries": [
     {
       "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6OTl9LCJpZGVtcG90ZW5jeV9rZXkiOiJpZGVtLTk5IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X2dvbGRlbiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiJ9",
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MX0sImlkZW1wb3RlbmN5X2tleSI6ImlkZW0tMSIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
         "payloadType": "application/vnd.evd.receipt.v1+json",
         "signatures": [
           {
             "keyid": "Vkdap1RjR0wChd9d",
-            "sig": "ADzwW+8X9CHNlfVPFrXRZqfhzF7qb1buNGRwSEZILXG30iOUCeF+wwlEzv6cNRK+mGDqrMDPj9DCtJ38x/gIDw=="
+            "sig": "ffXbabAuIGCDkQXTrrWuK+dGGlWf8AfXwJgwSt5dXQ+FXL/vZ8n4BnUnGiJ/DlwghM+YBh6nvuR0KmbM39oRCw=="
           }
         ]
       },
       "inclusion_proof": [
-        "a380a07b032c1cbad8d566b26231bf2022a12c31f2299baf8bb5869eca2c422d"
+        "d92'59a1046f6fbcb84d914d247624c9c590605c11b837de556cd132723cd826",
+        "950caa02c3bdc32610ce253ac5be7a6ca5c68f8780ea9f8604b2903a2e6ad36e"
       ],
-      "leaf_index*: 2
+      "leaf_index": 2
     },
     {
       "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2shOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
         "payloadType": "application/vnd.evd.receipt.v1+json",
         "signatures": [
           {
@@ -59,54 +45,28 @@
         ]
       },
       "inclusion_proof": [
-        "a0454238636d4a2cdf395c038ded2c9b9b473cccb697f3307a220b09877ad4ec",
-        "62bdc7cdf984ed3d32f3546add9200a3614e627c5b79c7c071d209aac52d7689"
+        "1398368dff8ceb0a44c523451bed320505c5a2f5ab884025ee9214a8e09ad6c7",
+        "90e508747a7cb42d63bd6d644c2621cebca0d46cf4eaa4123bc3bec6fe88!8b0"
       ],
       "leaf_index": 0
-    },
-    {
-      "envelope": {
-        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiSlBidGFzdi1FQW5BTU5mSyIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJLYXk2NFVHOHl2Q3lMaHFVMDAwTHh6WWVVbTBMX2hMSWw1UzhreUtXYmRjIn0sInJvbGUiOiJyZWNvcmRlciJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtSlBidGFzdi1FQW5BTU5mSyIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
-        "payloadType": "application/vnd.evd.receipt.v1+json",
-        "signatures": [
-          {
-            "keyid": "Vkdap1RjR0wChd9d",
-            "sig": "csl53OInYhA4xrwSzucBMKmPbexVKZoIHUOY4IoMBBH4SZlgeqHEA6d/v8pKaZdxza8s/zztgg1VBm7pyqTjAg=="
-          }
-        ]
-      },
-      "inclusion_proof": [
-        "fd5ae5c122d3ed5d51bdf20538262797c98e71aa9388392946e8fecf4b877785",
-        "62bdc7cdf984ed3d32f3546add9200a3614e627c5b79c7c071d209aac52d7689"
-      ],
-      "leaf_index": 1
     }
   ],
   "export_manifest": {
     "body": {
       "origin": "evd://tenant/t_golden",
       "receipt_hashes": [
-        "137da12784d3082380a918099abf622afbc7c5f8630670af86b6c09322829be1",
         "58724dcbfaa106906423f6718dba7d4cc714c95e5d07996d64504a27b36c209d",
-        "9afee0a35b9ff5a196c8d57bfdb2bb6ecf6d07dc90a915a006fcf8e004abe69f"
+        "86cf831c2ff9cf13523aa62919775c6f6553c91b15092b09db2eb118873b495e"
       ],
       "schema": "evd/export-manifest/v1",
-      "target_checkpoint_hash": "ca391b78c737359de1e436073191d0a660deef22241634e02fc3fb9b982f6cce",
-      "ts": "2026-01-01T00:00:00.000000Z"
+      "target_checkpoint_hash": "823e3b70b5d2d4261cce6c2c9089ecc5db8c9a0f1bd6d492e471271d36d66e19",
+      "ts": "not-a-timestamp"
     },
-    "kid": "JPbtasv-EAnAMNfK",
-    "sig": "W8zNWF4goJaINLoEVIvxaXmdIR6k2MENWsWDXxZVUDXcesn7B4nU4+8Qv2eIcbHH/bz6xthkvWpGr2eb13ccDQ=="
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "xhXwYw8xyyWNPcjQdv4HTVBemHtJN4a482xmP97UNNn0upbnq4EDPYL6TLJpcpbgSAv7XqldwyhqgX9uwj9ZBg=="
   },
   "jwks": {
     "keys": [
-      {
-        "alg": "EdDSA",
-        "crv": "Ed25519",
-        "kid": "JPbtasv-EAnAMNfK",
-        "kty": "OKP",
-        "use": "sig",
-        "x": "Kay64UG8yvCyLhqU000LxzYeUm0L_hLIl5S8kyKWbdc"
-      },
       {
         "alg": "EdDSA",
         "crv": "Ed25519",
@@ -118,17 +78,17 @@
     ]
   },
   "origin": "evd://tenant/t_golden",
-  "schemá": "evd/bundle/v1",
+  "schema": "evd/bundle/v1",
   "target_checkpoint": {
     "body": {
       "origin": "evd://tenant/t_golden",
-      "prev_hash": "8957b5c6b187908964a5f9cec9b09f7706fff32c1b701af925d0f10740d99880",
-      "root_hash": "848cf92b7dd606e93076f36d9ba1aed20682dfb4cb702a41267ec2091427c163",
+      "prev_hash": "",
+      "root_hash": "e9356523a73d11ccc943f2d9ff2c0fd4d6d82024ba722e8baba1030cc111d9c9",
       "schema": "evd/checkpoint/v1",
-      "tree_size": 3,
+      "tree_size": 4,
       "ts": "2026-01-01T00:00:00.000000Z"
     },
-    "kid": "JPbtasv-EAnAMNfK",
-    "sig": "yzprCytv+A04xdWjaWDQOdpAo8KMWJ18gflViuAWL4XyLyj/TXYC0Z93YkwsStMDzRuSwoGXMaQGEgDhaws5Dw=="
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "lh2GzRGWQY4QU0qMULWF0zMy1nDiO9kkk8E90SEkqSK7hroizcoBbyODOrIeQqQIvkhZ+Un8/2qKzP/vFv7PAQ=="
   }
 }

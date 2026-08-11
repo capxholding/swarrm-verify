@@ -21,12 +21,14 @@ use ciborium::Value;
 use ed25519_dalek::{Signer, SigningKey};
 use std::collections::BTreeMap;
 
+use crate::cbor_wire::{read_head, write_head};
+
 const TAG_SIGN1: u8 = 0xD2; // CBOR tag 18 wrapping the COSE_Sign1 array
 const BUILD_DEPTH: i64 = 32;
 
 // ---- minimal deterministic CBOR for the COSE envelope (int + text keys) ----
-// The shared head/integer emitters live in `cbor`; this module owns only the
-// extra integer-key map profile that certificates do not permit.
+// The shared head emitter lives in `cbor_wire` and integer values in `cbor`;
+// this module owns only the extra integer-key map profile certificates forbid.
 
 fn enc(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
     if limit < 0 {
@@ -37,11 +39,11 @@ fn enc(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
         Value::Integer(i) => return crate::cbor::write_int(out, i128::from(*i)),
         Value::Text(s) => crate::cbor::write_text(out, s),
         Value::Bytes(b) => {
-            crate::cbor::write_head(out, 2, b.len() as u64);
+            write_head(out, 2, b.len() as u64);
             out.extend_from_slice(b);
         }
         Value::Array(a) => {
-            crate::cbor::write_head(out, 4, a.len() as u64);
+            write_head(out, 4, a.len() as u64);
             for item in a {
                 if !enc(item, out, limit - 1) {
                     return false;
@@ -79,7 +81,7 @@ fn enc_map(m: &[(Value, Value)], out: &mut Vec<u8>, limit: i64) -> bool {
     if pairs.windows(2).any(|w| w[0].0 == w[1].0) {
         return false;
     }
-    crate::cbor::write_head(out, 5, pairs.len() as u64);
+    write_head(out, 5, pairs.len() as u64);
     for (kb, vb) in &pairs {
         out.extend_from_slice(kb);
         out.extend_from_slice(vb);
@@ -96,7 +98,7 @@ fn dec_item(data: &[u8], i: usize, depth: i64) -> Option<(Value, usize)> {
         return None;
     }
     let start = i;
-    let (major, arg, i) = crate::cbor::read_head(data, i)?;
+    let (major, arg, i) = read_head(data, i)?;
     cose_simple_allowed(data, start, major).then_some(())?; // COSE admits null, not bool
     match major {
         0 => Some((Value::Integer(i64::try_from(arg).ok()?.into()), i)),

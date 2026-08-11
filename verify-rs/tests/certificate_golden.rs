@@ -16,6 +16,9 @@ use std::path::PathBuf;
 #[path = "../src/cbor.rs"]
 #[allow(dead_code)]
 mod cbor;
+#[path = "../src/cbor_wire.rs"]
+#[allow(dead_code)]
+mod cbor_wire;
 
 use ciborium::Value as CborValue;
 
