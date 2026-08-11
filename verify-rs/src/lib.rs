@@ -9,6 +9,7 @@ pub mod action;
 pub mod b28;
 #[allow(dead_code)] // Test-only canonical JSON adapter.
 mod cbor;
+mod cbor_wire;
 pub mod certificate; // `verify_certificate_cbor` also serves the WASM export.
 #[allow(dead_code)] // COSE adapter used by SCITT and golden tests.
 mod cose;
@@ -253,7 +254,7 @@ fn forbidden_managed_edge_cosign(body: &Value, env: &Value) -> bool {
 
 struct KeyState {
     introduced: (u64, i64),
-    revoked_at: Option<String>,
+    revoked_at: Option<(u64, String)>,
     non_issuer: bool,
     recorder: bool,
 }
@@ -312,7 +313,7 @@ fn key_entries_well_formed(key_entries: &[(u64, &Value, Value)]) -> bool {
 pub(crate) fn key_active(kl: &KeyLog, kid: &str, at: &str, observed_size: u64) -> bool {
     let Some(state) = kl.state.get(kid) else { return false };
     let Some(at) = utc_epoch_micros(at) else { return false };
-    state.introduced.0 < observed_size && state.introduced.1 <= at && state.revoked_at.as_deref().and_then(utc_epoch_micros).is_none_or(|revoked| at <= revoked)
+    state.introduced.0 < observed_size && state.introduced.1 <= at && state.revoked_at.as_ref().is_none_or(|(leaf, ts)| observed_size <= *leaf && utc_epoch_micros(ts).is_some_and(|revoked| at <= revoked))
 }
 
 /// Some envelope signature is by a key the log had active at `ts` AND that
@@ -405,7 +406,7 @@ fn apply_key_revoked(kl: &mut KeyLog, leaf: u64, env: &Value, ctx: &Value, ts: &
     if !canonical_utc(eff) {
         return false;
     }
-    kl.state.get_mut(&kid).unwrap().revoked_at = Some(eff.to_string());
+    kl.state.get_mut(&kid).unwrap().revoked_at = Some((leaf, eff.to_string()));
     true
 }
 
@@ -1246,5 +1247,5 @@ mod wasm {
 }
 
 #[cfg(test)]
-#[path = "lib_tests.rs"]
+#[path = "../tests/internal/lib_tests.rs"]
 mod tests;

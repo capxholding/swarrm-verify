@@ -1,6 +1,6 @@
 use super::*;
 
-const VALID: &str = include_str!("../../tests/golden/bundles/valid_e1.json");
+const VALID: &str = include_str!("../../../tests/golden/bundles/valid_e1.json");
 const VALID_DIGEST: &str = "c3c85b1143c937cacf692eb37377b72be4d53941055262623c022c64916e8239";
 
 fn result(input: &str) -> Value {

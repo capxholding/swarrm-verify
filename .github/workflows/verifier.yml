@@ -101,4 +101,4 @@ jobs:
           retention-days: 1
       - name: Run browser golden parity
         if: ${{ !cancelled() && steps.wasm.outcome == 'success' }}
-        run: node verify-rs/web/test_parity.cjs
+        run: node verify-rs/tests/test_parity.cjs

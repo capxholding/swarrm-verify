@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Cursor;
 
+use crate::cbor_wire::{structural_scan, write_head as head};
 use crate::merkle::{verify_consistency as merkle_consistency, verify_inclusion};
 
 const PROFILE: &str = "https://swarrm.ai/spec/eat/b28/cwt/v1";
@@ -59,24 +60,6 @@ fn sha(parts: &[&[u8]]) -> [u8; 32] {
         h.update(part);
     }
     h.finalize().into()
-}
-fn head(out: &mut Vec<u8>, major: u8, arg: u64) {
-    match arg {
-        0..=23 => out.push((major << 5) | arg as u8),
-        24..=0xff => out.extend_from_slice(&[(major << 5) | 24, arg as u8]),
-        0x100..=0xffff => {
-            out.push((major << 5) | 25);
-            out.extend_from_slice(&(arg as u16).to_be_bytes());
-        }
-        0x1_0000..=0xffff_ffff => {
-            out.push((major << 5) | 26);
-            out.extend_from_slice(&(arg as u32).to_be_bytes());
-        }
-        _ => {
-            out.push((major << 5) | 27);
-            out.extend_from_slice(&arg.to_be_bytes());
-        }
-    }
 }
 fn encode(value: &C, out: &mut Vec<u8>, depth: usize) -> bool {
     if depth == 0 {
@@ -146,62 +129,9 @@ fn canonical(value: &C) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     encode(value, &mut out, 65).then_some(out)
 }
-/// Scan one restricted-CBOR item without materializing it. This runs before
-/// ciborium, bounding hostile nesting and aggregate allocation pressure.
-fn scan_head(data: &[u8], at: usize) -> Option<(u8, u64, usize)> {
-    let byte = *data.get(at)?;
-    let (major, info) = (byte >> 5, byte & 0x1f);
-    let at = at.checked_add(1)?;
-    match info {
-        0..=23 if major != 6 && (major != 7 || matches!(info, 20..=22)) => Some((major, u64::from(info), at)),
-        24..=27 if major < 6 => {
-            let width = 1usize << (info - 24);
-            let end = at.checked_add(width)?;
-            let value = data.get(at..end)?.iter().fold(0u64, |value, byte| (value << 8) | u64::from(*byte));
-            Some((major, value, end))
-        }
-        _ => None,
-    }
-}
-fn scan_item(data: &[u8], at: &mut usize, major: u8, argument: u64, stack: &mut Vec<u64>) -> Option<()> {
-    match major {
-        2 | 3 => {
-            *at = at.checked_add(usize::try_from(argument).ok()?)?;
-            data.get(*at..)?;
-        }
-        4 | 5 => {
-            let members = argument.checked_mul(if major == 5 { 2 } else { 1 })?;
-            (members <= data.len().checked_sub(*at)? as u64).then_some(())?;
-            if members > 0 {
-                (stack.len() < MAX_CBOR_DEPTH).then_some(())?;
-                stack.push(members);
-            }
-        }
-        _ => {}
-    }
-    Some(())
-}
-fn structural_scan(data: &[u8]) -> Option<usize> {
-    let (mut stack, mut at, mut items) = (Vec::new(), 0usize, 0usize);
-    loop {
-        items = items.checked_add(1)?;
-        (items <= MAX_CBOR_ITEMS).then_some(())?;
-        if let Some(remaining) = stack.last_mut() {
-            *remaining -= 1;
-        }
-        let (major, argument, next) = scan_head(data, at)?;
-        at = next;
-        scan_item(data, &mut at, major, argument, &mut stack)?;
-        while stack.last() == Some(&0) {
-            stack.pop();
-        }
-        if stack.is_empty() {
-            return Some(at);
-        }
-    }
-}
 fn decode(data: &[u8], cap: usize) -> Option<C> {
-    if data.len() > cap || structural_scan(data)? != data.len() {
+    // Bound hostile nesting and aggregate allocation before ciborium runs.
+    if data.len() > cap || structural_scan(data, MAX_CBOR_DEPTH, MAX_CBOR_ITEMS)? != data.len() {
         return None;
     }
     let mut reader = Cursor::new(data);
@@ -1283,5 +1213,5 @@ pub fn verify_b28_cwt(exchange: &[u8], local_context: &[u8], trust_pack: &[u8], 
 }
 
 #[cfg(test)]
-#[path = "b28_tests.rs"]
+#[path = "../tests/internal/b28_tests.rs"]
 mod tests;

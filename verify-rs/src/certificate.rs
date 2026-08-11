@@ -739,5 +739,5 @@ pub fn verify_certificate_cbor_with_trust(bytes: &[u8], trust: Option<&J>) -> St
 }
 
 #[cfg(test)]
-#[path = "certificate_tests.rs"]
+#[path = "../tests/internal/certificate_tests.rs"]
 mod tests;

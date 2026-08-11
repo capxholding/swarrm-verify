@@ -12,8 +12,8 @@ disclosable later by the payload holder) or must not exist anywhere.
 
 | action_type | PLAINTEXT context (queryable) | COMMITTED (disclosable) | NEVER anywhere |
 |---|---|---|---|
-| `llm.chat` | model, endpoint, status, stream, stream_truncated, truncation_type, finish_reason, input_tokens, output_tokens, requested_tool_names[], latency_ms | full request (`prompt`), full response (`output`) | raw user identifiers in context |
-| `tool.call` | tool_name, server_name, duration_ms, is_error, arg_keys[] (top-level keys only), result_kind (text/json/binary/none), result_size_band | tool.args, tool.result | any arg/result VALUES in context |
+| `llm.chat` | model, endpoint, status, stream, stream_truncated, truncation_type, finish_reason, input_tokens, output_tokens, requested_tool_names[], latency_ms, prompt_projection, output_projection | bounded request (`prompt`) and response (`output`) projections | raw user identifiers in context |
+| `tool.call` | tool_name, server_name, duration_ms, is_error, outcome_observed, arg_keys[] (top-level keys only), result_kind (text/json/binary/none), result_size_band, args_projection, result_projection | bounded tool.args and tool.result projections | any arg/result VALUES in context |
 | `data.read` | source_system, query_kind, record_count_band, duration_ms | query, result_set_hash | record contents in context |
 | `human.approve/override/reject` | decision, approver_role, latency_band | approver_id, justification | approver PII in context |
 | `human.escalation_timeout` | waited_ms, escalation_target_role | escalation_target_id | — |
@@ -23,7 +23,7 @@ disclosable later by the payload holder) or must not exist anywhere.
 | `interaction.message` | sender, receiver, transport, rel_seq, bilateral; for bilateral B28 acceptance only: assurance_transcript_digest, challenge_envelope_hash, presentation_envelope_hash, asa_envelope_hash, acceptance_result_digest, assurance_message_digest, assurance_verdict | message (the canonical transported payload) | message content in context |
 | `policy.decision` | engine, engine_version, decision, policy_bundle_hash | policy_input, policy_output | io values in context |
 | `guardrail.blocked` | guardrail_name, rule_kind, action_taken | trigger_content | trigger content in context |
-| `evd.alert.raised` | rule_id, severity, triggering_receipt_hashes[], window, triggering_count, triggering_sequence_digest, triggering_hashes_truncated | — | payload of any triggering receipt; rate alerts carry at most 32 hashes and bind the exact ordered trigger count/digest when truncated |
+| `evd.alert.raised` | rule_id, rule_semantic_version, detection_profile, severity, triggering_receipt_hashes[], window, triggering_count, triggering_sequence_digest, triggering_sequence_digest_profile, triggering_hashes_truncated | — | payload of any triggering receipt; rate alerts carry at most 32 hashes and bind the exact leaf-ordered trigger count/digest under the named digest profile when truncated |
 | `lineage.born` / `lineage.adopted` | kind, model_ref, code_digest, purpose, created_by_role, owner_org, lineage_from_seq, prior_history | system_prompt, tool_manifest, config, mandate_document, created_by_id | creator PII in context; prompt/mandate text in context |
 | `lineage.revised` | revises, reason | system_prompt, tool_manifest, config, mandate_document | prompt/mandate text in context |
 | `evd.key.*` / `evd.report.*` / `evd.grant.*` / `evd.disclosure.*` | (system — full plaintext, no secrets exist here) | — | — |
@@ -69,12 +69,16 @@ universal context keys; everything else stays per-type.
 The managed recorder accepts no recursively structured plaintext values.
 Universal IDs and ordinary dial fields are strings; `requested_tool_names`
 and `arg_keys` are arrays containing only strings; `stream`, `is_error`,
-`mandate_present`, and `bilateral` are booleans; token counts, durations,
-`waited_ms`, and `rel_seq` are nonnegative signed-64-bit integers (a JSON
+`outcome_observed`, `mandate_present`, and `bilateral` are booleans; token
+counts, durations, `waited_ms`, and `rel_seq` are nonnegative signed-64-bit integers (a JSON
 boolean is not an integer). `status` is either a string or such an integer.
 The three band fields above and `result_kind` (`text|json|binary|none`) use
 their exact enums. Nested objects, nested arrays, and arrays on scalar fields
 are forbidden at this boundary even when the field name itself is declared.
+The four `*_projection` fields use `exact|truncated|unavailable`. Their absence
+means the capture surface made no v1 projection claim; it never means `exact`.
+If `outcome_observed=false`, `is_error` MUST be absent.
+If `outcome_observed=true`, `is_error` MUST be present.
 
 ## 3. Sessions (normative algorithm — implemented in Build 7)
 

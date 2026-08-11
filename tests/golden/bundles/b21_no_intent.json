@@ -6,7 +6,7 @@
       "chain_id": 84532,
       "checkpoint_body_hash": "df2f8966a45519814b08b284673dca5ed0a7041d610648d4be2d27b620dee797",
       "contract": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
-      "tx_hash": "0xabababababababababababababababababababababababababababababababab"
+      "tx_hash": "0xdf2f8966a45519814b08b284673dca5ed0a7041d610648d4be2d27b620dee797"
     },
     {
       "block_number": 1,
@@ -14,7 +14,7 @@
       "chain_id": 84532,
       "checkpoint_body_hash": "30279b9f6e7cfeb64cb09dbff0e39685af190a550ececd9ed3b8f32cc1aa535c",
       "contract": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
-      "tx_hash": "0xabababababababababababababababababababababababababababababababab"
+      "tx_hash": "0x30279b9f6e7cfeb64cb09dbff0e39685af190a550ececd9ed3b8f32cc1aa535c"
     }
   ],
   "checkpoint_chain": [

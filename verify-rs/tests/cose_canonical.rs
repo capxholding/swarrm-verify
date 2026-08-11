@@ -13,6 +13,9 @@
 #[path = "../src/cbor.rs"]
 #[allow(dead_code)] // this binary uses only the emitter; the decoder is cbor_canonical.rs's
 mod cbor;
+#[path = "../src/cbor_wire.rs"]
+#[allow(dead_code)]
+mod cbor_wire;
 #[path = "../src/cose.rs"]
 mod cose;
 

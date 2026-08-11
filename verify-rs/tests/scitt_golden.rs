@@ -13,6 +13,9 @@
 #[path = "../src/cbor.rs"]
 #[allow(dead_code)]
 mod cbor;
+#[path = "../src/cbor_wire.rs"]
+#[allow(dead_code)]
+mod cbor_wire;
 #[path = "../src/cose.rs"]
 #[allow(dead_code)]
 mod cose;

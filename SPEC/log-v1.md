@@ -106,7 +106,8 @@ Rules (all normative):
    `operator_authorization`; it is issuer-witnessed audit metadata and does not
    change generic offline key-log replay rules.
 4. **Revocation** — signed by an active key; the revoked kid is invalid for
-   any material whose ts is after `effective_ts`. History before it stands.
+   every later log leaf and for any material whose ts is after `effective_ts`.
+   Material already committed before the revocation leaf remains historical.
    Each kid may be revoked only once; a later revocation is malformed rather
    than a new effective time. Key entries are never deleted or superseded in place.
 5. **Verifier key authority = the log.** Bundles auto-include every key
@@ -122,9 +123,12 @@ Rules (all normative):
    Receipt signatures therefore require introduction leaf `< leaf_index` and
    `ts_server >= effective_ts`; checkpoint signatures require introduction leaf
    `< tree_size` and checkpoint `ts >= effective_ts`. Genesis self-use at leaf
-   0 is the sole exception. Checkpoints signed by a key revoked before their
-   `ts`, and receipts signed by a key revoked before their `ts_server`,
-   → NOT VERIFIED. Receipt, key-event `effective_ts`, and checkpoint times use
+   0 is the sole exception. A checkpoint that includes the signer's revocation
+   leaf, or whose `ts` is after `effective_ts`, → NOT VERIFIED. A receipt at
+   or after its signer's revocation leaf, or whose `ts_server` is after
+   `effective_ts`, → NOT VERIFIED. Authority is the intersection of
+   authenticated log order and signed time; backdating cannot restore it.
+   Receipt, key-event `effective_ts`, and checkpoint times use
    receipt-v1's canonical extended UTC form; permissive ISO variants are not
    comparable authority times and make the bundle NOT VERIFIED. A receipt whose
    `ts_server` exceeds by more than 300 seconds the signed `ts` of the first

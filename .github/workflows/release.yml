@@ -66,7 +66,7 @@ jobs:
             diff -ru "$RUNNER_TEMP/committed-pkg" pkg
             wasm-pack build --target nodejs --out-dir pkg-node --features wasm --locked
           )
-          node verify-rs/web/test_parity.cjs
+          node verify-rs/tests/test_parity.cjs
           git diff --exit-code -- verify-rs/Cargo.lock verify-rs/pkg
       - name: Install checksummed CycloneDX tools
         run: |
