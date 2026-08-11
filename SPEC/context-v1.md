@@ -23,7 +23,7 @@ disclosable later by the payload holder) or must not exist anywhere.
 | `interaction.message` | sender, receiver, transport, rel_seq, bilateral; for bilateral B28 acceptance only: assurance_transcript_digest, challenge_envelope_hash, presentation_envelope_hash, asa_envelope_hash, acceptance_result_digest, assurance_message_digest, assurance_verdict | message (the canonical transported payload) | message content in context |
 | `policy.decision` | engine, engine_version, decision, policy_bundle_hash | policy_input, policy_output | io values in context |
 | `guardrail.blocked` | guardrail_name, rule_kind, action_taken | trigger_content | trigger content in context |
-| `evd.alert.raised` | rule_id, severity, triggering_receipt_hashes[], window | — | payload of any triggering receipt |
+| `evd.alert.raised` | rule_id, severity, triggering_receipt_hashes[], window, triggering_count, triggering_sequence_digest, triggering_hashes_truncated | — | payload of any triggering receipt; rate alerts carry at most 32 hashes and bind the exact ordered trigger count/digest when truncated |
 | `lineage.born` / `lineage.adopted` | kind, model_ref, code_digest, purpose, created_by_role, owner_org, lineage_from_seq, prior_history | system_prompt, tool_manifest, config, mandate_document, created_by_id | creator PII in context; prompt/mandate text in context |
 | `lineage.revised` | revises, reason | system_prompt, tool_manifest, config, mandate_document | prompt/mandate text in context |
 | `evd.key.*` / `evd.report.*` / `evd.grant.*` / `evd.disclosure.*` | (system — full plaintext, no secrets exist here) | — | — |
