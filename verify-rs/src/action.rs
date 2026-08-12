@@ -309,7 +309,7 @@ fn scan_binds_batch(vi: &Value, scan: &Value) -> bool {
     if !matches!((start, end), (Some(start), Some(end)) if start < end) {
         return false;
     }
-    let Some(canon) = jcs::canonical_checked(batch) else { return false };
+    let Some(canon) = jcs::canonical_integer_checked(batch) else { return false };
     declared == hex(&sha256(&canon))
 }
 
@@ -858,12 +858,22 @@ pub fn derive_vector_with_trust(verdict_input: &Value, trust: Option<&Value>) ->
 /// JSON/WASM entry point for a verdict input plus the relying party's LOCAL
 /// trust context.  The contexts remain separate arguments; exchange data can
 /// never smuggle its own roots into the verification call.
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
-pub fn derive_vector_json(verdict_input_json: &str, trust_json: &str) -> String {
-    let input = if verdict_input_json.len() <= MAX_VERDICT_INPUT_BYTES { serde_json::from_str::<Value>(verdict_input_json).ok() } else { None };
-    let trust = if trust_json.is_empty() || trust_json.len() > MAX_TRUST_CONTEXT_BYTES { None } else { serde_json::from_str::<Value>(trust_json).ok() };
+fn derive_vector_json_bytes(verdict_input_json: &[u8], trust_json: &[u8]) -> String {
+    let input = if verdict_input_json.len() <= MAX_VERDICT_INPUT_BYTES { crate::trust::strict_json(verdict_input_json) } else { None };
+    let trust = if trust_json.is_empty() || trust_json.len() > MAX_TRUST_CONTEXT_BYTES { None } else { crate::trust::strict_json(trust_json) };
     let vector = derive_vector_with_trust(input.as_ref().unwrap_or(&Value::Null), trust.as_ref());
     serde_json::to_string(&vector).expect("verdict vector is JSON")
+}
+
+#[cfg(not(feature = "wasm"))]
+pub fn derive_vector_json(verdict_input_json: &str, trust_json: &str) -> String {
+    derive_vector_json_bytes(verdict_input_json.as_bytes(), trust_json.as_bytes())
+}
+
+#[cfg(feature = "wasm")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn derive_vector_json(verdict_input_json: &[u8], trust_json: &[u8]) -> String {
+    derive_vector_json_bytes(verdict_input_json, trust_json)
 }
 
 // ------------------------------------------ authority_facts (authority-v1)
@@ -905,7 +915,7 @@ fn dsig_ok(pub_: &[u8; 32], domain: &[u8], doc: &Value, sig: Option<&Value>) -> 
     let mut stripped = m.clone();
     stripped.retain(|k, _| !k.ends_with("_sig"));
     let stripped = Value::Object(stripped);
-    let Some(canon) = jcs::canonical_checked(&stripped) else { return false };
+    let Some(canon) = jcs::canonical_integer_checked(&stripped) else { return false };
     let Ok(raw) = B64.decode(sig_b64) else { return false };
     let mut msg = domain.to_vec();
     msg.extend_from_slice(&canon);
@@ -1185,7 +1195,7 @@ fn passport_bundle_ok(passport: &Value, imported: &str, timeline: &[RootEntry]) 
 fn passport_birthtag<'a>(bundle: &Value, est_ctx: &'a Value, timeline: &[RootEntry]) -> Option<&'a str> {
     let imported = s(est_ctx, "imported_birthtag_id").filter(|x| !x.is_empty())?;
     let passport = obj(bundle, "passport")?;
-    let digest = hex(&sha256(&jcs::canonical_checked(passport)?)); // sha256(JCS(passport))
+    let digest = hex(&sha256(&jcs::canonical_integer_checked(passport)?)); // sha256(JCS(passport))
     if s(est_ctx, "passport_digest") != Some(digest.as_str()) {
         return None;
     }

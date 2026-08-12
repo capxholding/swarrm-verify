@@ -7,7 +7,11 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { isDeepStrictEqual } = require("util");
-const { derive_vector_json, verify_bundle_json, verify_certificate_cbor, verify_b28_cwt } = require("../pkg-node/swarrm_verify.js");
+const wasm = require("../pkg-node/swarrm_verify.js");
+const { verify_certificate_cbor, verify_b28_cwt } = wasm;
+const bytes = value => Buffer.isBuffer(value) ? value : Buffer.from(value, "utf8");
+const verify_bundle_json = value => wasm.verify_bundle_json(bytes(value));
+const derive_vector_json = (input, trust) => wasm.derive_vector_json(bytes(input), bytes(trust));
 
 const dir = path.join(__dirname, "..", "..", "tests", "golden", "bundles");
 const expected = JSON.parse(fs.readFileSync(path.join(dir, "expected.json"), "utf8"));
@@ -32,6 +36,12 @@ function parseBundleResult(raw) {
 }
 
 let failures = 0;
+const declarations = fs.readFileSync(path.join(__dirname, "..", "pkg-node", "swarrm_verify.d.ts"), "utf8");
+const byteApiOk =
+  /verify_bundle_json\(json: Uint8Array\)/.test(declarations) &&
+  /derive_vector_json\(verdict_input_json: Uint8Array, trust_json: Uint8Array\)/.test(declarations);
+if (!byteApiOk) failures++;
+console.log(`${byteApiOk ? "OK " : "XX "} WASM JSON boundaries require Uint8Array`);
 for (const [name, want] of Object.entries(expected)) {
   const bundle = fs.readFileSync(path.join(dir, `${name}.json`), "utf8");
   const got = parseBundleResult(verify_bundle_json(bundle));
@@ -56,6 +66,91 @@ const malformed = parseBundleResult(verify_bundle_json("{"));
 const malformedOk = malformed.verdict === "ERROR" && malformed.bundle_digest === null;
 if (!malformedOk) failures++;
 console.log(`${malformedOk ? "OK " : "XX "} malformed JSON result contract`);
+const baseBundle = fs.readFileSync(path.join(dir, "valid_e1.json"), "utf8").trimEnd();
+const withFragment = fragment => `${baseBundle.slice(0, -1)},${fragment}}`;
+for (const [name, raw] of [
+  ["UTF-8 BOM", Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes(baseBundle)])],
+  ["invalid UTF-8 scalar", Buffer.concat([
+    bytes(`${baseBundle.slice(0, -1)},"utf8_probe":"`),
+    Buffer.from([0xed, 0xa0, 0x80]),
+    bytes('"}'),
+  ])],
+]) {
+  const got = parseBundleResult(verify_bundle_json(raw));
+  const ok = got.verdict === "ERROR" && got.error === "INVALID_JSON" && got.bundle_digest === null;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} raw byte boundary ${name}`);
+}
+const numberProfile = JSON.parse(fs.readFileSync(
+  path.join(dir, "..", "json_number_profile.json"), "utf8",
+));
+for (const [name, item] of Object.entries(numberProfile)) {
+  const token = item.token || `${item.prefix || ""}${item.repeat.repeat(item.count)}${item.suffix || ""}`;
+  const got = parseBundleResult(verify_bundle_json(withFragment(`"number_probe":${token}`)));
+  const ok = got.verdict === item.rust_verdict &&
+    (item.accepted ? got.bundle_digest !== null : got.bundle_digest === null);
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} JSON number profile ${name}`);
+}
+const duplicateProfile = JSON.parse(fs.readFileSync(
+  path.join(dir, "..", "json_duplicate_profile.json"), "utf8",
+));
+for (const [name, fragment] of Object.entries(duplicateProfile)) {
+  const input = withFragment(fragment);
+  const got = parseBundleResult(verify_bundle_json(input));
+  const ok = got.verdict === "ERROR" && got.error === "INVALID_JSON" && got.bundle_digest === null;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} duplicate JSON ${name}`);
+}
+const unicodeProfile = JSON.parse(fs.readFileSync(
+  path.join(dir, "..", "json_unicode_profile.json"), "utf8",
+));
+for (const [name, item] of Object.entries(unicodeProfile)) {
+  const got = parseBundleResult(verify_bundle_json(withFragment(item.fragment)));
+  const ok = got.verdict === (item.accepted ? "VERIFIED" : "ERROR") &&
+    (item.accepted ? got.bundle_digest !== null : got.bundle_digest === null);
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} Unicode scalar profile ${name}`);
+}
+const hostileJson = [
+  '{"x":1,"x":2}',
+  `${'{"x":'.repeat(70)}0${'}'.repeat(70)}`,
+  `{"x":1.${"0".repeat(200)}}`,
+];
+const weakVector = derive_vector_json("{}", "");
+const invalidUtf8Object = Buffer.concat([
+  bytes('{"probe":"'), Buffer.from([0xed, 0xa0, 0x80]), bytes('"}'),
+]);
+for (const [name, raw] of [
+  ["UTF-8 BOM", Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes("{}")])],
+  ["invalid UTF-8 scalar", invalidUtf8Object],
+]) {
+  const ok = derive_vector_json(raw, "") === weakVector;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} verdict-input raw byte boundary ${name}`);
+}
+for (const [index, hostile] of hostileJson.entries()) {
+  const ok = derive_vector_json(hostile, "") === weakVector;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} strict verdict input ${index + 1}`);
+}
+const verdictDir = path.join(dir, "..", "verdicts");
+const verdictInput = fs.readFileSync(path.join(verdictDir, "va_hardware_full_scan.json"), "utf8");
+const untrustedVector = derive_vector_json(verdictInput, "");
+for (const [name, raw] of [
+  ["UTF-8 BOM", Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes("{}")])],
+  ["invalid UTF-8 scalar", invalidUtf8Object],
+]) {
+  const ok = derive_vector_json(verdictInput, raw) === untrustedVector;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} local-trust raw byte boundary ${name}`);
+}
+hostileJson[2] = `{"x":1e${"0".repeat(200)}1}`;
+for (const [index, hostile] of hostileJson.entries()) {
+  const ok = derive_vector_json(verdictInput, hostile) === untrustedVector;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} strict local trust ${index + 1}`);
+}
 if (failures) {
   console.error(`\nPARITY FAILED: ${failures} fixture(s) disagree`);
   process.exit(1);

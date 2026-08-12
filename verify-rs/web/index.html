@@ -60,14 +60,16 @@
     const flip = document.getElementById("flip");
     const requireManifest = document.getElementById("require-manifest");
     let currentText = null;
+    const utf8Decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+    const utf8Encoder = new TextEncoder();
     let verifyBundleJson = null;
     let verifyCertificateCbor = null;
     let verifierReady = false;
     // These are release pins, not values fetched from INTEGRITY.txt. A served
     // asset has to match before JavaScript executes or WASM instantiates.
     const EXPECTED_RELEASE_DIGESTS = Object.freeze({
-      module: "f6270aa631cd8b83f0152965a349372cf7e60f21490df4f0cb706067b00c0f78",
-      wasm: "a5f073990e045c4ae6a8ecd3c1caeba42a437f1e32e748eb5d005846a881e899",
+      module: "1c6ec724f72235a64d97739e27044a264dc849c5619aa5153babf01cea26f344",
+      wasm: "60d2e69c69ac4ce68a60ab14ecddf8fd48b5dae44104c93ee2433b0ef8eb024f",
     });
 
     async function sha256Hex(bytes) {
@@ -159,7 +161,7 @@
       return new Uint8Array(await f.arrayBuffer());
     }
 
-    function show(text) {
+    function show(text, raw = utf8Encoder.encode(text)) {
       clearBundleDigest();
       let bundle;
       try { bundle = JSON.parse(text); } catch { verdict.textContent = "not JSON"; verdict.className = "bad"; return; }
@@ -170,7 +172,7 @@
         return;
       }
       let r;
-      try { r = parseVerificationResult(verifyBundleJson(text)); }
+      try { r = parseVerificationResult(verifyBundleJson(raw)); }
       catch { rejectInput("The verifier returned an incompatible result and was refused."); return; }
       const manifestAbsent = bundle.export_manifest == null;
       const passed = r.verdict === "VERIFIED" && !(requireManifest.checked && manifestAbsent);
@@ -200,14 +202,15 @@
       }
     }
 
-    function handle(text) {
+    function handle(raw) {
       if (!verifierReady) {
         rejectInput("The verifier release assets were refused; no bundle was checked.");
         return;
       }
       cert.innerHTML = "";
+      const text = utf8Decoder.decode(raw);
       currentText = text;
-      show(text);
+      show(text, raw);
       controls.style.display = "block";
     }
 
@@ -271,7 +274,11 @@
     async function handleFile(f) {
       try {
         const bytes = await readFileBounded(f);
-        if (bytes[0] === 0x7b) return handle(new TextDecoder().decode(bytes)); // '{' → JSON bundle
+        let offset = 0;
+        while (offset < bytes.length &&
+          (bytes[offset] === 0x09 || bytes[offset] === 0x0a ||
+           bytes[offset] === 0x0d || bytes[offset] === 0x20)) offset++;
+        if (bytes[offset] === 0x7b) return handle(bytes); // first non-whitespace byte '{'
         return handleCertificate(bytes);
       } catch (e) {
         rejectInput(String(e.message || e));

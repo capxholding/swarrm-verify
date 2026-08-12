@@ -1,12 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-/**
- * JSON/WASM entry point for a verdict input plus the relying party's LOCAL
- * trust context.  The contexts remain separate arguments; exchange data can
- * never smuggle its own roots into the verification call.
- */
-export function derive_vector_json(verdict_input_json: string, trust_json: string): string;
+export function derive_vector_json(verdict_input_json: Uint8Array, trust_json: Uint8Array): string;
 
 /**
  * Verify a two-field exchange after locally validating context and root pin.
@@ -17,7 +12,7 @@ export function verify_b28_cwt(exchange: Uint8Array, local_context: Uint8Array, 
  * Verify a bundle and return the versioned browser result JSON. A
  * VERIFIED result alone carries SHA-256 of the JCS-canonical full bundle.
  */
-export function verify_bundle_json(json: string): string;
+export function verify_bundle_json(json: Uint8Array): string;
 
 /**
  * Verify certificate bytes (bare core or view envelope) and return the JSON
@@ -33,12 +28,11 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly verify_b28_cwt: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
+    readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly verify_certificate_cbor: (a: number, b: number) => [number, number];
     readonly verify_bundle_json: (a: number, b: number) => [number, number];
-    readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
-    readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_start: () => void;
 }

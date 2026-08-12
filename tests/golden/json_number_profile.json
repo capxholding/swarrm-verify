@@ -1,0 +1,26 @@
+{
+  "safe_max": {"token": "9007199254740991", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "unsafe_plus_one": {"token": "9007199254740992", "accepted": false, "programmatic_rejected": true, "rust_verdict": "ERROR"},
+  "bare_u64_plus_one": {"token": "18446744073709551616", "accepted": false, "programmatic_rejected": true, "rust_verdict": "ERROR"},
+  "bare_1e20": {"token": "100000000000000000000", "accepted": false, "programmatic_rejected": true, "rust_verdict": "ERROR"},
+  "negative_zero": {"token": "-0", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "decimal": {"token": "1.5", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "exponent_one": {"token": "1e0", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "small_fixed": {"token": "0.000001", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "small_exponent": {"token": "1e-7", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "large_fixed": {"token": "100000000000000000000.0", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "large_exponent": {"token": "1e21", "accepted": true, "programmatic_rejected": false, "rust_verdict": "VERIFIED"},
+  "fraction_token_over_cap": {"prefix": "1.", "repeat": "0", "count": 200, "accepted": false, "programmatic_rejected": false, "rust_verdict": "ERROR"},
+  "exponent_token_over_cap": {"prefix": "1e", "repeat": "0", "count": 200, "suffix": "1", "accepted": false, "programmatic_rejected": false, "rust_verdict": "ERROR"},
+  "exponent_overflow": {"token": "1e400", "accepted": false, "programmatic_rejected": true, "rust_verdict": "ERROR"},
+  "nan": {"token": "NaN", "accepted": false, "programmatic_rejected": true, "rust_verdict": "ERROR"},
+  "positive_infinity": {"token": "Infinity", "accepted": false, "programmatic_rejected": true, "rust_verdict": "ERROR"},
+  "negative_infinity": {"token": "-Infinity", "accepted": false, "programmatic_rejected": true, "rust_verdict": "ERROR"},
+  "integer_1000_digits": {
+    "repeat": "9",
+    "count": 1000,
+    "accepted": false,
+    "programmatic_rejected": true,
+    "rust_verdict": "ERROR"
+  }
+}

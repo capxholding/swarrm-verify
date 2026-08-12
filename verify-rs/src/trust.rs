@@ -24,6 +24,7 @@ use std::fmt;
 pub(crate) const SOURCE_WEBHOOK_SIGNATURE_CONTEXT: &str = "evd/source-webhook-body-jcs/v1";
 pub(crate) const MAX_SOURCE_PROOF_MATERIAL_BYTES: usize = 1024 * 1024;
 pub(crate) const MAX_SOURCE_PROOF_TOTAL_BYTES: usize = 8 * 1024 * 1024;
+const MAX_JSON_NUMBER_TOKEN_BYTES: usize = 128;
 
 /// Every key category a derivation may appeal to. A category absent from the
 /// supplied context means this relying party named no root there, so every
@@ -75,10 +76,11 @@ pub(crate) fn signed_bytes(domain: &str, payload: &Value) -> Option<Vec<u8>> {
             stripped.insert(k.clone(), v.clone());
         }
     }
+    let stripped = Value::Object(stripped);
     let mut out = b"evd/v1/".to_vec();
     out.extend_from_slice(domain.as_bytes());
     out.push(0);
-    out.extend_from_slice(&jcs::canonical_checked(&Value::Object(stripped))?);
+    out.extend_from_slice(&jcs::canonical_integer_checked(&stripped)?);
     Some(out)
 }
 
@@ -157,23 +159,29 @@ impl<'de> Visitor<'de> for StrictVisitor {
     type Value = Value;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("bounded integer-only JSON")
+        formatter.write_str("bounded duplicate-free JSON")
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Value, E> {
         Ok(Value::Bool(value))
     }
 
-    fn visit_i64<E>(self, value: i64) -> Result<Value, E> {
+    fn visit_i64<E: de::Error>(self, value: i64) -> Result<Value, E> {
+        if !(-jcs::MAX_SAFE_INTEGER..=jcs::MAX_SAFE_INTEGER).contains(&value) {
+            return Err(E::custom("integer is outside the interoperable exact domain"));
+        }
         Ok(Value::Number(value.into()))
     }
 
-    fn visit_u64<E>(self, value: u64) -> Result<Value, E> {
+    fn visit_u64<E: de::Error>(self, value: u64) -> Result<Value, E> {
+        if value > jcs::MAX_SAFE_INTEGER as u64 {
+            return Err(E::custom("integer is outside the interoperable exact domain"));
+        }
         Ok(Value::Number(value.into()))
     }
 
-    fn visit_f64<E: de::Error>(self, _value: f64) -> Result<Value, E> {
-        Err(E::custom("floating-point source-proof material is forbidden"))
+    fn visit_f64<E: de::Error>(self, value: f64) -> Result<Value, E> {
+        serde_json::Number::from_f64(value).map(Value::Number).ok_or_else(|| E::custom("JSON number is not finite"))
     }
 
     fn visit_str<E: de::Error>(self, value: &str) -> Result<Value, E> {
@@ -218,9 +226,13 @@ impl<'de> Visitor<'de> for StrictVisitor {
     }
 }
 
-fn source_material_depth_ok(raw: &[u8], maximum: usize) -> bool {
-    let (mut depth, mut in_string, mut escaped) = (0usize, false, false);
-    for byte in raw {
+fn json_number_token_ok(token: &[u8]) -> bool {
+    token.len() <= MAX_JSON_NUMBER_TOKEN_BYTES && (token.iter().any(|byte| matches!(byte, b'.' | b'E' | b'e')) || std::str::from_utf8(token.strip_prefix(b"-").unwrap_or(token)).ok().and_then(|value| value.parse::<u64>().ok()).is_some_and(|value| value <= jcs::MAX_SAFE_INTEGER as u64))
+}
+
+fn json_numbers_lexically_bounded(raw: &[u8]) -> bool {
+    let (mut in_string, mut escaped, mut number_start) = (false, false, None);
+    for (index, byte) in raw.iter().enumerate() {
         if in_string {
             if escaped {
                 escaped = false;
@@ -231,29 +243,30 @@ fn source_material_depth_ok(raw: &[u8], maximum: usize) -> bool {
             }
             continue;
         }
+        if let Some(start) = number_start {
+            if matches!(*byte, b'+' | b'-' | b'.' | b'E' | b'e' | b'0'..=b'9') {
+                continue;
+            }
+            if !json_number_token_ok(&raw[start..index]) {
+                return false;
+            }
+            number_start = None;
+        }
         match *byte {
             b'"' => in_string = true,
-            b'{' | b'[' => {
-                depth += 1;
-                if depth > maximum {
-                    return false;
-                }
-            }
-            b'}' | b']' => {
-                let Some(next) = depth.checked_sub(1) else { return false };
-                depth = next;
-            }
+            b'-' | b'0'..=b'9' => number_start = Some(index),
             _ => {}
         }
     }
-    !in_string && depth == 0
+    !in_string && number_start.is_none_or(|start| json_number_token_ok(&raw[start..]))
 }
 
-fn strict_json(raw: &[u8]) -> Option<Value> {
+pub(crate) fn strict_json(raw: &[u8]) -> Option<Value> {
+    json_numbers_lexically_bounded(raw).then_some(())?;
     let mut deserializer = serde_json::Deserializer::from_slice(raw);
     let value = StrictValue.deserialize(&mut deserializer).ok()?;
     deserializer.end().ok()?;
-    Some(value)
+    (!crate::depth_exceeds(&value, jcs::MAX_DEPTH)).then_some(value)
 }
 
 /// Verify the exact material accepted by SignedWebhookConnector: the disclosed
@@ -272,7 +285,7 @@ fn source_webhook_material(payload: &Value) -> Option<Vec<u8>> {
         return None;
     }
     let material = payload.get("material").and_then(Value::as_str).and_then(decode_b64)?;
-    if material.is_empty() || material.len() > MAX_SOURCE_PROOF_MATERIAL_BYTES || !source_material_depth_ok(&material, 16) {
+    if material.is_empty() || material.len() > MAX_SOURCE_PROOF_MATERIAL_BYTES {
         return None;
     }
     if payload.get("material_digest").and_then(Value::as_str) != Some(crate::hex(&Sha256::digest(&material)).as_str()) {
@@ -288,10 +301,13 @@ fn source_envelope_closed(envelope: &Map<String, Value>, name: Option<&str>) -> 
 fn source_webhook_statement(name: Option<&str>, payload: &Value) -> Option<(String, Vec<u8>)> {
     let material = source_webhook_material(payload)?;
     let delivery = strict_json(&material)?;
+    if crate::depth_exceeds(&delivery, 16) {
+        return None;
+    }
     let envelope = delivery.as_object()?;
     source_envelope_closed(envelope, name).then_some(())?;
     let signature = envelope.get("signature")?.as_str()?.to_owned();
-    let message = jcs::canonical_checked(&envelope["body"])?;
+    let message = jcs::canonical_integer_checked(&envelope["body"])?;
     Some((signature, message))
 }
 

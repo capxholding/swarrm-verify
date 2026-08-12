@@ -9,6 +9,16 @@ use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
 
+#[cfg(not(feature = "wasm"))]
+fn derive_json(input: &str, trust: &str) -> String {
+    swarrm_verify::action::derive_vector_json(input, trust)
+}
+
+#[cfg(feature = "wasm")]
+fn derive_json(input: &str, trust: &str) -> String {
+    swarrm_verify::action::derive_vector_json(input.as_bytes(), trust.as_bytes())
+}
+
 fn verdicts_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/verdicts")
 }
@@ -110,5 +120,24 @@ fn scan_binding_rejects_shared_noncanonical_cases() {
         assert_eq!(got["node_observation"], "NOT_OBSERVED", "{}", case["name"]);
         assert_eq!(got["coverage"], "UNKNOWN", "{}", case["name"]);
         assert_eq!(got["coverage_basis"], "INSUFFICIENT", "{}", case["name"]);
+    }
+}
+
+#[test]
+fn json_entry_rejects_ambiguous_or_unbounded_input_and_trust() {
+    let weak = derive_json("{}", "");
+    let deep = format!("{}0{}", "{\"x\":".repeat(70), "}".repeat(70));
+    let long_number = format!("{{\"x\":1.{}}}", "0".repeat(200));
+    for hostile in ["{\"x\":1,\"x\":2}".to_string(), deep, long_number] {
+        assert_eq!(derive_json(&hostile, ""), weak);
+    }
+
+    let dir = verdicts_dir();
+    let input = fs::read_to_string(dir.join("va_hardware_full_scan.json")).unwrap();
+    let untrusted = derive_json(&input, "");
+    let deep = format!("{}0{}", "{\"x\":".repeat(70), "}".repeat(70));
+    let long_number = format!("{{\"x\":1e{}1}}", "0".repeat(200));
+    for hostile in ["{\"x\":1,\"x\":2}".to_string(), deep, long_number] {
+        assert_eq!(derive_json(&input, &hostile), untrusted);
     }
 }
