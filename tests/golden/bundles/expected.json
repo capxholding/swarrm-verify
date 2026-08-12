@@ -64,5 +64,6 @@
   "rotation_valid": "VERIFIED",
   "tampered_payload": "NOT_VERIFIED",
   "valid_e1": "VERIFIED",
+  "valid_finite_float_receipt": "VERIFIED",
   "wrong_leaf_index": "NOT_VERIFIED"
 }

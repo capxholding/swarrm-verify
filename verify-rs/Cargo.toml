@@ -14,7 +14,9 @@ crate-type = ["rlib", "cdylib"]  # cdylib is the browser/Node wasm-pack surface
 
 [dependencies]
 serde = "1"
-serde_json = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }
+# RFC 8785 uses ECMAScript Number::toString for finite binary64 values.
+ryu-js = "=1.0.3"
 # `oid` feature: digest types carry AssociatedOid so rsa's Pkcs1v15Sign can
 # build the DigestInfo prefix (const-oid is already in the graph via der/p256).
 sha2 = { version = "0.10", features = ["oid"] }

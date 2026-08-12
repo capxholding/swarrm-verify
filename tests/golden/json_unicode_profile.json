@@ -1,0 +1,8 @@
+{
+  "top_level_value": {"fragment": "\"surrogate_probe\":\"\\ud800\"", "accepted": false},
+  "nested_value": {"fragment": "\"surrogate_probe\":{\"value\":\"\\udfff\"}", "accepted": false},
+  "top_level_key": {"fragment": "\"\\ud800\":1", "accepted": false},
+  "nested_key": {"fragment": "\"surrogate_probe\":{\"\\udfff\":1}", "accepted": false},
+  "paired_value": {"fragment": "\"surrogate_probe\":\"\\ud83d\\ude00\"", "accepted": true},
+  "paired_key": {"fragment": "\"surrogate_probe\":{\"\\ud83d\\ude00\":1}", "accepted": true}
+}
