@@ -59,6 +59,8 @@
   "lineage_forged_birthtag": "NOT_VERIFIED",
   "missing_keylog": "NOT_VERIFIED",
   "post_revocation_forgery": "NOT_VERIFIED",
+  "receipt_boolean_seq": "NOT_VERIFIED",
+  "receipt_foreign_tenant": "NOT_VERIFIED",
   "recorder_delegates_recorder": "NOT_VERIFIED",
   "recorder_delegates_scitt_issuer": "NOT_VERIFIED",
   "rotation_valid": "VERIFIED",

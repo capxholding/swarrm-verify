@@ -27,6 +27,8 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
 const RECEIPT_TYPE: &str = "application/vnd.evd.receipt.v1+json";
+const RECEIPT_SCHEMA: &str = "evd/receipt/v1";
+const RECEIPT_MAX_PARENTS: usize = 32;
 const CHECKPOINT_TYPE: &str = "application/vnd.evd.checkpoint.v1+json";
 const EXPORT_MANIFEST_TYPE: &str = "application/vnd.evd.export-manifest.v1+json";
 const DISCLOSURE_SCHEMA: &str = "evd/disclosure/v1";
@@ -43,6 +45,7 @@ const MAX_INCLUSION_PROOF_LEN: usize = 64;
 const MAX_CHECKPOINT_CHAIN_LEN: usize = 100_000;
 const MAX_SIGNATURES_PER_ENVELOPE: usize = 9;
 const MAX_ATTESTATION_RECORDS: usize = 256;
+
 // A signed checkpoint whose tree_size covers a leaf is the log's own sworn
 // statement that it already HELD that receipt, so a receipt's ts_server may
 // exceed the FIRST covering checkpoint's signed ts by at most this many
@@ -194,13 +197,52 @@ pub(crate) fn receipt_hash_hex(env: &Value) -> Option<String> {
 }
 
 pub(crate) fn body_of(env: &Value) -> Option<Value> {
-    canonical_body(&payload_of(env)?)
+    let body = canonical_body(&payload_of(env)?)?;
+    receipt_body_valid(&body, None).then_some(body)
 }
 
 fn canonical_body(raw: &[u8]) -> Option<Value> {
     let mut body = serde_json::from_slice(raw).ok()?;
     jcs::promote_jcs_integer_lexemes(&mut body).then_some(())?;
     (jcs::canonical_checked(&body)?.as_slice() == raw).then_some(body)
+}
+
+fn namespaced_action(value: &str) -> bool {
+    let mut parts = value.split(['.', '_', '-']);
+    parts.clone().count() > 1 && parts.all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit()))
+}
+
+fn lower_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
+}
+
+fn receipt_body_valid(body: &Value, expected_tenant: Option<&str>) -> bool {
+    const REQUIRED: [&str; 11] = ["schema", "tenant_id", "agent_id", "seq", "action_type", "commitments", "context", "parents", "ts_client", "ts_server", "idempotency_key"];
+    let Some(object) = body.as_object() else { return false };
+    let optional = ["session_id", "session_inferred"];
+    if REQUIRED.iter().any(|field| !object.contains_key(*field)) || object.keys().any(|field| !REQUIRED.contains(&field.as_str()) && !optional.contains(&field.as_str())) {
+        return false;
+    }
+    let text = |field| body.get(field).and_then(Value::as_str).filter(|value| !value.is_empty());
+    let (Some(tenant), Some(_agent), Some(action), Some(_idem)) = (text("tenant_id"), text("agent_id"), text("action_type"), text("idempotency_key")) else { return false };
+    if text("schema") != Some(RECEIPT_SCHEMA) || expected_tenant.is_some_and(|expected| tenant != expected) || !namespaced_action(action) || body.get("seq").and_then(Value::as_u64).is_none_or(|seq| seq == 0 || seq > jcs::MAX_SAFE_INTEGER as u64) {
+        return false;
+    }
+    let commitments = body.get("commitments").and_then(Value::as_object).is_some_and(|items| items.iter().all(|(name, value)| !name.is_empty() && value.as_str().is_some_and(lower_sha256)));
+    let parents = body.get("parents").and_then(Value::as_array).is_some_and(|items| {
+        let values: Option<Vec<&str>> = items.iter().map(Value::as_str).collect();
+        values.is_some_and(|values| values.len() <= RECEIPT_MAX_PARENTS && values.iter().all(|digest| lower_sha256(digest)) && values.iter().collect::<BTreeSet<_>>().len() == values.len())
+    });
+    let session = match (body.get("session_id"), body.get("session_inferred")) {
+        (None, None) => true,
+        (Some(id), Some(inferred)) => id.as_str().is_some_and(|value| !value.is_empty()) && inferred.is_boolean(),
+        _ => false,
+    };
+    commitments && body.get("context").is_some_and(Value::is_object) && parents && body.get("ts_client").and_then(Value::as_str).is_some_and(canonical_utc) && body.get("ts_server").and_then(Value::as_str).is_some_and(canonical_utc) && session
+}
+
+fn tenant_from_origin(origin: &str) -> Option<&str> {
+    origin.rsplit('/').next().filter(|tenant| !tenant.is_empty())
 }
 
 fn decimal(bytes: &[u8]) -> Option<u32> {
@@ -634,20 +676,17 @@ fn check_entry_inclusion(e: &Value, payload: &[u8], size: u64, root: &[u8]) -> b
     merkle::verify_inclusion(&leaf_hash, leaf_index, size, &proof, root)
 }
 
-fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8], covers: &[(u64, i64)]) -> bool {
+fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8], covers: &[(u64, i64)], expected_tenant: &str) -> bool {
     let env = &e["envelope"];
     let Some(payload) = payload_of(env) else { return false };
     let Some(body) = canonical_body(&payload) else { return false };
     // schema
-    if body.get("schema").and_then(|v| v.as_str()) != Some("evd/receipt/v1") {
+    if !receipt_body_valid(&body, Some(expected_tenant)) {
         return false;
     }
-    // every signature valid + key valid at ts_server
+    // every signature valid + key valid at ts_server; receipt_body_valid has
+    // already admitted both timestamps under the shared canonical UTC profile.
     let ts_server = body.get("ts_server").and_then(|v| v.as_str()).unwrap_or("");
-    let ts_client = body.get("ts_client").and_then(|v| v.as_str()).unwrap_or("");
-    if !canonical_utc(ts_client) || !canonical_utc(ts_server) {
-        return false;
-    }
     // ts_server may not postdate the FIRST chain checkpoint whose tree_size
     // covers this leaf by more than RECEIPT_CHECKPOINT_SKEW_S — the same rule,
     // boundary and skew as verify/verifier.py::_check_entries. The chain's
@@ -772,8 +811,9 @@ fn check_entries(entries: &[Value], target: &Value, chain: &[Value], kl: &KeyLog
     let root_hex = target.get("body").and_then(|b| b.get("root_hash")).and_then(|v| v.as_str()).unwrap_or("");
     let Some(root) = hex_to_bytes(root_hex) else { return false };
     let Some(covers) = checkpoint_cover_deadlines(chain) else { return false };
+    let Some(expected_tenant) = target.get("body").and_then(|body| body.get("origin")).and_then(Value::as_str).and_then(tenant_from_origin) else { return false };
     for e in entries {
-        if !check_entry(e, kl, size, &root, &covers) {
+        if !check_entry(e, kl, size, &root, &covers, expected_tenant) {
             return false;
         }
         if entry_recorder_attested(&e["envelope"], kl, trust) {
@@ -1054,29 +1094,89 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 
 type DisclosureFields = (String, String, String, Vec<u8>, Vec<u8>); // (receipt_hash, field, domain, nonce, payload)
 
-fn disclosure_fields(pkg: &Value) -> Option<DisclosureFields> {
-    // any missing or undecodable member makes the whole package malformed
-    if str_field(pkg, "schema")? != DISCLOSURE_SCHEMA {
-        return None;
+const DISCLOSURE_FIELD_DOMAINS: &[(&str, &[&str])] = &[
+    ("payload", &["evd/v1/payload"]),
+    ("prompt", &["evd/v1/prompt", "evd/v1/llm.prompt"]),
+    ("output", &["evd/v1/output", "evd/v1/llm.output"]),
+    ("tool.args", &["evd/v1/tool.args"]),
+    ("tool.result", &["evd/v1/tool.result"]),
+    ("message", &["evd/v1/interaction.message"]),
+    ("policy_input", &["evd/v1/policy.input"]),
+    ("policy_output", &["evd/v1/policy.output"]),
+    ("approver_id", &["evd/v1/approver_id"]),
+    ("justification", &["evd/v1/justification"]),
+    ("escalation_target_id", &["evd/v1/escalation_target"]),
+    ("config", &["evd/v1/agent.config", "evd/v1/lineage/config"]),
+    ("query", &["evd/v1/query"]),
+    ("trigger_content", &["evd/v1/guardrail.trigger"]),
+    ("amount_exact", &["evd/v1/payment.amount"]),
+    ("counterparty_id", &["evd/v1/payment.counterparty"]),
+    ("mandate_ref", &["evd/v1/payment.mandate"]),
+    ("system_prompt", &["evd/v1/lineage/system_prompt"]),
+    ("tool_manifest", &["evd/v1/lineage/tool_manifest"]),
+    ("mandate_document", &["evd/v1/lineage/mandate_document"]),
+    ("created_by_id", &["evd/v1/lineage/created_by_id"]),
+    ("enrolment_evidence", &["evd/v1/authority/enrolment_evidence"]),
+    ("source_manifest", &["evd/v1/authority/source_manifest"]),
+    ("inputs", &["evd/v1/authority/inputs"]),
+    ("context_doc", &["evd/v1/authority/context_doc"]),
+    ("request", &["evd/v1/authority/request"]),
+    ("batch", &["evd/v1/node/batch"]),
+    ("attestation", &["evd/v1/node/attestation"]),
+    ("statement", &["evd/v1/node/triage"]),
+    ("doc", &["evd/v1/node/coverage"]),
+];
+
+fn disclosure_domain(field: &str, domain: &str) -> bool {
+    let control = |text: &str| {
+        text.is_empty()
+            || text.chars().any(|c| {
+                let n = c as u32;
+                n < 0x20 || (0x7f..=0x9f).contains(&n)
+            })
+    };
+    if control(field) || control(domain) || !domain.starts_with(DOMAIN_PREFIX) {
+        return false;
     }
-    let nonce = hex_to_bytes(&str_field(pkg, "nonce_hex")?)?;
-    let payload = B64.decode(str_field(pkg, "payload_b64")?).ok()?;
-    Some((str_field(pkg, "receipt_hash")?, str_field(pkg, "field")?, str_field(pkg, "domain")?, nonce, payload))
+    let fixed = DISCLOSURE_FIELD_DOMAINS.iter().find(|(name, _)| *name == field).is_some_and(|(_, domains)| domains.contains(&domain));
+    fixed || domain == format!("evd/v1/x/{field}")
 }
 
-fn disclosure_commitment(domain: &str, payload: &[u8], nonce: &[u8]) -> Option<String> {
-    // core/canonical.py commitment(): an unscoped domain or a weak nonce
-    // silently destroys the privacy model, so it never verifies.
-    if !domain.starts_with(DOMAIN_PREFIX) || nonce.len() < 16 {
+fn disclosure_nonce(pkg: &Value) -> Option<Vec<u8>> {
+    let nonce = hex_to_bytes(&str_field(pkg, "nonce_hex")?)?;
+    (nonce.len() >= 16).then_some(nonce)
+}
+
+fn disclosure_payload(pkg: &Value) -> Option<Vec<u8>> {
+    let text = str_field(pkg, "payload_b64")?;
+    let payload = B64.decode(&text).ok()?;
+    (B64.encode(&payload) == text).then_some(payload)
+}
+
+fn disclosure_fields(pkg: &Value) -> Option<DisclosureFields> {
+    if pkg.as_object()?.len() != 6 || str_field(pkg, "schema").as_deref() != Some(DISCLOSURE_SCHEMA) {
         return None;
     }
+    let rh = str_field(pkg, "receipt_hash")?;
+    if !lower_sha256(&rh) {
+        return None;
+    }
+    let field = str_field(pkg, "field")?;
+    let domain = str_field(pkg, "domain")?;
+    if !disclosure_domain(&field, &domain) {
+        return None;
+    }
+    Some((rh, field, domain, disclosure_nonce(pkg)?, disclosure_payload(pkg)?))
+}
+
+fn disclosure_commitment(domain: &str, payload: &[u8], nonce: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(domain.as_bytes());
     h.update([0x00u8]);
     h.update(nonce);
     h.update([0x00u8]);
     h.update(payload);
-    Some(hex(&h.finalize()))
+    hex(&h.finalize())
 }
 
 fn disclosure_committed_value(raw: &[u8], field: &str) -> Option<String> {
@@ -1089,7 +1189,7 @@ fn disclosure_committed_value(raw: &[u8], field: &str) -> Option<String> {
 /// SHA-256(domain || 0x00 || nonce || 0x00 || payload). Mirrors
 /// verify/disclosure.py — weak or malformed input is false, never a panic;
 /// this does not re-verify the bundle itself.
-pub fn verify_disclosure(pkg: &Value, bundle: &Value) -> bool {
+fn verify_disclosure(pkg: &Value, bundle: &Value) -> bool {
     let (rh, field, domain, nonce, payload) = match disclosure_fields(pkg) {
         Some(t) => t,
         None => return false,
@@ -1104,9 +1204,21 @@ pub fn verify_disclosure(pkg: &Value, bundle: &Value) -> bool {
             continue;
         }
         let Some(expected) = disclosure_committed_value(&raw, &field) else { return false };
-        return disclosure_commitment(&domain, &payload, &nonce).as_deref() == Some(&expected);
+        return disclosure_commitment(&domain, &payload, &nonce) == expected;
     }
     false
+}
+
+/// Strict JSON boundary shared by native Rust and WASM disclosure verification.
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+pub fn verify_disclosure_json(package_json: &[u8], bundle_json: &[u8]) -> bool {
+    if package_json.len() > MAX_BUNDLE_BYTES || bundle_json.len() > MAX_BUNDLE_BYTES {
+        return false;
+    }
+    let (Some(pkg), Some(bundle)) = (trust::strict_json(package_json), trust::strict_json(bundle_json)) else {
+        return false;
+    };
+    verify_disclosure(&pkg, &bundle)
 }
 
 /// Verify an evd/bundle/v1 document. Returns true iff VERIFIED.

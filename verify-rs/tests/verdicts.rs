@@ -9,12 +9,6 @@ use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
 
-#[cfg(not(feature = "wasm"))]
-fn derive_json(input: &str, trust: &str) -> String {
-    swarrm_verify::action::derive_vector_json(input, trust)
-}
-
-#[cfg(feature = "wasm")]
 fn derive_json(input: &str, trust: &str) -> String {
     swarrm_verify::action::derive_vector_json(input.as_bytes(), trust.as_bytes())
 }

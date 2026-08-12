@@ -38,7 +38,7 @@ proofs, not the producer's budget.
 | `schema` | string | `"evd/receipt/v1"` |
 | `tenant_id` | string | issuing tenant |
 | `agent_id` | string | acting principal, registered per tenant |
-| `seq` | int | per-`(tenant, agent)` monotonic counter starting at 1. A gap is evidence of a missing receipt — the system is honest about its own holes |
+| `seq` | int | per-`(tenant, agent)` monotonic counter in `1..2^53-1` (the exact RFC 8785/JCS integer domain), starting at 1. A gap is evidence of a missing receipt — the system is honest about its own holes |
 | `action_type` | string | namespaced, e.g. `llm.chat`, `tool.call`, `payment.execute` |
 | `commitments` | object | field → hex commitment (see §4) |
 | `context` | object | non-secret metadata (model ref, endpoint, status). MUST NOT contain payloads |
@@ -52,6 +52,14 @@ Signed timestamps use exactly canonical extended UTC:
 space separators, offsets, impossible calendar dates, leap seconds, and more
 than six fractional digits are invalid. This fixed form makes chronological
 comparison identical across verifier implementations.
+
+The member set is closed. The eleven fields above are required; the additive
+`session_id` (non-empty string) and `session_inferred` (boolean) fields may
+appear only as a pair. Identity strings are non-empty and `action_type` is a
+lowercase namespaced string. `commitments` maps non-empty names to lowercase
+SHA-256 hex, `context` is an object, and `parents` contains at most 32 distinct
+lowercase receipt hashes. Every receipt's `tenant_id` MUST equal the final
+tenant component of the signed checkpoint/log origin that covers it.
 
 **`receipt_hash`** = SHA-256(canonical body), lowercase hex. This value is
 the Merkle leaf (see log-v1) and the value `parents` references.
@@ -169,7 +177,7 @@ registration, lineage, Node, finding, or coverage state.
    payload is at most **8192 bytes**. The payload MUST already be the RFC 8785
    canonical bytes of one `evd/receipt/v1` body with the required §3 fields
    and their declared types (plus only the additive `session_id` /
-   `session_inferred` pair). `seq` is in `1..2^63-1`. An upload carries **1..7
+   `session_inferred` pair). `seq` is in `1..2^53-1`. An upload carries **1..7
    distinct 64-byte Ed25519 recorder signatures**. The verifier-wide cap is
    **nine**: the managed issuer appends its current signature and, only during
    the signed bounded issuer-rotation overlap, its immediately preceding
@@ -248,7 +256,8 @@ replay decision, never admission authority.
 2. Every signature verifies over PAE(payloadType, payload) with a key whose
    `kid` matches its material. Unknown `kid` ⇒ FAIL (no unsigned-key
    tolerance).
-3. `schema` == `evd/receipt/v1`.
+3. The complete closed body profile in §3 is valid, including tenant binding
+   to the signed checkpoint/log origin.
 4. `receipt_hash` is recomputed from payload bytes — never trusted from
    context.
 5. Inclusion in the log is checked per log-v1 §4 using the recomputed hash.

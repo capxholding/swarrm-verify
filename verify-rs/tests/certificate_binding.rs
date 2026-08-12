@@ -398,7 +398,14 @@ fn a_coverage_doc_making_no_population_statement_is_not_established() {
 /// the surrounding BUNDLE_INVALID is asserted around, not through.
 fn with_coverage_receipt(c: &mut J) {
     let digest = hex_sha256(&jcs::canonical_checked(&c["coverage_doc"]).unwrap());
-    let body = json!({"schema": "evd/receipt/v1", "action_type": "evd.coverage.recorded", "agent_id": "_node", "context": {"coverage_doc_digest": digest}});
+    let tenant = c["bundle"]["origin"].as_str().unwrap().rsplit('/').next().unwrap();
+    let body = json!({
+        "schema": "evd/receipt/v1", "tenant_id": tenant, "agent_id": "_node", "seq": 9999,
+        "action_type": "evd.coverage.recorded", "commitments": {},
+        "context": {"coverage_doc_digest": digest}, "parents": [],
+        "ts_client": "2026-01-01T00:00:00Z", "ts_server": "2026-01-01T00:00:00Z",
+        "idempotency_key": "hostile-coverage-binding"
+    });
     let payload = B64.encode(serde_json::to_vec(&body).unwrap());
     c["bundle"]["entries"].as_array_mut().unwrap().push(json!({"leaf_index": 9999, "envelope": {"payload": payload}}));
 }

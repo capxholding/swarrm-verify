@@ -12,6 +12,7 @@ const { verify_certificate_cbor, verify_b28_cwt } = wasm;
 const bytes = value => Buffer.isBuffer(value) ? value : Buffer.from(value, "utf8");
 const verify_bundle_json = value => wasm.verify_bundle_json(bytes(value));
 const derive_vector_json = (input, trust) => wasm.derive_vector_json(bytes(input), bytes(trust));
+const verify_disclosure_json = (input, bundle) => wasm.verify_disclosure_json(bytes(input), bytes(bundle));
 
 const dir = path.join(__dirname, "..", "..", "tests", "golden", "bundles");
 const expected = JSON.parse(fs.readFileSync(path.join(dir, "expected.json"), "utf8"));
@@ -39,7 +40,8 @@ let failures = 0;
 const declarations = fs.readFileSync(path.join(__dirname, "..", "pkg-node", "swarrm_verify.d.ts"), "utf8");
 const byteApiOk =
   /verify_bundle_json\(json: Uint8Array\)/.test(declarations) &&
-  /derive_vector_json\(verdict_input_json: Uint8Array, trust_json: Uint8Array\)/.test(declarations);
+  /derive_vector_json\(verdict_input_json: Uint8Array, trust_json: Uint8Array\)/.test(declarations) &&
+  /verify_disclosure_json\(package_json: Uint8Array, bundle_json: Uint8Array\)/.test(declarations);
 if (!byteApiOk) failures++;
 console.log(`${byteApiOk ? "OK " : "XX "} WASM JSON boundaries require Uint8Array`);
 for (const [name, want] of Object.entries(expected)) {
@@ -156,6 +158,26 @@ if (failures) {
   process.exit(1);
 }
 console.log(`\nWASM agrees with all ${Object.keys(expected).length} golden fixtures`);
+
+const disclosureBundle = fs.readFileSync(path.join(dir, "disclosure_bundle.json"), "utf8");
+const disclosureCases = JSON.parse(fs.readFileSync(path.join(dir, "disclosure_cases.json"), "utf8"));
+for (const item of disclosureCases) {
+  const got = verify_disclosure_json(JSON.stringify(item.package), disclosureBundle);
+  const ok = got === item.expected;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} disclosure ${item.name}`);
+}
+const duplicateDisclosure = '{"schema":"evd/disclosure/v1","schema":"evd/disclosure/v1"}';
+if (verify_disclosure_json(duplicateDisclosure, disclosureBundle)) failures++;
+console.log(`${!verify_disclosure_json(duplicateDisclosure, disclosureBundle) ? "OK " : "XX "} disclosure duplicate-key JSON`);
+for (const [name, raw] of [
+  ["UTF-8 BOM", Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes("{}")])],
+  ["invalid UTF-8 scalar", invalidUtf8Object],
+]) {
+  const ok = !verify_disclosure_json(raw, disclosureBundle);
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} disclosure raw byte boundary ${name}`);
+}
 
 const sourceProof = JSON.parse(fs.readFileSync(
   path.join(__dirname, "..", "..", "tests", "golden", "source_proof_full_disclosure.json"),
