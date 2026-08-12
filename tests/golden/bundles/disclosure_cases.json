@@ -1,0 +1,567 @@
+[
+  {
+    "expected": true,
+    "name": "valid_01",
+    "package": {
+      "domain": "evd/v1/payment.amount",
+      "field": "amount_exact",
+      "nonce_hex": "00000000000000000000000000000001",
+      "payload_b64": "YW1vdW50X2V4YWN0OmV2ZC92MS9wYXltZW50LmFtb3VudA==",
+      "receipt_hash": "7639aca76551afd3a921f3f1bffe5358ff35928682b32c15e32a1a48dcea70b1",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_02",
+    "package": {
+      "domain": "evd/v1/approver_id",
+      "field": "approver_id",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000002",
+      "payload_b64": "YXBwcm92ZXJfaWQ6ZXZkL3YxL2FwcHJvdmVyX2lk",
+      "receipt_hash": "f63340b0ba90be974214de035b8c014e0c55a303c30878d3cc8f1ee66912fbb6",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_03",
+    "package": {
+      "domain": "evd/v1/node/attestation",
+      "field": "attestation",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000003",
+      "payload_b64": "YXR0ZXN0YXRpb246ZXZkL3YxL25vZGUvYXR0ZXN0YXRpb24=",
+      "receipt_hash": "e9a75e7f8f0dc84e1693e6934ee428b68e4d742b896738f2e7e7ab8fe6e7413f",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_04",
+    "package": {
+      "domain": "evd/v1/node/batch",
+      "field": "batch",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000004",
+      "payload_b64": "YmF0Y2g6ZXZkL3YxL25vZGUvYmF0Y2g=",
+      "receipt_hash": "cbb2f2944d3c60c599b8dbe0527e0ac02e5151f6cc641eb5fdc28ec45ee0650d",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_05",
+    "package": {
+      "domain": "evd/v1/agent.config",
+      "field": "config",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000005",
+      "payload_b64": "Y29uZmlnOmV2ZC92MS9hZ2VudC5jb25maWc=",
+      "receipt_hash": "6ea0cfbfcf6a7eb111033189a256ec03d10208f4c554a5ca592bee7b94b5cbe1",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_06",
+    "package": {
+      "domain": "evd/v1/lineage/config",
+      "field": "config",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000006",
+      "payload_b64": "Y29uZmlnOmV2ZC92MS9saW5lYWdlL2NvbmZpZw==",
+      "receipt_hash": "47275a7afeb5435951facfd59cd44f6fbdf4ffb01a7d7448c8a8da8a9b364178",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_07",
+    "package": {
+      "domain": "evd/v1/authority/context_doc",
+      "field": "context_doc",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000007",
+      "payload_b64": "Y29udGV4dF9kb2M6ZXZkL3YxL2F1dGhvcml0eS9jb250ZXh0X2RvYw==",
+      "receipt_hash": "6208e04117d47be6f4e5ac4b32d23ac1237e4f5f19626c6062adaee7de7ea8cc",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_08",
+    "package": {
+      "domain": "evd/v1/payment.counterparty",
+      "field": "counterparty_id",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000008",
+      "payload_b64": "Y291bnRlcnBhcnR5X2lkOmV2ZC92MS9wYXltZW50LmNvdW50ZXJwYXJ0eQ==",
+      "receipt_hash": "406c91e44c2676b5bdfacb2b257deba1154dafb276c58fe3cfeac517e53806ca",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_09",
+    "package": {
+      "domain": "evd/v1/lineage/created_by_id",
+      "field": "created_by_id",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000009",
+      "payload_b64": "Y3JlYXRlZF9ieV9pZDpldmQvdjEvbGluZWFnZS9jcmVhdGVkX2J5X2lk",
+      "receipt_hash": "592ec83b30fa52a04fa01bb430f36e6c144ef6bd402f0138b628e941a049f880",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_10",
+    "package": {
+      "domain": "evd/v1/node/coverage",
+      "field": "doc",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000000a",
+      "payload_b64": "ZG9jOmV2ZC92MS9ub2RlL2NvdmVyYWdl",
+      "receipt_hash": "151154a898758c882c9a482d39ab3f2f879167ee48dcf96c80a201ce29ff3b0b",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_11",
+    "package": {
+      "domain": "evd/v1/authority/enrolment_evidence",
+      "field": "enrolment_evidence",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000000b",
+      "payload_b64": "ZW5yb2xtZW50X2V2aWRlbmNlOmV2ZC92MS9hdXRob3JpdHkvZW5yb2xtZW50X2V2aWRlbmNl",
+      "receipt_hash": "79bdf2c27018cc1814dc1b48aadec5e8e16d1d62f9afdf6c1673ab8923c29136",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_12",
+    "package": {
+      "domain": "evd/v1/escalation_target",
+      "field": "escalation_target_id",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000000c",
+      "payload_b64": "ZXNjYWxhdGlvbl90YXJnZXRfaWQ6ZXZkL3YxL2VzY2FsYXRpb25fdGFyZ2V0",
+      "receipt_hash": "10c924e79fb8e89063e7c7411ab8170e882380b89615d08d22e14e7c5bfa4625",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_13",
+    "package": {
+      "domain": "evd/v1/authority/inputs",
+      "field": "inputs",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000000d",
+      "payload_b64": "aW5wdXRzOmV2ZC92MS9hdXRob3JpdHkvaW5wdXRz",
+      "receipt_hash": "c5f231da4df09bddcea0e7b459b2ef6ad15bb15b13c574448d853e0f888fe7b6",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_14",
+    "package": {
+      "domain": "evd/v1/justification",
+      "field": "justification",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000000e",
+      "payload_b64": "anVzdGlmaWNhdGlvbjpldmQvdjEvanVzdGlmaWNhdGlvbg==",
+      "receipt_hash": "bab59788038ba7090d82d71a1a651f693ab2737be2f1ed28f76d7ed23ed3e475",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_15",
+    "package": {
+      "domain": "evd/v1/lineage/mandate_document",
+      "field": "mandate_document",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000000f",
+      "payload_b64": "bWFuZGF0ZV9kb2N1bWVudDpldmQvdjEvbGluZWFnZS9tYW5kYXRlX2RvY3VtZW50",
+      "receipt_hash": "2a35e3b555cd81e18b9f775d81a3406ef6f5cefafeb338e6d8e2a715605d6a32",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_16",
+    "package": {
+      "domain": "evd/v1/payment.mandate",
+      "field": "mandate_ref",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000010",
+      "payload_b64": "bWFuZGF0ZV9yZWY6ZXZkL3YxL3BheW1lbnQubWFuZGF0ZQ==",
+      "receipt_hash": "aeb65e4a6020f24617880ce13fd8a7f0a6615e101c9cfbbfed4c6933d5d2ae8f",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_17",
+    "package": {
+      "domain": "evd/v1/interaction.message",
+      "field": "message",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000011",
+      "payload_b64": "bWVzc2FnZTpldmQvdjEvaW50ZXJhY3Rpb24ubWVzc2FnZQ==",
+      "receipt_hash": "3d1a8e45e096fe30ab6988212b9e04df415e9b6a95c32310393628c162a8ba6b",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_18",
+    "package": {
+      "domain": "evd/v1/output",
+      "field": "output",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000012",
+      "payload_b64": "b3V0cHV0OmV2ZC92MS9vdXRwdXQ=",
+      "receipt_hash": "c8b6170f127748cb7f5d969ff8cc62f16603e42e1df8246fc75a85efa90df178",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_19",
+    "package": {
+      "domain": "evd/v1/llm.output",
+      "field": "output",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000013",
+      "payload_b64": "b3V0cHV0OmV2ZC92MS9sbG0ub3V0cHV0",
+      "receipt_hash": "427f05c918b5a44cdd06132a1525c6c23898de4fd5aba060aacaa3a917a6d934",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_20",
+    "package": {
+      "domain": "evd/v1/payload",
+      "field": "payload",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000014",
+      "payload_b64": "cGF5bG9hZDpldmQvdjEvcGF5bG9hZA==",
+      "receipt_hash": "31024f9ab2ff82f43df59f8ca13ec483765b8aa7f95d6a0171023821cea0a640",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_21",
+    "package": {
+      "domain": "evd/v1/policy.input",
+      "field": "policy_input",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000015",
+      "payload_b64": "cG9saWN5X2lucHV0OmV2ZC92MS9wb2xpY3kuaW5wdXQ=",
+      "receipt_hash": "4950e02dcf7f9e073ebd67d4db705dd53e34cdeaa66b2c6f85c2e136a517ac5b",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_22",
+    "package": {
+      "domain": "evd/v1/policy.output",
+      "field": "policy_output",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000016",
+      "payload_b64": "cG9saWN5X291dHB1dDpldmQvdjEvcG9saWN5Lm91dHB1dA==",
+      "receipt_hash": "a68ce47c1e7609b3054de1813cd56bef9adb000911ed5a950b6baf728009bb17",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_23",
+    "package": {
+      "domain": "evd/v1/prompt",
+      "field": "prompt",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000017",
+      "payload_b64": "cHJvbXB0OmV2ZC92MS9wcm9tcHQ=",
+      "receipt_hash": "4eeed0272993cd0b483eee3ec19d7555dc0d612ff976549b76ec49763b07a5cd",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_24",
+    "package": {
+      "domain": "evd/v1/llm.prompt",
+      "field": "prompt",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000018",
+      "payload_b64": "cHJvbXB0OmV2ZC92MS9sbG0ucHJvbXB0",
+      "receipt_hash": "1cbc4a9b53bae7bacc5fc5298d3a64c1deb1671d5a83a1fa6228335ec0f3e16f",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_25",
+    "package": {
+      "domain": "evd/v1/query",
+      "field": "query",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000019",
+      "payload_b64": "cXVlcnk6ZXZkL3YxL3F1ZXJ5",
+      "receipt_hash": "e886f9bf263f5a84611c21471ec94ecadc47df37ff3c5cd7b173675a979d94ef",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_26",
+    "package": {
+      "domain": "evd/v1/authority/request",
+      "field": "request",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000001a",
+      "payload_b64": "cmVxdWVzdDpldmQvdjEvYXV0aG9yaXR5L3JlcXVlc3Q=",
+      "receipt_hash": "2adee80f57c24af4839a57a6dbdb4a7cd14d79239a663fa236464db032c01815",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_27",
+    "package": {
+      "domain": "evd/v1/authority/source_manifest",
+      "field": "source_manifest",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000001b",
+      "payload_b64": "c291cmNlX21hbmlmZXN0OmV2ZC92MS9hdXRob3JpdHkvc291cmNlX21hbmlmZXN0",
+      "receipt_hash": "12aab7333478cd0140dbf904343d0398a3da9f180f28e26855021aa8cc533fc2",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_28",
+    "package": {
+      "domain": "evd/v1/node/triage",
+      "field": "statement",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000001c",
+      "payload_b64": "c3RhdGVtZW50OmV2ZC92MS9ub2RlL3RyaWFnZQ==",
+      "receipt_hash": "eaeea0ed7835941574f46b76d7ca866b665bdd3999f86d29d5477230a278990d",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_29",
+    "package": {
+      "domain": "evd/v1/lineage/system_prompt",
+      "field": "system_prompt",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000001d",
+      "payload_b64": "c3lzdGVtX3Byb21wdDpldmQvdjEvbGluZWFnZS9zeXN0ZW1fcHJvbXB0",
+      "receipt_hash": "7f5281530c396bcb8c7c1a6f4ea28edc6e7542225215ce441534138ee5fef29a",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_30",
+    "package": {
+      "domain": "evd/v1/tool.args",
+      "field": "tool.args",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000001e",
+      "payload_b64": "dG9vbC5hcmdzOmV2ZC92MS90b29sLmFyZ3M=",
+      "receipt_hash": "252e011cf84b457d5bb673e72e0f9508ee2bd2fc360453f25106bc74040fb88b",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_31",
+    "package": {
+      "domain": "evd/v1/tool.result",
+      "field": "tool.result",
+      "nonce_hex": "000000000000000000000000000000000000000000000000000000000000001f",
+      "payload_b64": "dG9vbC5yZXN1bHQ6ZXZkL3YxL3Rvb2wucmVzdWx0",
+      "receipt_hash": "25ebe1af10395012fdf2fa3e8e35325d58cebb21b6b97572993eeab5827e80e0",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_32",
+    "package": {
+      "domain": "evd/v1/lineage/tool_manifest",
+      "field": "tool_manifest",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000020",
+      "payload_b64": "dG9vbF9tYW5pZmVzdDpldmQvdjEvbGluZWFnZS90b29sX21hbmlmZXN0",
+      "receipt_hash": "de35ed494cb8a018a9a4c38b1342db64298e3e006a68e4f70313ff9811da3957",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_33",
+    "package": {
+      "domain": "evd/v1/guardrail.trigger",
+      "field": "trigger_content",
+      "nonce_hex": "0000000000000000000000000000000000000000000000000000000000000021",
+      "payload_b64": "dHJpZ2dlcl9jb250ZW50OmV2ZC92MS9ndWFyZHJhaWwudHJpZ2dlcg==",
+      "receipt_hash": "c1463501a1b5e967ca13e80126e6b73123b789db2f35c4280124bf6901c736d8",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_custom",
+    "package": {
+      "domain": "evd/v1/x/custom.note",
+      "field": "custom.note",
+      "nonce_hex": "6363636363636363636363636363636363636363636363636363636363636363",
+      "payload_b64": "Y3VzdG9t",
+      "receipt_hash": "d04afb3f4ee68b4174d3ffe3424a2695977c24748cb8d80665d86e78fb04e3c5",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "cross_field_domain",
+    "package": {
+      "domain": "evd/v1/output",
+      "field": "prompt",
+      "nonce_hex": "6161616161616161616161616161616161616161616161616161616161616161",
+      "payload_b64": "Y3Jvc3NfZmllbGRfZG9tYWlu",
+      "receipt_hash": "96c1fa6ede336efff06622b9b4dae59faea01aa1fd4c80591605c4c31a7e26c3",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "outside_scope",
+    "package": {
+      "domain": "other/v1/prompt",
+      "field": "prompt",
+      "nonce_hex": "6262626262626262626262626262626262626262626262626262626262626262",
+      "payload_b64": "b3V0c2lkZV9zY29wZQ==",
+      "receipt_hash": "22765e08596752e3750cb7752c77ac9c7427605e4ebf24297ca6f82dd10ff075",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "domain_nul",
+    "package": {
+      "domain": "evd/v1/prompt\u0000suffix",
+      "field": "prompt",
+      "nonce_hex": "6464646464646464646464646464646464646464646464646464646464646464",
+      "payload_b64": "ZG9tYWluX251bA==",
+      "receipt_hash": "3d9eccddabcb2eb5b51ea0e2679dce1842297c84047b3a6e25d8b582a0d99338",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "domain_control",
+    "package": {
+      "domain": "evd/v1/prompt\nsuffix",
+      "field": "prompt",
+      "nonce_hex": "6565656565656565656565656565656565656565656565656565656565656565",
+      "payload_b64": "ZG9tYWluX2NvbnRyb2w=",
+      "receipt_hash": "d2f61616d914970549d015f1b5f0b56ca6e68c0f838f0b2028e04fba3a289890",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "field_control",
+    "package": {
+      "domain": "evd/v1/x/custom\nnote",
+      "field": "custom\nnote",
+      "nonce_hex": "6666666666666666666666666666666666666666666666666666666666666666",
+      "payload_b64": "ZmllbGRfY29udHJvbA==",
+      "receipt_hash": "3381e4fcb71631adbd1eebe79070b3f10ce8a9d1faf8de93cde731a14682ec90",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "weak_nonce",
+    "package": {
+      "domain": "evd/v1/prompt",
+      "field": "prompt",
+      "nonce_hex": "676767676767676767676767676767",
+      "payload_b64": "d2Vha19ub25jZQ==",
+      "receipt_hash": "02ab8042d9428d535bc3529e912c2cc8296267dc79439d98b211515a64821e19",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "prefix_only",
+    "package": {
+      "domain": "evd/v1/",
+      "field": "unknown",
+      "nonce_hex": "6868686868686868686868686868686868686868686868686868686868686868",
+      "payload_b64": "cHJlZml4X29ubHk=",
+      "receipt_hash": "7984fd3b14f58d42d42ba1ed5470564c8e126766c60a75cf22bbd2ddc96d4060",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "unknown_fixed_field",
+    "package": {
+      "domain": "evd/v1/prompt",
+      "field": "unknown",
+      "nonce_hex": "6969696969696969696969696969696969696969696969696969696969696969",
+      "payload_b64": "dW5rbm93bl9maXhlZF9maWVsZA==",
+      "receipt_hash": "1ad08ff8c083c6edf1c9ca5caaa2bd2ce5c15ef1ffee4fe0949c48309088eaae",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "custom_field_mismatch",
+    "package": {
+      "domain": "evd/v1/x/other.note",
+      "field": "custom.note",
+      "nonce_hex": "6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a",
+      "payload_b64": "Y3VzdG9tX2ZpZWxkX21pc21hdGNo",
+      "receipt_hash": "eec65956560b3f854abf785b9a971c55d33f05770e266c107af1c89fa66ccbfa",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": true,
+    "name": "valid_uppercase_nonce",
+    "package": {
+      "domain": "evd/v1/payment.amount",
+      "field": "amount_exact",
+      "nonce_hex": "00000000000000000000000000000001",
+      "payload_b64": "YW1vdW50X2V4YWN0OmV2ZC92MS9wYXltZW50LmFtb3VudA==",
+      "receipt_hash": "7639aca76551afd3a921f3f1bffe5358ff35928682b32c15e32a1a48dcea70b1",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "wrong_nonce",
+    "package": {
+      "domain": "evd/v1/payment.amount",
+      "field": "amount_exact",
+      "nonce_hex": "ffffffffffffffffffffffffffffffff",
+      "payload_b64": "YW1vdW50X2V4YWN0OmV2ZC92MS9wYXltZW50LmFtb3VudA==",
+      "receipt_hash": "7639aca76551afd3a921f3f1bffe5358ff35928682b32c15e32a1a48dcea70b1",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "spaced_nonce_hex",
+    "package": {
+      "domain": "evd/v1/payment.amount",
+      "field": "amount_exact",
+      "nonce_hex": "00 000000000000000000000000000001",
+      "payload_b64": "YW1vdW50X2V4YWN0OmV2ZC92MS9wYXltZW50LmFtb3VudA==",
+      "receipt_hash": "7639aca76551afd3a921f3f1bffe5358ff35928682b32c15e32a1a48dcea70b1",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
+    "expected": false,
+    "name": "extra_package_member",
+    "package": {
+      "domain": "evd/v1/payment.amount",
+      "field": "amount_exact",
+      "nonce_hex": "00000000000000000000000000000001",
+      "note": "not in v1",
+      "payload_b64": "YW1vdW50X2V4YWN0OmV2ZC92MS9wYXltZW50LmFtb3VudA==",
+      "receipt_hash": "7639aca76551afd3a921f3f1bffe5358ff35928682b32c15e32a1a48dcea70b1",
+      "schema": "evd/disclosure/v1"
+    }
+  }
+]

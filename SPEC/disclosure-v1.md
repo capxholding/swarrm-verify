@@ -39,6 +39,37 @@ committed hash was fixed at capture time, before anyone knew what would be
 disputed. `--disclose` is repeatable; the JSON report carries a
 `disclosures` object.
 
+### 2.1 Closed field/domain profile
+
+The package has exactly the six members in §1. `receipt_hash` is 64 lowercase
+hex characters; `nonce_hex` is strict even-length hex decoding to at least 16
+bytes; `field` and `domain` are nonempty Unicode scalar strings containing no
+C0, DEL or C1 control. The domain begins with the literal `evd/v1/` and MUST be
+one of these field bindings:
+
+| field | permitted domain(s) |
+|---|---|
+| `payload` | `evd/v1/payload` |
+| `prompt` | `evd/v1/prompt`, `evd/v1/llm.prompt` |
+| `output` | `evd/v1/output`, `evd/v1/llm.output` |
+| `tool.args`, `tool.result` | `evd/v1/tool.args`, `evd/v1/tool.result` respectively |
+| `message` | `evd/v1/interaction.message` |
+| `policy_input`, `policy_output` | `evd/v1/policy.input`, `evd/v1/policy.output` respectively |
+| `approver_id`, `justification`, `escalation_target_id` | `evd/v1/approver_id`, `evd/v1/justification`, `evd/v1/escalation_target` respectively |
+| `config` | `evd/v1/agent.config`, `evd/v1/lineage/config` |
+| `query`, `trigger_content` | `evd/v1/query`, `evd/v1/guardrail.trigger` respectively |
+| `amount_exact`, `counterparty_id`, `mandate_ref` | `evd/v1/payment.amount`, `evd/v1/payment.counterparty`, `evd/v1/payment.mandate` respectively |
+| `system_prompt`, `tool_manifest`, `mandate_document`, `created_by_id` | `evd/v1/lineage/<field>` |
+| `enrolment_evidence`, `source_manifest`, `inputs`, `context_doc`, `request` | `evd/v1/authority/<field>` |
+| `batch`, `attestation`, `statement`, `doc` | `evd/v1/node/batch`, `evd/v1/node/attestation`, `evd/v1/node/triage`, `evd/v1/node/coverage` respectively |
+
+The custom-event escape hatch is the only structural rule: every safe field
+may use exactly `evd/v1/x/` followed by that same field. No other domain is
+valid. In particular, a cryptographic match does not permit a package to name
+one field while using another field's domain. Receipt commitment values with no
+binding above (for example an already-computed result-set digest) are not
+selectively disclosable under v1.
+
 ## 3. Live disclosure (auditor portal)
 
 `POST /portal/{grant}/disclose` with a package: the portal recomputes the

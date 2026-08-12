@@ -1,6 +1,9 @@
 /* @ts-self-types="./swarrm_verify.d.ts" */
 
 /**
+ * JSON/WASM entry point for a verdict input plus the relying party's LOCAL
+ * trust context.  The contexts remain separate arguments; exchange data can
+ * never smuggle its own roots into the verification call.
  * @param {Uint8Array} verdict_input_json
  * @param {Uint8Array} trust_json
  * @returns {string}
@@ -94,6 +97,21 @@ export function verify_certificate_cbor(bytes) {
     } finally {
         wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
+}
+
+/**
+ * Strict JSON boundary shared by native Rust and WASM disclosure verification.
+ * @param {Uint8Array} package_json
+ * @param {Uint8Array} bundle_json
+ * @returns {boolean}
+ */
+export function verify_disclosure_json(package_json, bundle_json) {
+    const ptr0 = passArray8ToWasm0(package_json, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArray8ToWasm0(bundle_json, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.verify_disclosure_json(ptr0, len0, ptr1, len1);
+    return ret !== 0;
 }
 function __wbg_get_imports() {
     const import0 = {

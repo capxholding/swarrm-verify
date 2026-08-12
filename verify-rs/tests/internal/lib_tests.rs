@@ -85,18 +85,63 @@ fn browser_entry_enforces_the_shared_unicode_scalar_profile() {
 #[test]
 fn receipt_payloads_are_exact_jcs_in_both_verifier_engines() {
     let canonical = br#"{"action_type":"llm.chat","seq":1}"#;
-    let envelope = |raw: &[u8]| {
-        serde_json::json!({
-            "payload": B64.encode(raw), "payloadType": RECEIPT_TYPE, "signatures": []
-        })
-    };
-    assert!(body_of(&envelope(canonical)).is_some());
+    assert!(canonical_body(canonical).is_some());
     for hostile in [br#"{"action_type":"shadow","action_type":"llm.chat","seq":1}"#.as_slice(), br#"{"seq":1,"action_type":"llm.chat"}"#, br#"{"action_type":"llm.chat","seq":1.0}"#, br#"{"action_type":"llm.chat","seq":1}\n"#] {
-        assert!(body_of(&envelope(hostile)).is_none());
+        assert!(canonical_body(hostile).is_none());
     }
     for (raw, accepted) in [(br#"{"n":9007199254740992}"#.as_slice(), true), (br#"{"n":-9007199254740992}"#, true), (br#"{"n":9007199254740993}"#, false), (br#"{"n":9007199254740994}"#, true)] {
-        assert_eq!(body_of(&envelope(raw)).is_some(), accepted, "{}", String::from_utf8_lossy(raw));
+        assert_eq!(canonical_body(raw).is_some(), accepted, "{}", String::from_utf8_lossy(raw));
     }
+}
+
+#[test]
+fn receipt_profile_is_closed_and_tenant_bound() {
+    let valid = serde_json::json!({
+        "schema":"evd/receipt/v1", "tenant_id":"tenant-a", "agent_id":"agent-a",
+        "seq":1, "action_type":"tool.call", "commitments":{"args":"ab".repeat(32)},
+        "context":{"status":200}, "parents":["cd".repeat(32)],
+        "ts_client":"2026-08-12T00:00:00Z", "ts_server":"2026-08-12T00:00:01.1Z",
+        "idempotency_key":"idem-a", "session_id":"session-a", "session_inferred":false
+    });
+    assert!(receipt_body_valid(&valid, Some("tenant-a")));
+    assert!(!receipt_body_valid(&valid, Some("tenant-b")));
+    let mut boundary = valid.clone();
+    boundary["parents"] = serde_json::json!((0..RECEIPT_MAX_PARENTS).map(|index| format!("{index:064x}")).collect::<Vec<_>>());
+    assert!(receipt_body_valid(&boundary, None));
+    boundary["parents"].as_array_mut().unwrap().push(serde_json::json!(format!("{:064x}", RECEIPT_MAX_PARENTS)));
+    assert!(!receipt_body_valid(&boundary, None));
+    let mut hostile = Vec::new();
+    let mut case = valid.clone();
+    case.as_object_mut().unwrap().remove("agent_id");
+    hostile.push(case);
+    let mut case = valid.clone();
+    case["extra"] = serde_json::json!(true);
+    hostile.push(case);
+    for seq in [serde_json::json!(false), serde_json::json!(0), serde_json::json!(9_007_199_254_740_992_u64)] {
+        let mut case = valid.clone();
+        case["seq"] = seq;
+        hostile.push(case);
+    }
+    for (field, value) in [("action_type", serde_json::json!("tool")), ("commitments", serde_json::json!({"args":"AB".repeat(32)})), ("context", serde_json::json!([])), ("parents", serde_json::json!(["cd".repeat(32), "cd".repeat(32)])), ("ts_server", serde_json::json!("2026-02-30T00:00:00Z")), ("session_inferred", serde_json::json!(1))] {
+        let mut case = valid.clone();
+        case[field] = value;
+        hostile.push(case);
+    }
+    assert!(hostile.iter().all(|body| !receipt_body_valid(body, None)));
+}
+
+#[test]
+fn malformed_key_receipts_cannot_enter_key_replay() {
+    let valid: Value = serde_json::from_str(VALID).unwrap();
+    let entries = valid["entries"].as_array().unwrap();
+    let mut entries = vec![entries.iter().find(|entry| entry["leaf_index"] == 0).unwrap().clone()];
+    assert!(replay_key_log(&entries).ok);
+    let envelope = &mut entries[0]["envelope"];
+    let mut body = canonical_body(&payload_of(envelope).unwrap()).unwrap();
+    body["unknown"] = serde_json::json!(true);
+    envelope["payload"] = serde_json::json!(B64.encode(jcs::canonical_checked(&body).unwrap()));
+    assert!(body_of(envelope).is_none());
+    assert!(!replay_key_log(&entries).ok);
 }
 
 #[test]

@@ -1,0 +1,78 @@
+{
+  "checkpoint_chain": [
+    {
+      "checkpoint": {
+        "body": {
+          "origin": "evd://tenant/t_golden",
+          "prev_hash": "",
+          "root_hash": "ea7b5e832be09285b343d442e9d3cba4b1e16756958426887e7c5c60f7f14ac6",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 2,
+          "ts": "2026-01-01T00:00:00.000000Z"
+        },
+        "kid": "Vkdap1RjR0wChd9d",
+        "sig": "4edeWPeYfKeKnD5pGncV+pb7VTlWd0LP2wiNvdL/haUVLkAHYTkQp7dvGEsaqZlouYSyZw0/fbArMV2CiYkOBw=="
+      }
+    }
+  ],
+  "entries": [
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoibWFsZm9ybWVkLWFnZW50IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7fSwiaWRlbXBvdGVuY3lfa2V5IjoiYm9vbGVhbi1zZXEiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOmZhbHNlLCJ0ZW5hbnRfaWQiOiJ0X2dvbGRlbiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "zJ9u+PSQRj35TiFci8oqt8UNwfcfkvmaBWssISeOgXHzkzV7d3DhGeaMDmy8wUeArmNp+BbKuiHDTwi9zADGCg=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "fd5ae5c122d3ed5d51bdf20538262797c98e71aa9388392946e8fecf4b877785"
+      ],
+      "leaf_index": 1
+    },
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "VBqI3aephPAuAxzMrr8a+1ejPItV4MNOjPrzKaTZsm9k4mhbNSt/mzRxTcezK5y+L4/nL35tY4mQbLevL8P8Dg=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "3bf05e62a28520be4e64e30900ac4013364eb15d2ae93d67fdea81a642060a5b"
+      ],
+      "leaf_index": 0
+    }
+  ],
+  "jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "Vkdap1RjR0wChd9d",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+      }
+    ]
+  },
+  "origin": "evd://tenant/t_golden",
+  "schema": "evd/bundle/v1",
+  "target_checkpoint": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "prev_hash": "",
+      "root_hash": "ea7b5e832be09285b343d442e9d3cba4b1e16756958426887e7c5c60f7f14ac6",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 2,
+      "ts": "2026-01-01T00:00:00.000000Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "4edeWPeYfKeKnD5pGncV+pb7VTlWd0LP2wiNvdL/haUVLkAHYTkQp7dvGEsaqZlouYSyZw0/fbArMV2CiYkOBw=="
+  }
+}

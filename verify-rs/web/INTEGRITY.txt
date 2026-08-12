@@ -14,12 +14,12 @@ Reproduce and check:
 Expected sha256 of swarrm_verify.js (the canonical x86_64 Linux CI build
 from this source tree):
 
-    1c6ec724f72235a64d97739e27044a264dc849c5619aa5153babf01cea26f344
+    3804710dd5b7eb5b1bc39a88b5b9f7c5db83f3eb1ea85bb70ea2b6f280562e15
 
 Expected sha256 of swarrm_verify_bg.wasm (the canonical x86_64 Linux CI build
 from this source tree):
 
-    983d0433011492442025739db8db22eb7e2df7226eed3c0661278a4381a537a1
+    1617c9f676e460e568546e0251834835839ad1e47c3d39fedf23b0f80882420d
 
 This artifact was rebuilt on x86_64 Linux with the official wasm-pack 0.15.0
 release binary and Rust 1.90.0 from the Cargo.lock-pinned dependency graph.

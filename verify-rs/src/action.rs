@@ -858,22 +858,12 @@ pub fn derive_vector_with_trust(verdict_input: &Value, trust: Option<&Value>) ->
 /// JSON/WASM entry point for a verdict input plus the relying party's LOCAL
 /// trust context.  The contexts remain separate arguments; exchange data can
 /// never smuggle its own roots into the verification call.
-fn derive_vector_json_bytes(verdict_input_json: &[u8], trust_json: &[u8]) -> String {
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+pub fn derive_vector_json(verdict_input_json: &[u8], trust_json: &[u8]) -> String {
     let input = if verdict_input_json.len() <= MAX_VERDICT_INPUT_BYTES { crate::trust::strict_json(verdict_input_json) } else { None };
     let trust = if trust_json.is_empty() || trust_json.len() > MAX_TRUST_CONTEXT_BYTES { None } else { crate::trust::strict_json(trust_json) };
     let vector = derive_vector_with_trust(input.as_ref().unwrap_or(&Value::Null), trust.as_ref());
     serde_json::to_string(&vector).expect("verdict vector is JSON")
-}
-
-#[cfg(not(feature = "wasm"))]
-pub fn derive_vector_json(verdict_input_json: &str, trust_json: &str) -> String {
-    derive_vector_json_bytes(verdict_input_json.as_bytes(), trust_json.as_bytes())
-}
-
-#[cfg(feature = "wasm")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn derive_vector_json(verdict_input_json: &[u8], trust_json: &[u8]) -> String {
-    derive_vector_json_bytes(verdict_input_json, trust_json)
 }
 
 // ------------------------------------------ authority_facts (authority-v1)
