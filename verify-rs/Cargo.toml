@@ -1,7 +1,7 @@
 # Apache-2.0 (public verifier repo)
 [package]
 name = "swarrm-verify"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2021"
 description = "Public Rust/WASM second implementation for evidence bundles, certificates, and CWT/COSE-only B28 assurance"
 # Declared, not merely stated in the header comment above: wasm-pack reads these
