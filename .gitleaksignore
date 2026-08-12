@@ -51,3 +51,4 @@ bdd5fda9463133fff372a1dbf14296285b5af352:tests/golden/fuzz/case_017.json:generic
 bdd5fda9463133fff372a1dbf14296285b5af352:tests/golden/fuzz/case_020.json:generic-api-key:1
 bdd5fda9463133fff372a1dbf14296285b5af352:tests/golden/fuzz/case_024.json:generic-api-key:84
 bdd5fda9463133fff372a1dbf14296285b5af352:tests/golden/fuzz/case_029.json:generic-api-key:1
+35c341bfbf11652402b99edc5b7affbd17fe52f7:tests/golden/fuzz/case_015.json:generic-api-key:55
