@@ -1,6 +1,11 @@
 /* tslint:disable */
 /* eslint-disable */
 
+/**
+ * JSON/WASM entry point for a verdict input plus the relying party's LOCAL
+ * trust context.  The contexts remain separate arguments; exchange data can
+ * never smuggle its own roots into the verification call.
+ */
 export function derive_vector_json(verdict_input_json: Uint8Array, trust_json: Uint8Array): string;
 
 /**
@@ -23,14 +28,20 @@ export function verify_bundle_json(json: Uint8Array): string;
  */
 export function verify_certificate_cbor(bytes: Uint8Array): string;
 
+/**
+ * Strict JSON boundary shared by native Rust and WASM disclosure verification.
+ */
+export function verify_disclosure_json(package_json: Uint8Array, bundle_json: Uint8Array): boolean;
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly verify_b28_cwt: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
+    readonly verify_disclosure_json: (a: number, b: number, c: number, d: number) => number;
+    readonly verify_bundle_json: (a: number, b: number) => [number, number];
     readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly verify_certificate_cbor: (a: number, b: number) => [number, number];
-    readonly verify_bundle_json: (a: number, b: number) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
