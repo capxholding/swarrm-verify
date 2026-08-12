@@ -1,24 +1,58 @@
 // Apache-2.0 (public verifier repo)
 //! Minimal RFC 8785 (JCS) canonicalization over serde_json::Value.
 //!
-//! Covers exactly the value shapes that appear in signed structures here:
-//! objects (keys sorted by UTF-16 code units), arrays, strings, integers,
-//! booleans, null. Canonicalization FAILS (None) instead of panicking on
-//! hostile shapes (H5): non-integer numbers, and container nesting past
-//! MAX_DEPTH — the guard bails at depth MAX_DEPTH+1, so recursion is bounded
-//! long before it could overflow the stack, and a failed canonicalization
-//! can never verify (no honest signature covers its output).
+//! Covers RFC 8785's JSON value domain, including finite binary64 values
+//! rendered with ECMAScript Number::toString. Canonicalization FAILS (None)
+//! on hostile numeric shapes or nesting past MAX_DEPTH, long before stack
+//! overflow, so a failed canonicalization can never verify.
 
 use serde_json::Value;
 
 /// Same cap as MAX_JCS_DEPTH in core/canonical.py — the two verifiers must
 /// reject identically.
 pub(crate) const MAX_DEPTH: i64 = 64;
-const MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
+pub(crate) const MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
 
-/// Fallible canonicalization: None on over-deep nesting, a float, or an
-/// integer outside RFC 8785's interoperable IEEE-754 domain. Verification
-/// callers must treat None as "does not verify".
+fn number_text(number: &serde_json::Number) -> Option<String> {
+    if number.is_i64() {
+        number.as_i64().filter(|value| (-MAX_SAFE_INTEGER..=MAX_SAFE_INTEGER).contains(value)).map(|value| value.to_string())
+    } else if number.is_u64() {
+        number.as_u64().filter(|value| *value <= MAX_SAFE_INTEGER as u64).map(|value| value.to_string())
+    } else {
+        number.as_f64().filter(|value| value.is_finite()).map(|value| ryu_js::Buffer::new().format_finite(value).to_owned())
+    }
+}
+
+fn numbers_are_integers(v: &Value) -> bool {
+    match v {
+        Value::Number(number) => !number.is_f64(),
+        Value::Array(items) => items.iter().all(numbers_are_integers),
+        Value::Object(items) => items.values().all(numbers_are_integers),
+        _ => true,
+    }
+}
+
+pub(crate) fn canonical_integer_checked(v: &Value) -> Option<Vec<u8>> {
+    numbers_are_integers(v).then(|| canonical_checked(v)).flatten()
+}
+
+pub(crate) fn promote_jcs_integer_lexemes(v: &mut Value) -> bool {
+    match v {
+        Value::Number(number) if number.as_i64().is_some_and(|value| !(-MAX_SAFE_INTEGER..=MAX_SAFE_INTEGER).contains(&value)) || number.as_u64().is_some_and(|value| value > MAX_SAFE_INTEGER as u64) => {
+            let Some(promoted) = number.as_f64().and_then(serde_json::Number::from_f64) else {
+                return false;
+            };
+            *number = promoted;
+            true
+        }
+        Value::Array(items) => items.iter_mut().all(promote_jcs_integer_lexemes),
+        Value::Object(items) => items.values_mut().all(promote_jcs_integer_lexemes),
+        _ => true,
+    }
+}
+
+/// Fallible canonicalization: None on over-deep nesting, a non-finite value,
+/// or an integer outside RFC 8785's interoperable IEEE-754 domain.
 pub(crate) fn canonical_checked(v: &Value) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     if write_value(v, &mut out, MAX_DEPTH) {
@@ -33,13 +67,11 @@ fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
         return false; // nested deeper than MAX_DEPTH — refuse, don't recurse on
     }
     match v {
-        Value::Null => out.extend_from_slice(b"null"),
-        Value::Bool(b) => out.extend_from_slice(if *b { b"true" } else { b"false" }),
-        Value::Number(n) => {
-            let Some(i) = n.as_i64().filter(|i| (-MAX_SAFE_INTEGER..=MAX_SAFE_INTEGER).contains(i)) else { return false };
-            out.extend_from_slice(i.to_string().as_bytes());
+        Value::Null | Value::Bool(_) | Value::String(_) => serde_json::to_writer(out, v).expect("writing JSON to Vec cannot fail"),
+        Value::Number(number) => {
+            let Some(text) = number_text(number) else { return false };
+            out.extend_from_slice(text.as_bytes());
         }
-        Value::String(s) => write_string(s, out),
         Value::Array(a) => {
             out.push(b'[');
             for (i, e) in a.iter().enumerate() {
@@ -60,7 +92,7 @@ fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
                 if i > 0 {
                     out.push(b',');
                 }
-                write_string(k, out);
+                serde_json::to_writer(&mut *out, k).expect("writing JSON to Vec cannot fail");
                 out.push(b':');
                 if !write_value(&m[*k], out, limit - 1) {
                     return false;
@@ -74,25 +106,4 @@ fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
 
 fn utf16_cmp(a: &str, b: &str) -> std::cmp::Ordering {
     a.encode_utf16().cmp(b.encode_utf16())
-}
-
-fn write_string(s: &str, out: &mut Vec<u8>) {
-    out.push(b'"');
-    for c in s.chars() {
-        match c {
-            '"' => out.extend_from_slice(b"\\\""),
-            '\\' => out.extend_from_slice(b"\\\\"),
-            '\u{08}' => out.extend_from_slice(b"\\b"),
-            '\u{0C}' => out.extend_from_slice(b"\\f"),
-            '\n' => out.extend_from_slice(b"\\n"),
-            '\r' => out.extend_from_slice(b"\\r"),
-            '\t' => out.extend_from_slice(b"\\t"),
-            c if (c as u32) < 0x20 => out.extend_from_slice(format!("\\u{:04x}", c as u32).as_bytes()),
-            c => {
-                let mut buf = [0u8; 4];
-                out.extend_from_slice(c.encode_utf8(&mut buf).as_bytes())
-            }
-        }
-    }
-    out.push(b'"');
 }

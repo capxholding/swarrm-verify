@@ -43,7 +43,6 @@ const MAX_INCLUSION_PROOF_LEN: usize = 64;
 const MAX_CHECKPOINT_CHAIN_LEN: usize = 100_000;
 const MAX_SIGNATURES_PER_ENVELOPE: usize = 9;
 const MAX_ATTESTATION_RECORDS: usize = 256;
-const MAX_JSON_DEPTH: i64 = jcs::MAX_DEPTH; // 64 — whole bundle shares the JCS cap
 
 // A signed checkpoint whose tree_size covers a leaf is the log's own sworn
 // statement that it already HELD that receipt, so a receipt's ts_server may
@@ -52,7 +51,7 @@ const MAX_JSON_DEPTH: i64 = jcs::MAX_DEPTH; // 64 — whole bundle shares the JC
 // semantics as verify/verifier.py::RECEIPT_CHECKPOINT_SKEW_S.
 const RECEIPT_CHECKPOINT_SKEW_S: i64 = 300;
 
-fn depth_exceeds(v: &Value, limit: i64) -> bool {
+pub(crate) fn depth_exceeds(v: &Value, limit: i64) -> bool {
     // bounded recursion: bails at the first over-deep branch (limit+2 frames
     // at most), so the walk itself can never overflow the stack
     if limit < 0 {
@@ -96,7 +95,7 @@ fn within_caps(bundle: &Value) -> bool {
             return false;
         }
     }
-    !depth_exceeds(bundle, MAX_JSON_DEPTH)
+    jcs::canonical_checked(bundle).is_some()
 }
 
 pub(crate) fn sha256(data: &[u8]) -> [u8; 32] {
@@ -200,7 +199,8 @@ pub(crate) fn body_of(env: &Value) -> Option<Value> {
 }
 
 fn canonical_body(raw: &[u8]) -> Option<Value> {
-    let body = serde_json::from_slice(raw).ok()?;
+    let mut body = serde_json::from_slice(raw).ok()?;
+    jcs::promote_jcs_integer_lexemes(&mut body).then_some(())?;
     (jcs::canonical_checked(&body)?.as_slice() == raw).then_some(body)
 }
 
@@ -1218,9 +1218,8 @@ fn browser_bundle_verification_result(json: &str) -> String {
     if json.len() > MAX_BUNDLE_BYTES {
         return browser_bundle_result("NOT_VERIFIED", None, None);
     }
-    let bundle = match serde_json::from_str::<Value>(json) {
-        Ok(bundle) => bundle,
-        Err(_) => return browser_bundle_result("ERROR", None, Some("INVALID_JSON")),
+    let Some(bundle) = trust::strict_json(json.as_bytes()) else {
+        return browser_bundle_result("ERROR", None, Some("INVALID_JSON"));
     };
     if !verify_bundle(&bundle) {
         return browser_bundle_result("NOT_VERIFIED", None, None);

@@ -56,6 +56,59 @@ const malformed = parseBundleResult(verify_bundle_json("{"));
 const malformedOk = malformed.verdict === "ERROR" && malformed.bundle_digest === null;
 if (!malformedOk) failures++;
 console.log(`${malformedOk ? "OK " : "XX "} malformed JSON result contract`);
+const baseBundle = fs.readFileSync(path.join(dir, "valid_e1.json"), "utf8").trimEnd();
+const withFragment = fragment => `${baseBundle.slice(0, -1)},${fragment}}`;
+const numberProfile = JSON.parse(fs.readFileSync(
+  path.join(dir, "..", "json_number_profile.json"), "utf8",
+));
+for (const [name, item] of Object.entries(numberProfile)) {
+  const token = item.token || `${item.prefix || ""}${item.repeat.repeat(item.count)}${item.suffix || ""}`;
+  const got = parseBundleResult(verify_bundle_json(withFragment(`"number_probe":${token}`)));
+  const ok = got.verdict === item.rust_verdict &&
+    (item.accepted ? got.bundle_digest !== null : got.bundle_digest === null);
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} JSON number profile ${name}`);
+}
+const duplicateProfile = JSON.parse(fs.readFileSync(
+  path.join(dir, "..", "json_duplicate_profile.json"), "utf8",
+));
+for (const [name, fragment] of Object.entries(duplicateProfile)) {
+  const input = withFragment(fragment);
+  const got = parseBundleResult(verify_bundle_json(input));
+  const ok = got.verdict === "ERROR" && got.error === "INVALID_JSON" && got.bundle_digest === null;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} duplicate JSON ${name}`);
+}
+const unicodeProfile = JSON.parse(fs.readFileSync(
+  path.join(dir, "..", "json_unicode_profile.json"), "utf8",
+));
+for (const [name, item] of Object.entries(unicodeProfile)) {
+  const got = parseBundleResult(verify_bundle_json(withFragment(item.fragment)));
+  const ok = got.verdict === (item.accepted ? "VERIFIED" : "ERROR") &&
+    (item.accepted ? got.bundle_digest !== null : got.bundle_digest === null);
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} Unicode scalar profile ${name}`);
+}
+const hostileJson = [
+  '{"x":1,"x":2}',
+  `${'{"x":'.repeat(70)}0${'}'.repeat(70)}`,
+  `{"x":1.${"0".repeat(200)}}`,
+];
+const weakVector = derive_vector_json("{}", "");
+for (const [index, hostile] of hostileJson.entries()) {
+  const ok = derive_vector_json(hostile, "") === weakVector;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} strict verdict input ${index + 1}`);
+}
+const verdictDir = path.join(dir, "..", "verdicts");
+const verdictInput = fs.readFileSync(path.join(verdictDir, "va_hardware_full_scan.json"), "utf8");
+const untrustedVector = derive_vector_json(verdictInput, "");
+hostileJson[2] = `{"x":1e${"0".repeat(200)}1}`;
+for (const [index, hostile] of hostileJson.entries()) {
+  const ok = derive_vector_json(verdictInput, hostile) === untrustedVector;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} strict local trust ${index + 1}`);
+}
 if (failures) {
   console.error(`\nPARITY FAILED: ${failures} fixture(s) disagree`);
   process.exit(1);

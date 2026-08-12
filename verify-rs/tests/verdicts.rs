@@ -112,3 +112,22 @@ fn scan_binding_rejects_shared_noncanonical_cases() {
         assert_eq!(got["coverage_basis"], "INSUFFICIENT", "{}", case["name"]);
     }
 }
+
+#[test]
+fn json_entry_rejects_ambiguous_or_unbounded_input_and_trust() {
+    let weak = swarrm_verify::action::derive_vector_json("{}", "");
+    let deep = format!("{}0{}", "{\"x\":".repeat(70), "}".repeat(70));
+    let long_number = format!("{{\"x\":1.{}}}", "0".repeat(200));
+    for hostile in ["{\"x\":1,\"x\":2}".to_string(), deep, long_number] {
+        assert_eq!(swarrm_verify::action::derive_vector_json(&hostile, ""), weak);
+    }
+
+    let dir = verdicts_dir();
+    let input = fs::read_to_string(dir.join("va_hardware_full_scan.json")).unwrap();
+    let untrusted = swarrm_verify::action::derive_vector_json(&input, "");
+    let deep = format!("{}0{}", "{\"x\":".repeat(70), "}".repeat(70));
+    let long_number = format!("{{\"x\":1e{}1}}", "0".repeat(200));
+    for hostile in ["{\"x\":1,\"x\":2}".to_string(), deep, long_number] {
+        assert_eq!(swarrm_verify::action::derive_vector_json(&input, &hostile), untrusted);
+    }
+}
