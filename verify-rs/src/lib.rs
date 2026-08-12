@@ -43,7 +43,6 @@ const MAX_INCLUSION_PROOF_LEN: usize = 64;
 const MAX_CHECKPOINT_CHAIN_LEN: usize = 100_000;
 const MAX_SIGNATURES_PER_ENVELOPE: usize = 9;
 const MAX_ATTESTATION_RECORDS: usize = 256;
-
 // A signed checkpoint whose tree_size covers a leaf is the log's own sworn
 // statement that it already HELD that receipt, so a receipt's ts_server may
 // exceed the FIRST covering checkpoint's signed ts by at most this many
@@ -95,7 +94,7 @@ fn within_caps(bundle: &Value) -> bool {
             return false;
         }
     }
-    jcs::canonical_checked(bundle).is_some()
+    jcs::numbers_within_profile(bundle)
 }
 
 pub(crate) fn sha256(data: &[u8]) -> [u8; 32] {
@@ -1212,13 +1211,13 @@ fn browser_bundle_result(verdict: &str, bundle_digest: Option<String>, error: Op
 }
 
 #[cfg(any(test, feature = "wasm"))]
-fn browser_bundle_verification_result(json: &str) -> String {
+fn browser_bundle_verification_result(json: &[u8]) -> String {
     // Preserve the verifier's established over-limit verdict without parsing
     // or allocating another copy of attacker-controlled input.
     if json.len() > MAX_BUNDLE_BYTES {
         return browser_bundle_result("NOT_VERIFIED", None, None);
     }
-    let Some(bundle) = trust::strict_json(json.as_bytes()) else {
+    let Some(bundle) = trust::strict_json(json) else {
         return browser_bundle_result("ERROR", None, Some("INVALID_JSON"));
     };
     if !verify_bundle(&bundle) {
@@ -1240,7 +1239,7 @@ mod wasm {
     /// Verify a bundle and return the versioned browser result JSON. A
     /// VERIFIED result alone carries SHA-256 of the JCS-canonical full bundle.
     #[wasm_bindgen]
-    pub fn verify_bundle_json(json: &str) -> String {
+    pub fn verify_bundle_json(json: &[u8]) -> String {
         super::browser_bundle_verification_result(json)
     }
 }

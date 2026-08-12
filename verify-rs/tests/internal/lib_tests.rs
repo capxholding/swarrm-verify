@@ -4,7 +4,7 @@ const VALID: &str = include_str!("../../../tests/golden/bundles/valid_e1.json");
 const VALID_DIGEST: &str = "c3c85b1143c937cacf692eb37377b72be4d53941055262623c022c64916e8239";
 
 fn result(input: &str) -> Value {
-    serde_json::from_str(&browser_bundle_verification_result(input)).unwrap()
+    serde_json::from_str(&browser_bundle_verification_result(input.as_bytes())).unwrap()
 }
 
 fn assert_closed_shape(value: &Value) {
@@ -122,6 +122,16 @@ fn signed_action_semantics_remain_integer_only_inside_full_rfc8785_jcs() {
     let value = serde_json::json!({"nested": [1.5]});
     assert!(crate::jcs::canonical_checked(&value).is_some());
     assert!(crate::jcs::canonical_integer_checked(&value).is_none());
+}
+
+#[test]
+fn integer_profile_preflight_stops_before_programmatic_depth_can_exhaust_the_stack() {
+    let mut value = Value::Null;
+    for _ in 0..10_000 {
+        value = Value::Array(vec![value]);
+    }
+    assert!(crate::jcs::canonical_integer_checked(&value).is_none());
+    std::mem::forget(value); // recursive Value drop is outside the verifier boundary under test
 }
 
 #[test]

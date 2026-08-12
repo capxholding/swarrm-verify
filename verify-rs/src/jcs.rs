@@ -23,17 +23,24 @@ fn number_text(number: &serde_json::Number) -> Option<String> {
     }
 }
 
-fn numbers_are_integers(v: &Value) -> bool {
+fn numbers_match(v: &Value, integers_only: bool, limit: i64) -> bool {
+    if limit < 0 {
+        return false;
+    }
     match v {
-        Value::Number(number) => !number.is_f64(),
-        Value::Array(items) => items.iter().all(numbers_are_integers),
-        Value::Object(items) => items.values().all(numbers_are_integers),
+        Value::Number(number) => (!integers_only || !number.is_f64()) && number_text(number).is_some(),
+        Value::Array(items) => items.iter().all(|item| numbers_match(item, integers_only, limit - 1)),
+        Value::Object(items) => items.values().all(|item| numbers_match(item, integers_only, limit - 1)),
         _ => true,
     }
 }
 
+pub(crate) fn numbers_within_profile(v: &Value) -> bool {
+    numbers_match(v, false, MAX_DEPTH)
+}
+
 pub(crate) fn canonical_integer_checked(v: &Value) -> Option<Vec<u8>> {
-    numbers_are_integers(v).then(|| canonical_checked(v)).flatten()
+    numbers_match(v, true, MAX_DEPTH).then(|| canonical_checked(v)).flatten()
 }
 
 pub(crate) fn promote_jcs_integer_lexemes(v: &mut Value) -> bool {
