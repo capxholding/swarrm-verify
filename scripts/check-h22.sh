@@ -39,6 +39,19 @@ NODE
 
 grep -A2 '^name = "rsa"$' verify-rs/Cargo.lock | grep -F 'version = "0.9.10"' >/dev/null
 grep -F 'publish_results: false' .github/workflows/scorecard.yml >/dev/null
+grep -F 'node scripts/finalize-cyclonedx.mjs' .github/workflows/release.yml >/dev/null
+node scripts/check-browser-page.mjs
+
+sbom_tmp=$(mktemp -d "${TMPDIR:-/tmp}/swarrm-h22-sbom.XXXXXX")
+trap 'rm -rf "$sbom_tmp"' EXIT
+cat >"$sbom_tmp/bom.json" <<JSON
+{"bomFormat":"CycloneDX","specVersion":"1.5","version":1,"metadata":{"component":{"type":"library","name":"swarrm-verify","version":"$cargo_version"}},"components":[]}
+JSON
+node scripts/finalize-cyclonedx.mjs "$sbom_tmp/bom.json" capxholding/swarrm-verify 0123456789abcdef0123456789abcdef01234567 "$cargo_version" >/dev/null
+cp "$sbom_tmp/bom.json" "$sbom_tmp/first.json"
+node scripts/finalize-cyclonedx.mjs "$sbom_tmp/bom.json" capxholding/swarrm-verify 0123456789abcdef0123456789abcdef01234567 "$cargo_version" >/dev/null
+cmp "$sbom_tmp/first.json" "$sbom_tmp/bom.json"
+node -e 'const b=require(process.argv[1]); if (!/^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(b.serialNumber)) process.exit(1)' "$sbom_tmp/bom.json"
 test -f .github/CODEOWNERS
 test -f .github/dependabot.yml
 for target in bundle_json certificate_cbor b28_exchange tsa; do

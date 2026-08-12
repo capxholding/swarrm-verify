@@ -110,6 +110,8 @@ jobs:
             --all-features --target all --spec-version 1.5 \
             --override-filename "swarrm-verify-$version.cdx"
           mv "verify-rs/swarrm-verify-$version.cdx.json" "dist/swarrm-verify-$version.cdx.json"
+          node scripts/finalize-cyclonedx.mjs \
+            "dist/swarrm-verify-$version.cdx.json" "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$version"
           cyclonedx validate --input-file "dist/swarrm-verify-$version.cdx.json" --input-format json --fail-on-errors
 
           VERSION="$version" TAG="$tag" EPOCH="$epoch" node <<'NODE'

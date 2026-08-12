@@ -6,11 +6,29 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-08-12
+
 ### Security
 
 - Require every signed receipt payload to be strict JSON whose bytes are
   already in exact RFC 8785 canonical form; duplicate members, trailing bytes
   and alternate-but-equivalent encodings now fail before claim evaluation.
+- Require receipt-v1 fields, types, tenant binding and signer roles to match the
+  closed profile before any signed receipt enters verification.
+- Enforce the complete selective-disclosure field/domain registry, exact package
+  shape, canonical base64 and minimum nonce strength in native Rust and WASM.
+
+### Fixed
+
+- Preserve the exact uploaded JSON bytes across browser policy re-verification;
+  only the deliberate tamper demonstration re-encodes its modified text.
+- Add the deterministic CycloneDX `serialNumber` required by `actions/attest`,
+  while retaining schema validation, checksum signing, SBOM attestation and
+  provenance publication.
+- Supersede the unpublished `v1.0.4` tag. Its deterministic build succeeded,
+  but publication was stopped after the stale browser re-verification path and
+  missing attestation-recognition field were found; the tag remains immutable
+  and has no GitHub release.
 
 ## [1.0.4] - 2026-08-09
 
@@ -67,6 +85,7 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 - Source-only GitHub release. It had no downloadable assets, SBOM, signature or
   provenance, and the tagged tree declared crate/package version `0.1.0`.
 
-[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/capxholding/swarrm-verify/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/capxholding/swarrm-verify/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/capxholding/swarrm-verify/releases/tag/v1.0.3
