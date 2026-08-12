@@ -19,7 +19,7 @@ from this source tree):
 Expected sha256 of swarrm_verify_bg.wasm (the canonical x86_64 Linux CI build
 from this source tree):
 
-    1617c9f676e460e568546e0251834835839ad1e47c3d39fedf23b0f80882420d
+    30bfb6ae8a09137f5f20ab47bb95cf2e7dcb8ddcc45dcc5e67c4c3f1f8c3e1da
 
 This artifact was rebuilt on x86_64 Linux with the official wasm-pack 0.15.0
 release binary and Rust 1.90.0 from the Cargo.lock-pinned dependency graph.
