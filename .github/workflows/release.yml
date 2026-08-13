@@ -42,32 +42,42 @@ jobs:
             git merge-base --is-ancestor "$GITHUB_SHA" origin/main
           fi
           test -z "$(git status --short)"
-      - name: Install the checksummed wasm-pack release
+      - name: Install the checksummed canonical WASM tools
         run: |
-          archive="$RUNNER_TEMP/wasm-pack-v0.15.0.tar.gz"
-          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
-            --output "$archive" \
-            https://github.com/wasm-bindgen/wasm-pack/releases/download/v0.15.0/wasm-pack-v0.15.0-x86_64-unknown-linux-musl.tar.gz
-          echo "c09f971ecaed9a2efc80fdcea7a00ef6b53c7fadc8c57d1f61b53a6aa66b668a  $archive" | sha256sum --check -
-          tar -xzf "$archive" -C "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/wasm-pack-v0.15.0-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
-      - name: Test and reproduce the committed verifier
+          tool_bin=$(bash verify-rs/scripts/install-canonical-wasm-tools.sh \
+            "$RUNNER_TEMP/canonical-wasm-tools")
+          echo "$tool_bin" >> "$GITHUB_PATH"
+      - name: Test and rebuild the verifier
+        id: wasm
         run: |
           test "$(rustc --version | awk '{print $2}')" = "1.90.0"
           test "$(node --version)" = "v22.23.2"
           test "$(wasm-pack --version)" = "wasm-pack 0.15.0"
+          test "$(wasm-bindgen --version)" = "wasm-bindgen 0.2.126"
+          test "$(wasm-opt --version)" = "wasm-opt version 117 (version_117)"
           cargo fmt --manifest-path verify-rs/Cargo.toml --check
           cargo test --locked --manifest-path verify-rs/Cargo.toml
           cargo clippy --locked --manifest-path verify-rs/Cargo.toml --all-targets -- -D warnings
           cp -R verify-rs/pkg "$RUNNER_TEMP/committed-pkg"
-          (
-            cd verify-rs
-            wasm-pack build --target web --features wasm --locked
-            diff -ru "$RUNNER_TEMP/committed-pkg" pkg
-            wasm-pack build --target nodejs --out-dir pkg-node --features wasm --locked
-          )
+          bash verify-rs/scripts/build-canonical-wasm.sh web
+          bash verify-rs/scripts/build-canonical-wasm.sh nodejs
           node verify-rs/tests/test_parity.cjs
-          git diff --exit-code -- verify-rs/Cargo.lock verify-rs/pkg
+          git diff --exit-code -- verify-rs/Cargo.lock
+      - name: Assert the committed verifier is reproducible
+        id: provenance
+        if: ${{ !cancelled() && steps.wasm.outcome == 'success' }}
+        run: |
+          diff -ru "$RUNNER_TEMP/committed-pkg" verify-rs/pkg
+          git diff --exit-code -- verify-rs/pkg
+      - name: Retain the canonical Linux rebuild on provenance failure
+        if: ${{ always() && steps.wasm.outcome == 'success' && steps.provenance.outcome == 'failure' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rebuilt-release-verifier-${{ github.sha }}
+          path: verify-rs/pkg
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
       - name: Install checksummed CycloneDX tools
         run: |
           mkdir -p "$RUNNER_TEMP/cyclonedx-bin"
@@ -127,8 +137,19 @@ jobs:
               rust: "1.90.0",
               node: "22.23.2",
               wasm_pack: "0.15.0",
+              wasm_bindgen: "0.2.126",
+              binaryen: "117",
               cargo_cyclonedx: "0.5.9",
               cyclonedx_cli: "0.33.1"
+            },
+            tool_archive_sha256: {
+              wasm_pack_x86_64_linux: "c09f971ecaed9a2efc80fdcea7a00ef6b53c7fadc8c57d1f61b53a6aa66b668a",
+              wasm_bindgen_x86_64_linux: "064948d58e2d6c0a745216477a639ba696216d6309aaa902939d1b865b1d869d",
+              binaryen_x86_64_linux: "3dc677006555b355ea2da5e82602065a161d5e83eaefd3f759afa00b96e83212"
+            },
+            rust_path_prefixes: {
+              source: "/swarrm/source",
+              cargo: "/swarrm/cargo"
             },
             workflow: ".github/workflows/release.yml"
           };

@@ -6,6 +6,23 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-08-13
+
+### Security
+
+- Reproduce the browser verifier with checksummed release binaries for
+  wasm-pack, wasm-bindgen CLI and Binaryen. The build now uses `no-install`
+  mode, so it cannot silently compile a tool from a changing Cargo graph.
+
+### Fixed
+
+- Restore release provenance after the coordinated history remediation changed
+  the reachable `v1.0.5` revision while the existing release assets retained
+  their original commit identity. Version `1.0.6` is built and attested from a
+  new immutable tag; the historical release is not overwritten.
+- Retain the canonical Linux rebuild when a committed artifact comparison
+  fails, making a byte-level provenance drift directly diagnosable.
+
 ## [1.0.5] - 2026-08-12
 
 ### Security
@@ -85,7 +102,8 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 - Source-only GitHub release. It had no downloadable assets, SBOM, signature or
   provenance, and the tagged tree declared crate/package version `0.1.0`.
 
-[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/capxholding/swarrm-verify/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/capxholding/swarrm-verify/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/capxholding/swarrm-verify/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/capxholding/swarrm-verify/releases/tag/v1.0.3

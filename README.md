@@ -64,15 +64,16 @@ rejected with the right error, not just "invalid".
 
 ```bash
 cd verify-rs
-wasm-pack build --target web --features wasm --locked # pinned 0.15.0 binary
+tool_bin=$(bash scripts/install-canonical-wasm-tools.sh /tmp/swarrm-wasm-tools)
+PATH="$tool_bin:$PATH" bash scripts/build-canonical-wasm.sh web
 shasum -a 256 pkg/swarrm_verify_bg.wasm
 ```
 
 Compare the hash against `INTEGRITY.txt` on swarrm.ai. Bit-exact reproduction
-requires the same toolchain (rustc + wasm-pack versions are recorded in the
-integrity file); regardless of toolchain, this source is what to audit — the
+requires the same toolchain (all tool versions are recorded in the integrity
+file); regardless of toolchain, this source is what to audit — the
 page at swarrm.ai/verify loads no external code and never uploads your file.
-For byte reproduction, follow the hash-checked wasm-pack 0.15.0 procedure in
+For byte reproduction, follow the fully checksummed toolchain procedure in
 [`verify-rs/README.md`](verify-rs/README.md); CI also asserts that `Cargo.lock`
 does not change.
 

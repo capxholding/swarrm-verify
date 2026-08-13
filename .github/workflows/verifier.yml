@@ -63,25 +63,22 @@ jobs:
       - uses: dtolnay/rust-toolchain@06e5a564a0556e338780f5aecf2e7dcc9b267f07 # branch 1.90.0
         with:
           targets: wasm32-unknown-unknown
-      - name: Install the pinned wasm-pack release
+      - name: Install the checksummed canonical WASM tools
         run: |
-          wasm_pack_archive="$RUNNER_TEMP/wasm-pack.tar.gz"
-          wasm_pack_dir="$RUNNER_TEMP/wasm-pack-v0.15.0-x86_64-unknown-linux-musl"
-          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
-            --output "$wasm_pack_archive" \
-            https://github.com/wasm-bindgen/wasm-pack/releases/download/v0.15.0/wasm-pack-v0.15.0-x86_64-unknown-linux-musl.tar.gz
-          echo "c09f971ecaed9a2efc80fdcea7a00ef6b53c7fadc8c57d1f61b53a6aa66b668a  $wasm_pack_archive" | sha256sum --check -
-          tar -xzf "$wasm_pack_archive" -C "$RUNNER_TEMP"
-          echo "$wasm_pack_dir" >> "$GITHUB_PATH"
+          tool_bin=$(bash verify-rs/scripts/install-canonical-wasm-tools.sh \
+            "$RUNNER_TEMP/canonical-wasm-tools")
+          echo "$tool_bin" >> "$GITHUB_PATH"
       - name: Rebuild the served verifier
         id: wasm
         run: |
           test "$(wasm-pack --version)" = "wasm-pack 0.15.0"
-          cd verify-rs
-          wasm-pack build --target web --features wasm --locked
-          wasm-pack build --target nodejs --out-dir pkg-node --features wasm --locked
-          git diff --exit-code -- Cargo.lock
+          test "$(wasm-bindgen --version)" = "wasm-bindgen 0.2.126"
+          test "$(wasm-opt --version)" = "wasm-opt version 117 (version_117)"
+          bash verify-rs/scripts/build-canonical-wasm.sh web
+          bash verify-rs/scripts/build-canonical-wasm.sh nodejs
+          git diff --exit-code -- verify-rs/Cargo.lock
       - name: Assert the committed browser artifact and pin are current
+        id: provenance
         if: ${{ !cancelled() && steps.wasm.outcome == 'success' }}
         run: |
           js_sha="$(sha256sum verify-rs/pkg/swarrm_verify.js | awk '{print $1}')"
@@ -92,7 +89,7 @@ jobs:
           grep -F "$wasm_sha" verify-rs/web/index.html
           git diff --exit-code -- verify-rs/pkg
       - name: Retain the canonical Linux rebuild on provenance failure
-        if: ${{ failure() && steps.wasm.outcome == 'success' }}
+        if: ${{ always() && steps.wasm.outcome == 'success' && steps.provenance.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: rebuilt-public-verifier-${{ github.sha }}

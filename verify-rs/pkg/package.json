@@ -2,7 +2,7 @@
   "name": "swarrm-verify",
   "type": "module",
   "description": "Public Rust/WASM second implementation for evidence bundles, certificates, and CWT/COSE-only B28 assurance",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
