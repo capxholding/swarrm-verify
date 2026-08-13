@@ -6,6 +6,7 @@
 1388f80323ab5ad00724bcc79664ceeb347a5bdf:tests/golden/bundles/rotation_valid.json:generic-api-key:55
 1d13e95649c1bfd25778ed02171817cd1f28964f:tests/golden/bundles/rotation_valid.json:generic-api-key:55
 2ab6c37a1361bde6d53a7bc002f18a40049464f6:tests/golden/verdicts/trust_context.json:generic-api-key:24
+88123cc570db24a49a5e3e4feb21366c88ea9ca1:tests/golden/verdicts/trust_context.json:generic-api-key:24
 3493637ffa6e2fc8719f453b6b77bdfc8c4c36ad:tests/golden/fuzz/case_013.json:generic-api-key:1
 3493637ffa6e2fc8719f453b6b77bdfc8c4c36ad:tests/golden/fuzz/case_016.json:generic-api-key:1
 3493637ffa6e2fc8719f453b6b77bdfc8c4c36ad:tests/golden/fuzz/case_017.json:generic-api-key:1
