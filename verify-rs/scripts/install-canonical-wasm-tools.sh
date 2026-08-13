@@ -22,7 +22,12 @@ download() {
   curl --fail --silent --show-error --location --retry 3 \
     --connect-timeout 15 --max-time 300 --proto '=https' --tlsv1.2 \
     --output "$target" "$url"
-  printf '%s  %s\n' "$digest" "$target" | sha256sum --check --status
+  local observed
+  observed=$(sha256sum "$target")
+  if [[ ${observed%% *} != "$digest" ]]; then
+    echo "$name SHA-256 differs from the repository pin" >&2
+    exit 1
+  fi
 }
 
 download \
