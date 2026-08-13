@@ -22,18 +22,14 @@ git diff --exit-code -- Cargo.lock
 ## Browser (WASM) verifier
 
 The committed browser artifact is reproduced in CI on Linux x86-64 with Rust
-1.90.0 and the official wasm-pack 0.15.0 release binary. Do not replace that
-binary with a floating `cargo install`:
+1.90.0, wasm-pack 0.15.0, wasm-bindgen CLI 0.2.126 and Binaryen 117. The helper
+downloads each official release by a repository-pinned SHA-256; no tool is
+compiled from a floating Cargo dependency graph:
 
 ```bash
-archive=wasm-pack-v0.15.0-x86_64-unknown-linux-musl.tar.gz
-curl --fail --location --proto '=https' --tlsv1.2 -o "$archive" \
-  "https://github.com/wasm-bindgen/wasm-pack/releases/download/v0.15.0/$archive"
-echo "c09f971ecaed9a2efc80fdcea7a00ef6b53c7fadc8c57d1f61b53a6aa66b668a  $archive" \
-  | sha256sum --check -
-tar -xzf "$archive"
-./wasm-pack-v0.15.0-x86_64-unknown-linux-musl/wasm-pack \
-  build --target web --features wasm --locked
+tool_bin=$(bash scripts/install-canonical-wasm-tools.sh /tmp/swarrm-wasm-tools)
+PATH="$tool_bin:$PATH" wasm-pack build --mode no-install \
+  --target web --features wasm --locked
 git diff --exit-code -- Cargo.lock
 python3 -m http.server      # from verify-rs/; open http://localhost:8000/web/
 ```

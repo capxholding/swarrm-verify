@@ -8,7 +8,8 @@ to confirm the WASM you are served is the one built from this repo's source
 Reproduce and check:
 
     cd verify-rs
-    wasm-pack build --target web --features wasm --locked
+    tool_bin=$(bash scripts/install-canonical-wasm-tools.sh /tmp/swarrm-wasm-tools)
+    PATH="$tool_bin:$PATH" wasm-pack build --mode no-install --target web --features wasm --locked
     shasum -a 256 pkg/swarrm_verify_bg.wasm
 
 Expected sha256 of swarrm_verify.js (the canonical x86_64 Linux CI build
@@ -21,8 +22,8 @@ from this source tree):
 
     30bfb6ae8a09137f5f20ab47bb95cf2e7dcb8ddcc45dcc5e67c4c3f1f8c3e1da
 
-This artifact was rebuilt on x86_64 Linux with the official wasm-pack 0.15.0
-release binary and Rust 1.90.0 from the Cargo.lock-pinned dependency graph.
+This artifact was rebuilt on x86_64 Linux with Rust 1.90.0 and checksummed
+wasm-pack 0.15.0, wasm-bindgen CLI 0.2.126 and Binaryen 117 release binaries.
 CI asserts exact-byte reproduction on that host; other host platforms can
 produce semantically equivalent but byte-different modules.
 The page hardcodes both release digests and refuses to execute the JS glue or
