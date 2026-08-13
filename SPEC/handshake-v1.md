@@ -93,6 +93,19 @@ Cross-tenant digest reuse and a future issuance checkpoint therefore fail
 closed. A verified revocation, rollback or fork is `FAIL`. An expired, missing
 or locally unregistered checkpoint is `INDETERMINATE`.
 
+Before a hosted Action Authority accepts a challenge from a foreign AgentRef,
+the foreign credential and `agent_head` proofs are imported with the signed
+checkpoint. `swarrm-b28/counterparty-agent-import/v3` also carries
+`authority_consistency_proof`. It is empty for the first locally pinned
+checkpoint and for an exact retry. Every higher checkpoint must carry an RFC
+6962 consistency proof from the stored `(log_size, log_root)` to the new signed
+head; rollback, same-sequence contradiction, or a higher unproven/forked head is
+rejected before it can refresh challenger eligibility. The pin retains the
+exact checkpoint envelope, digest, state root, log size, and log root. A legacy
+pin lacking the log head may only be backfilled by re-presenting the exact
+signed checkpoint whose sequence, state root, and digest were already pinned;
+it cannot treat a later checkpoint as a new baseline.
+
 `AdminConsumptionV1` root-signs the accepted WebAuthn `sign_count_before`,
 `sign_count_after`, backup eligibility/state, binding id and counter version.
 The final root mutation updates `admin_counter`, keyed by that binding id, to
