@@ -2,7 +2,7 @@
 // WASM parity: the browser verifier (compiled from the same lib.rs) must agree
 // with the shared golden suite — the same fixtures the native Rust crate and
 // the Python verifier run. Build first with the checksummed tools documented in README:
-//   wasm-pack build --mode no-install --target nodejs --features wasm --locked
+//   bash scripts/build-canonical-wasm.sh nodejs
 //   node verify-rs/tests/test_parity.cjs
 const fs = require("fs");
 const path = require("path");

@@ -9,7 +9,7 @@ Reproduce and check:
 
     cd verify-rs
     tool_bin=$(bash scripts/install-canonical-wasm-tools.sh /tmp/swarrm-wasm-tools)
-    PATH="$tool_bin:$PATH" wasm-pack build --mode no-install --target web --features wasm --locked
+    PATH="$tool_bin:$PATH" bash scripts/build-canonical-wasm.sh web
     shasum -a 256 pkg/swarrm_verify_bg.wasm
 
 Expected sha256 of swarrm_verify.js (the canonical x86_64 Linux CI build
@@ -20,7 +20,7 @@ from this source tree):
 Expected sha256 of swarrm_verify_bg.wasm (the canonical x86_64 Linux CI build
 from this source tree):
 
-    30bfb6ae8a09137f5f20ab47bb95cf2e7dcb8ddcc45dcc5e67c4c3f1f8c3e1da
+    c289458259329c82140ba3a31d55acfe5ae961c69f1f9710667dac06b6729b93
 
 This artifact was rebuilt on x86_64 Linux with Rust 1.90.0 and checksummed
 wasm-pack 0.15.0, wasm-bindgen CLI 0.2.126 and Binaryen 117 release binaries.

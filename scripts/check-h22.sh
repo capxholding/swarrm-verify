@@ -43,7 +43,8 @@ grep -F 'publish_results: false' .github/workflows/scorecard.yml >/dev/null
 grep -F 'node scripts/finalize-cyclonedx.mjs' .github/workflows/release.yml >/dev/null
 for workflow in .github/workflows/verifier.yml .github/workflows/release.yml; do
   grep -F 'bash verify-rs/scripts/install-canonical-wasm-tools.sh' "$workflow" >/dev/null
-  grep -F 'wasm-pack build --mode no-install' "$workflow" >/dev/null
+  grep -F 'bash verify-rs/scripts/build-canonical-wasm.sh web' "$workflow" >/dev/null
+  grep -F 'bash verify-rs/scripts/build-canonical-wasm.sh nodejs' "$workflow" >/dev/null
 done
 grep -F 'c09f971ecaed9a2efc80fdcea7a00ef6b53c7fadc8c57d1f61b53a6aa66b668a' \
   verify-rs/scripts/install-canonical-wasm-tools.sh >/dev/null
@@ -51,6 +52,8 @@ grep -F '064948d58e2d6c0a745216477a639ba696216d6309aaa902939d1b865b1d869d' \
   verify-rs/scripts/install-canonical-wasm-tools.sh >/dev/null
 grep -F '3dc677006555b355ea2da5e82602065a161d5e83eaefd3f759afa00b96e83212' \
   verify-rs/scripts/install-canonical-wasm-tools.sh >/dev/null
+grep -F 'CARGO_ENCODED_RUSTFLAGS=' verify-rs/scripts/build-canonical-wasm.sh >/dev/null
+grep -F 'wasm-pack build --mode no-install' verify-rs/scripts/build-canonical-wasm.sh >/dev/null
 node scripts/check-browser-page.mjs
 
 sbom_tmp=$(mktemp -d "${TMPDIR:-/tmp}/swarrm-h22-sbom.XXXXXX")

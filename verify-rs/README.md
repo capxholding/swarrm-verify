@@ -28,8 +28,7 @@ compiled from a floating Cargo dependency graph:
 
 ```bash
 tool_bin=$(bash scripts/install-canonical-wasm-tools.sh /tmp/swarrm-wasm-tools)
-PATH="$tool_bin:$PATH" wasm-pack build --mode no-install \
-  --target web --features wasm --locked
+PATH="$tool_bin:$PATH" bash scripts/build-canonical-wasm.sh web
 git diff --exit-code -- Cargo.lock
 python3 -m http.server      # from verify-rs/; open http://localhost:8000/web/
 ```
@@ -38,6 +37,11 @@ python3 -m http.server      # from verify-rs/; open http://localhost:8000/web/
 is read locally and creates no bundle-related network request. The native crate builds without `wasm-bindgen`
 (it is an optional dependency behind the `wasm` feature), so `cargo test`
 and CI stay lean.
+
+The build helper remaps the absolute source and Cargo cache paths to stable
+virtual roots before compilation. This is required because Rust panic metadata
+otherwise makes the optimized module depend on the builder's home and checkout
+paths even when every compiler and dependency version is identical.
 
 ## Coverage
 

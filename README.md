@@ -65,8 +65,7 @@ rejected with the right error, not just "invalid".
 ```bash
 cd verify-rs
 tool_bin=$(bash scripts/install-canonical-wasm-tools.sh /tmp/swarrm-wasm-tools)
-PATH="$tool_bin:$PATH" wasm-pack build --mode no-install \
-  --target web --features wasm --locked
+PATH="$tool_bin:$PATH" bash scripts/build-canonical-wasm.sh web
 shasum -a 256 pkg/swarrm_verify_bg.wasm
 ```
 
