@@ -408,6 +408,18 @@
     }
   },
   {
+    "expected": true,
+    "name": "valid_custom_unicode",
+    "package": {
+      "domain": "evd/v1/x/r\u00e9sum\u00e9.\ud83d\udee1",
+      "field": "r\u00e9sum\u00e9.\ud83d\udee1",
+      "nonce_hex": "7575757575757575757575757575757575757575757575757575757575757575",
+      "payload_b64": "dW5pY29kZQ==",
+      "receipt_hash": "5fa1b48d5b7b05df8977c9678ecfeaa9786b6f597e95baed1d9d813d5bb66253",
+      "schema": "evd/disclosure/v1"
+    }
+  },
+  {
     "expected": false,
     "name": "cross_field_domain",
     "package": {
@@ -415,7 +427,7 @@
       "field": "prompt",
       "nonce_hex": "6161616161616161616161616161616161616161616161616161616161616161",
       "payload_b64": "Y3Jvc3NfZmllbGRfZG9tYWlu",
-      "receipt_hash": "96c1fa6ede336efff06622b9b4dae59faea01aa1fd4c80591605c4c31a7e26c3",
+      "receipt_hash": "bbbb766d276d9d0d55b9a2199b7d5444e5e65f2fbbbd76b5ecb9a198f35d5200",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -427,7 +439,7 @@
       "field": "prompt",
       "nonce_hex": "6262626262626262626262626262626262626262626262626262626262626262",
       "payload_b64": "b3V0c2lkZV9zY29wZQ==",
-      "receipt_hash": "22765e08596752e3750cb7752c77ac9c7427605e4ebf24297ca6f82dd10ff075",
+      "receipt_hash": "11e1ff62952c9326f7cb923aea77ca82f56ef6fb015e92b32bc800355e569e37",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -439,7 +451,7 @@
       "field": "prompt",
       "nonce_hex": "6464646464646464646464646464646464646464646464646464646464646464",
       "payload_b64": "ZG9tYWluX251bA==",
-      "receipt_hash": "3d9eccddabcb2eb5b51ea0e2679dce1842297c84047b3a6e25d8b582a0d99338",
+      "receipt_hash": "3d201c1fe2ac75842d25aa33f9aaa4b81d4820ab4e050d3c72913e3751d12e94",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -451,7 +463,7 @@
       "field": "prompt",
       "nonce_hex": "6565656565656565656565656565656565656565656565656565656565656565",
       "payload_b64": "ZG9tYWluX2NvbnRyb2w=",
-      "receipt_hash": "d2f61616d914970549d015f1b5f0b56ca6e68c0f838f0b2028e04fba3a289890",
+      "receipt_hash": "13f2059f8bda6bb6664ce111556e6e24628373fffc43aa449bdfb1b1cdb3785a",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -463,7 +475,7 @@
       "field": "custom\nnote",
       "nonce_hex": "6666666666666666666666666666666666666666666666666666666666666666",
       "payload_b64": "ZmllbGRfY29udHJvbA==",
-      "receipt_hash": "3381e4fcb71631adbd1eebe79070b3f10ce8a9d1faf8de93cde731a14682ec90",
+      "receipt_hash": "f6763f243fe86e20a1221ff2ff293c34c970e4f373875df4b68e2264dca3b49b",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -475,7 +487,7 @@
       "field": "prompt",
       "nonce_hex": "676767676767676767676767676767",
       "payload_b64": "d2Vha19ub25jZQ==",
-      "receipt_hash": "02ab8042d9428d535bc3529e912c2cc8296267dc79439d98b211515a64821e19",
+      "receipt_hash": "5274e72c7d160445590753a43bf597ccdaf1567137ab6b8a56ad6c169b0330a6",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -487,7 +499,7 @@
       "field": "unknown",
       "nonce_hex": "6868686868686868686868686868686868686868686868686868686868686868",
       "payload_b64": "cHJlZml4X29ubHk=",
-      "receipt_hash": "7984fd3b14f58d42d42ba1ed5470564c8e126766c60a75cf22bbd2ddc96d4060",
+      "receipt_hash": "a0fc048b6c743027ec8065ee38ad9cd9de2dfc7a9d13b8c12bd7e8e8b2cdafd3",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -499,7 +511,7 @@
       "field": "unknown",
       "nonce_hex": "6969696969696969696969696969696969696969696969696969696969696969",
       "payload_b64": "dW5rbm93bl9maXhlZF9maWVsZA==",
-      "receipt_hash": "1ad08ff8c083c6edf1c9ca5caaa2bd2ce5c15ef1ffee4fe0949c48309088eaae",
+      "receipt_hash": "c51e4c4c73146875f7526fc4f8a1ea7ec3120c40329ba697e025adf27a2c171a",
       "schema": "evd/disclosure/v1"
     }
   },
@@ -511,7 +523,7 @@
       "field": "custom.note",
       "nonce_hex": "6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a",
       "payload_b64": "Y3VzdG9tX2ZpZWxkX21pc21hdGNo",
-      "receipt_hash": "eec65956560b3f854abf785b9a971c55d33f05770e266c107af1c89fa66ccbfa",
+      "receipt_hash": "cd0b9a0bc09f97c70b6fe7209448f99a614fc8cdb8c87e3d1d5f066de8094d3e",
       "schema": "evd/disclosure/v1"
     }
   },

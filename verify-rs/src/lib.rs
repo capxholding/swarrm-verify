@@ -216,6 +216,14 @@ fn lower_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
 }
 
+fn safe_identity_text(value: &str) -> bool {
+    !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_graphic())
+}
+
+fn disclosure_text(value: &str) -> bool {
+    !value.is_empty() && value.chars().all(|c| !matches!(c as u32, 0..=0x1f | 0x7f..=0x9f))
+}
+
 fn receipt_body_valid(body: &Value, expected_tenant: Option<&str>) -> bool {
     const REQUIRED: [&str; 11] = ["schema", "tenant_id", "agent_id", "seq", "action_type", "commitments", "context", "parents", "ts_client", "ts_server", "idempotency_key"];
     let Some(object) = body.as_object() else { return false };
@@ -223,7 +231,7 @@ fn receipt_body_valid(body: &Value, expected_tenant: Option<&str>) -> bool {
     if REQUIRED.iter().any(|field| !object.contains_key(*field)) || object.keys().any(|field| !REQUIRED.contains(&field.as_str()) && !optional.contains(&field.as_str())) {
         return false;
     }
-    let text = |field| body.get(field).and_then(Value::as_str).filter(|value| !value.is_empty());
+    let text = |field| body.get(field).and_then(Value::as_str).filter(|value| safe_identity_text(value));
     let (Some(tenant), Some(_agent), Some(action), Some(_idem)) = (text("tenant_id"), text("agent_id"), text("action_type"), text("idempotency_key")) else { return false };
     if text("schema") != Some(RECEIPT_SCHEMA) || expected_tenant.is_some_and(|expected| tenant != expected) || !namespaced_action(action) || body.get("seq").and_then(Value::as_u64).is_none_or(|seq| seq == 0 || seq > jcs::MAX_SAFE_INTEGER as u64) {
         return false;
@@ -235,14 +243,14 @@ fn receipt_body_valid(body: &Value, expected_tenant: Option<&str>) -> bool {
     });
     let session = match (body.get("session_id"), body.get("session_inferred")) {
         (None, None) => true,
-        (Some(id), Some(inferred)) => id.as_str().is_some_and(|value| !value.is_empty()) && inferred.is_boolean(),
+        (Some(id), Some(inferred)) => id.as_str().is_some_and(safe_identity_text) && inferred.is_boolean(),
         _ => false,
     };
     commitments && body.get("context").is_some_and(Value::is_object) && parents && body.get("ts_client").and_then(Value::as_str).is_some_and(canonical_utc) && body.get("ts_server").and_then(Value::as_str).is_some_and(canonical_utc) && session
 }
 
 fn tenant_from_origin(origin: &str) -> Option<&str> {
-    origin.rsplit('/').next().filter(|tenant| !tenant.is_empty())
+    safe_identity_text(origin).then(|| origin.rsplit('/').next()).flatten().filter(|tenant| !tenant.is_empty())
 }
 
 fn decimal(bytes: &[u8]) -> Option<u32> {
@@ -1128,14 +1136,7 @@ const DISCLOSURE_FIELD_DOMAINS: &[(&str, &[&str])] = &[
 ];
 
 fn disclosure_domain(field: &str, domain: &str) -> bool {
-    let control = |text: &str| {
-        text.is_empty()
-            || text.chars().any(|c| {
-                let n = c as u32;
-                n < 0x20 || (0x7f..=0x9f).contains(&n)
-            })
-    };
-    if control(field) || control(domain) || !domain.starts_with(DOMAIN_PREFIX) {
+    if !disclosure_text(field) || !disclosure_text(domain) || !domain.starts_with(DOMAIN_PREFIX) {
         return false;
     }
     let fixed = DISCLOSURE_FIELD_DOMAINS.iter().find(|(name, _)| *name == field).is_some_and(|(_, domains)| domains.contains(&domain));

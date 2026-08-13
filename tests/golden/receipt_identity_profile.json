@@ -1,0 +1,25 @@
+{
+  "safe": [
+    "tenant-a",
+    "t_0123456789abcdef0123456789abcdef",
+    "agent/runtime:v1",
+    "idem+request=7",
+    "evd://tenant/t_golden"
+  ],
+  "unsafe": [
+    {"name": "nul", "value": "bad\u0000id"},
+    {"name": "bell", "value": "bad\u0007id"},
+    {"name": "escape", "value": "bad\u001b[2Jid"},
+    {"name": "delete", "value": "bad\u007fid"},
+    {"name": "space", "value": "bad id"},
+    {"name": "c1_next_line", "value": "bad\u0085id"},
+    {"name": "zero_width_space", "value": "bad\u200bid"},
+    {"name": "zero_width_joiner", "value": "bad\u200did"},
+    {"name": "line_separator", "value": "bad\u2028id"},
+    {"name": "paragraph_separator", "value": "bad\u2029id"},
+    {"name": "bidi_override", "value": "bad\u202eid"},
+    {"name": "bidi_isolate", "value": "bad\u2066id"},
+    {"name": "byte_order_mark", "value": "bad\ufeffid"},
+    {"name": "non_ascii_confusable_surface", "value": "caf\u00e9"}
+  ]
+}

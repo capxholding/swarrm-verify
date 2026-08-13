@@ -6,6 +6,19 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-08-13
+
+### Security
+
+- Reject signed receipt terminal identifiers and origins containing whitespace,
+  control bytes or non-ASCII confusables before tenant and claim evaluation.
+
+### Fixed
+
+- Preserve valid non-control Unicode in extension disclosure fields and domains
+  while keeping their control-character boundary identical across Rust, WASM
+  and Python.
+
 ## [1.0.6] - 2026-08-13
 
 ### Security
@@ -102,7 +115,8 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 - Source-only GitHub release. It had no downloadable assets, SBOM, signature or
   provenance, and the tagged tree declared crate/package version `0.1.0`.
 
-[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/capxholding/swarrm-verify/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/capxholding/swarrm-verify/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/capxholding/swarrm-verify/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/capxholding/swarrm-verify/compare/v1.0.3...v1.0.4

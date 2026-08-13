@@ -12,7 +12,7 @@
       },
       "products": [
         {
-          "@id": "pkg:cargo/swarrm-verify@1.0.6"
+          "@id": "pkg:cargo/swarrm-verify@1.0.7"
         }
       ],
       "status": "not_affected",

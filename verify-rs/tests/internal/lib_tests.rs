@@ -127,6 +127,21 @@ fn receipt_profile_is_closed_and_tenant_bound() {
         case[field] = value;
         hostile.push(case);
     }
+    let profile: Value = serde_json::from_str(include_str!("../../../tests/golden/receipt_identity_profile.json")).unwrap();
+    for value in profile["safe"].as_array().unwrap().iter().map(|value| value.as_str().unwrap()) {
+        assert!(safe_identity_text(value), "{value:?}");
+    }
+    assert_eq!(tenant_from_origin("evd://tenant/t_golden"), Some("t_golden"));
+    for item in profile["unsafe"].as_array().unwrap() {
+        let value = item["value"].as_str().unwrap();
+        assert!(!safe_identity_text(value), "{}", item["name"]);
+        assert!(tenant_from_origin(&format!("evd://{value}/t_golden")).is_none(), "{}", item["name"]);
+        for field in ["tenant_id", "agent_id", "idempotency_key", "session_id"] {
+            let mut case = valid.clone();
+            case[field] = Value::String(value.to_owned());
+            assert!(!receipt_body_valid(&case, None), "{}:{field}", item["name"]);
+        }
+    }
     assert!(hostile.iter().all(|body| !receipt_body_valid(body, None)));
 }
 
