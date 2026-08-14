@@ -3,8 +3,8 @@
   "@id": "https://github.com/capxholding/swarrm-verify/security/openvex.json",
   "author": "https://github.com/capxholding",
   "role": "Document Creator",
-  "timestamp": "2026-08-13T11:24:52Z",
-  "version": 2,
+  "timestamp": "2026-08-14T09:07:11Z",
+  "version": 3,
   "statements": [
     {
       "vulnerability": {
@@ -12,7 +12,7 @@
       },
       "products": [
         {
-          "@id": "pkg:cargo/swarrm-verify@1.0.7"
+          "@id": "pkg:cargo/swarrm-verify@1.0.8"
         }
       ],
       "status": "not_affected",

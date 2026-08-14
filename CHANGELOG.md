@@ -6,6 +6,32 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-08-14
+
+### Security
+
+- Require a successful `verifier` workflow run for the exact release commit
+  before `signed-release` builds or publishes anything. The previous gate
+  proved only that the tag was an annotated tag whose target was an ancestor
+  of `main`; it never consulted whether that commit's checks had passed, so a
+  commit whose full-history secret scan was red could still be published.
+
+### Fixed
+
+- Re-release the reviewed 1.0.7 verifier source with the secret-scan
+  fingerprints refreshed after the commit-attribution history rewrite. The
+  rewrite changed every rewritten commit's SHA, which invalidated 33
+  `commit:file:rule:line` fingerprints in `.gitleaksignore` and turned the
+  full-history scan red at the 1.0.7 release commit. No new finding was
+  allowlisted: the refreshed entries cover the identical set of
+  `file:rule:line` locations, all of them `tests/golden` fixtures.
+- The canonical browser WASM is rebuilt for 1.0.8: the crate version
+  participates in Cargo's symbol-hash metadata, so a version bump changes the
+  module bytes even with no source change. The JS glue is byte-identical to
+  1.0.7; `verify-rs/web/INTEGRITY.txt` and `verify-rs/web/index.html` pin the
+  new module digest (`798a92f9…ad6ba`), reproduced by the canonical x86_64
+  Linux CI build.
+
 ## [1.0.7] - 2026-08-13
 
 ### Security
@@ -115,7 +141,8 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 - Source-only GitHub release. It had no downloadable assets, SBOM, signature or
   provenance, and the tagged tree declared crate/package version `0.1.0`.
 
-[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/capxholding/swarrm-verify/compare/v1.0.8...HEAD
+[1.0.8]: https://github.com/capxholding/swarrm-verify/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/capxholding/swarrm-verify/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/capxholding/swarrm-verify/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/capxholding/swarrm-verify/compare/v1.0.4...v1.0.5
