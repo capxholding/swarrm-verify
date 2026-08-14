@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # Required to read this commit's verifier run conclusions below.
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,6 +44,39 @@ jobs:
             git merge-base --is-ancestor "$GITHUB_SHA" origin/main
           fi
           test -z "$(git status --short)"
+      # The step above proves lineage only: an annotated tag, matching the crate
+      # version, whose target is an ancestor of main.  Ancestry is not a verdict.
+      # v1.0.7 was published from a commit whose own full-history secret scan was
+      # red, because nothing here ever consulted that commit's checks.
+      - name: Require a green verifier run for this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          completed=$(gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/verifier.yml/runs?head_sha=$COMMIT&per_page=100" \
+            --jq '.workflow_runs[]
+                  | select(.status == "completed")
+                  | [.id, .conclusion, .event, .html_url]
+                  | @tsv')
+          if [[ -z "$completed" ]]; then
+            echo "::error::no completed verifier run exists for $COMMIT. Dispatch the" \
+                 "verifier workflow at this ref and let it pass before releasing." >&2
+            exit 1
+          fi
+          echo "Completed verifier runs for $COMMIT (oldest first):"
+          printf '%s\n' "$completed" | sort -n
+          # Latest run wins, so a re-run that clears an infrastructure flake can
+          # unblock a release, but a red run that is never re-run cannot be
+          # outvoted by an older green one.
+          latest=$(printf '%s\n' "$completed" | sort -n | tail -1)
+          conclusion=$(printf '%s' "$latest" | cut -f2)
+          url=$(printf '%s' "$latest" | cut -f4)
+          if [[ "$conclusion" != "success" ]]; then
+            echo "::error::the latest verifier run for $COMMIT concluded '$conclusion' ($url)" >&2
+            exit 1
+          fi
+          echo "Latest verifier run for $COMMIT is green: $url"
       - name: Install the checksummed canonical WASM tools
         run: |
           tool_bin=$(bash verify-rs/scripts/install-canonical-wasm-tools.sh \
