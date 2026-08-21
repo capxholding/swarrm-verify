@@ -57,6 +57,8 @@
   "lineage_born_valid": "VERIFIED",
   "lineage_duplicate_establishment": "NOT_VERIFIED",
   "lineage_forged_birthtag": "NOT_VERIFIED",
+  "mandate_assigned_after_action": "VERIFIED",
+  "mandate_assigned_first": "VERIFIED",
   "missing_keylog": "NOT_VERIFIED",
   "post_revocation_forgery": "NOT_VERIFIED",
   "receipt_boolean_seq": "NOT_VERIFIED",
