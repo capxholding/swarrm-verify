@@ -9,6 +9,8 @@ statements — it appends the digest of a Signed Statement and returns a
 Receipt; it never sees the certificate content. SCITT proves issuer
 attribution and transparent append-only registration — never statement
 truth, complete source coverage, action time, or legal admissibility.
+§10 names the exact standards revision this profile is written against and
+enumerates every divergence from it.
 
 COSE is a **small reviewed adapter** (`core/cose.py`, `verify-rs/src/cose.rs`)
 over the B24 CBOR codecs (`cbor2` / `ciborium`) — no general trust framework.
@@ -224,3 +226,117 @@ log whose head is independently timestamped and anchored. It proves nothing
 about the certificate's content, the action's truth, coverage completeness, or
 legal effect. Statement substitution, a forged receipt, a forked tree, a wrong
 registration policy/root, and a stale checkpoint each fail §6.
+
+## 10. Standards base — the revision profiled, and every divergence
+
+This profile is written against **`draft-ietf-scitt-architecture-22`**
+(2025-10-10), published as **RFC 9943** (Proposed Standard, June 2026) with
+an unchanged section layout — the architecture citations below hold for both
+texts. Receipt structures profile **RFC 9942** (COSE Receipts): the `395`
+(`vds`) and `396` (`vdp`) labels in §1 and §4 are that RFC's final registered
+assignments, and `RFC9162_SHA256 = 1` is its registered tree algorithm. The
+lists below were derived by reading both documents' normative text in full
+against both verification engines (`verify/scitt.py`, `verify-rs/src/scitt.rs`).
+Anything not listed is intended to conform; a mismatch found later is a defect
+in THIS section and must be corrected here, never argued around.
+
+Naming a revision is not an interoperability claim. A receipt is portable only
+when an independent SCITT implementation demonstrably verifies one of ours and
+we verify one of theirs; until that demonstration exists this profile claims
+conformance-with-divergences, nothing more.
+
+### 10.1 Restrictions — the standard's open choices, closed (conformant)
+
+- **R1 — one algorithm.** `alg` is frozen to EdDSA (`-8`) for statements and
+  receipts. RFC 9943 §9.6 recommends cryptographic agility; this profile
+  refuses it: one reviewed signing path in two engines, no downgrade surface.
+- **R2 — kid-only identity, no X.509.** RFC 9943 §6's `x5t`/`x5chain` path is
+  conditional on using X.509 certificates; this profile never does. Issuer
+  trust is the certificate bundle's append-only key log; TS trust is the
+  locally supplied root (§6–§7). The §6 URI and length rules on `iss` bind
+  only when `x5t`/`x5chain` is present, so they do not apply here.
+- **R3 — deterministic encoding.** Every envelope is encoded under the
+  deterministic CBOR profile (§1). RFC 9943 mandates no encoding profile;
+  byte-identical cross-engine verification does.
+- **R4 — closed maps.** Protected headers and CWT claims must equal the
+  profile exactly; an unknown label or claim fails verification, and the
+  statement's unprotected header must be the empty map (stricter than RFC
+  9943 §6.3, which empties it only before sequence inclusion). RFC 9943's
+  CDDL leaves these maps open (`* label => any`); an ignored header is an
+  unread claim carrier, so nothing is ignored. The one extension carried
+  under this rule is the `evd_scope_digest` CWT claim (§2), permitted by
+  that open CDDL.
+- **R5 — commitment-only payload, always.** RFC 9943 §6.2 permits statements
+  over a hash for large or sensitive payloads; this profile makes that the
+  ONLY mode (§2: the payload is exactly the 32-byte `certificate_id`). The
+  content type (`3`) names the certificate format the commitment refers to,
+  not the 32-byte digest itself — stated here because RFC 9943 leaves
+  hashed-statement content typing unspecified.
+- **R6 — no consistency receipts.** RFC 9943 §3 requires Receipt profiles to
+  support inclusion proofs and leaves other proof types optional (RFC 9942
+  §5.3). Cross-head consistency is carried by the checkpoint `prev` chain,
+  the public anchor and the RFC 3161 token (§5) instead.
+
+### 10.2 Divergences — where these bytes do NOT conform, and why
+
+- **D1 — receipts carry no CWT claims.** RFC 9943 §6 requires the protected
+  header of a Receipt to include CWT claims (`15`) with `iss` and `sub`; this
+  profile's receipt protected header is exactly `{1, 4, 395}` (§4). Reason:
+  the TS identity a relying party trusts is the root-signed registration
+  policy's exact key set and origin, verified at §6 steps 4–5 — an in-band
+  self-asserted `iss` is an unverified naming surface, and `sub` has no
+  referent for a digest-leaf receipt. Cost, stated: a generic RFC 9943
+  consumer rejects these receipts.
+- **D2 — receipt payload is the checkpoint body_hash, attached.** RFC 9942
+  §5.2.1 makes the (detached) payload the Merkle tree root. Here it is the
+  attached 32-byte `SHA-256(JCS(checkpoint body))` (§4). Reason: the root
+  alone cannot be matched against the public anchor and RFC 3161 token —
+  binding the full body (root, size, ts, prev) is what closes §5's loop to
+  independent time.
+- **D3 — the inclusion proof is one bare triple.** RFC 9942 §5.2.1 encodes
+  `396: {-1: [+ bstr]}`, each entry a `.cbor`-wrapped `[size, leaf, path]`.
+  This profile encodes `396: {-1: [tree_size, leaf_index, [* bstr]]}` — one
+  proof, unwrapped (§4). Reason: frozen before RFC 9942 stabilized; the
+  wrapper adds a second decode layer with no verification value here, and
+  the exact bytes are pinned by the cross-language golden corpus.
+- **D4 — private unprotected label `-2`.** The receipt's unprotected header
+  carries the enclosing checkpoint body at label `-2` (§4) — a private-use
+  label, not a COSE-registered parameter (RFC 9942's `-2` is a label inside
+  the `396` proofs map, a different position). Reason: §6 steps 6–7
+  recompute the payload from this body; declared here so it is never
+  mistaken for a registered assignment.
+- **D5 — the log registers digests, not Signed Statements.** RFC 9943's
+  Statement Sequence, replayability (§5.1.3) and registration auditability
+  (§5.1.1.2: "the Signed Statements themselves") assume the TS retains the
+  statements. Here the leaf is the 32-byte `statement_digest` and the TS
+  retains nothing else (§4, §8). Reason: this is the profile's core privacy
+  property — the TS never sees or stores certificate content; the issuer
+  retains the statement and supplies it to the relying party. Cost, stated:
+  TS-side audit reproduces admission over digests; content-level audit
+  requires the issuer.
+- **D6 — the registration policy is signed and pinned, not registered.**
+  RFC 9943 §5.1.1.1 requires policies and trust anchors to be made
+  transparent by registering them as Signed Statements on the VDS, applying
+  the most recently committed one. Here the policy is a versioned,
+  root-signed canonical-JSON document, carried in the pack and verified
+  against a locally supplied root (§7). Reason: D5 makes the log
+  commitment-only — policy content on it would breach that property — and a
+  root-signature check against a local anchor does not depend on the log's
+  own operator for policy discovery. RFC 9943 §5.1.2's "preconfigured
+  Registration Policy and trust anchors" bootstrapping mode is the permanent
+  mode here.
+- **D7 — no Transparent Statement, no label `394`.** RFC 9943 §7 attaches
+  Receipts into the statement's unprotected header (`394`). Here the
+  registered leaf commits to the COMPLETE statement bytes with an empty
+  unprotected map (§2, R4), so attaching anything afterwards would change
+  the digest and break its own inclusion proof. The receipt travels beside
+  the statement in the trust pack (§7), which also carries what `394`
+  cannot: policy, JWKS and checkpoint. Reason: envelope immutability IS the
+  commitment; a mutable envelope cannot be the thing a digest-leaf pins.
+- **D8 — vendor-tree media types.** This profile uses
+  `application/vnd.swarrm.action-statement+cose` and
+  `application/vnd.swarrm.scitt-receipt+cose`, not RFC 9943 §10.1/§10.2's
+  `application/scitt-statement+cose` and `application/scitt-receipt+cose`.
+  Reason: after D1–D3 these envelopes are not generically consumable, and
+  wearing the registered types would claim an interoperability the bytes do
+  not deliver. A revision that closes D1–D3 may adopt the registered types.
