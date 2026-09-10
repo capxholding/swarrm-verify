@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Canonical-CBOR codec gate (B24 W1) — the Rust twin of
+//! Canonical-CBOR codec gate — the Rust twin of
 //! tests/test_cbor_canonical.py. Every JSON-sourced golden vector must emit
 //! byte-identical output to the Python engine's .bin bytes; the five
 //! byte-string vectors are reconstructed here IN CODE, mirroring

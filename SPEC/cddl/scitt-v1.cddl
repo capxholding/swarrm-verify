@@ -1,5 +1,5 @@
 ; Apache-2.0 — ships with the public verifier repo.
-; CDDL for scitt-action-profile-v1 (B25). Encoded per SPEC/certificate-v1.md
+; CDDL for scitt-action-profile-v1. Encoded per SPEC/certificate-v1.md
 ; §1 deterministic CBOR. COSE_Sign1 is the CBOR array (tag 18). FROZEN:
 ; extending any structure here requires updating both engines, the COSE
 ; canonical-byte vectors and the SCITT goldens in the same commit.
@@ -58,9 +58,10 @@ CheckpointBody = {
   prev_hash: text,                               ; hex of prev body_hash, "" at genesis
 }
 
-; ---------- registration receipts (frozen in B21.7, operated here) ----------
+; ---------- registration receipts (frozen with the contract objects, operated here) ----------
 ; RegistrationIntent / RegistrationAttempt / ScopeRegistration are defined in
-; SPEC/cddl/verified-action-v1.cddl; B25 emits them as ordinary evd/receipt/v1
+; SPEC/cddl/verified-action-v1.cddl; the transparency service emits them as
+; ordinary evd/receipt/v1
 ; receipts and consumes them for the REGISTERED/PENDING/UNREGISTERED derivation.
 
 RegistrationPolicy = {

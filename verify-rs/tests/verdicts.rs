@@ -77,7 +77,7 @@ fn no_fixture_is_favourable_without_a_trust_anchor() {
     assert!(checked >= 40, "ran {checked}");
 }
 
-/// The history list is scoped by a manifest only when one is present. B28
+/// The history list is scoped by a manifest only when one is present. Counterparty Assurance
 /// handshake inputs intentionally have no surface manifest, so filtering their
 /// named claim through an empty set would invent a scope contradiction and
 /// diverge from the Python verifier.

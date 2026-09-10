@@ -1,5 +1,5 @@
 <!-- Apache-2.0 -->
-# evd/otel v1 — OTLP → receipts mapping (NORMATIVE, Build 10)
+# evd/otel v1 — OTLP → receipts mapping (NORMATIVE)
 
 `POST /evd/otlp` accepts OTLP/HTTP **JSON** encoding (protobuf is out of
 scope in v1; configure the collector's `otlphttp` exporter with

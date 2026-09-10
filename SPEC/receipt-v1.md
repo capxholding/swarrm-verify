@@ -115,7 +115,8 @@ An envelope carries 1..n signatures over the same PAE bytes:
    applies the ordered law below and only then COUNTER-SIGNS with the tenant
    issuer key and appends. The appended envelope carries the edge and issuer
    signatures.
-4. **Verification rule (amended, B29)** — the in-log rule above is the
+4. **Verification rule (amended for relying-party-rooted evidence levels)** —
+   the in-log rule above is the
    NECESSARY half: `verify_envelope(env, log_keys, require_kids={issuer_kid,
    recorder_kid})` with both kids drawn from the LOG's key history (log-v1
    §5) and valid at the receipt's `ts_server`. It is never sufficient for an
@@ -131,8 +132,9 @@ An envelope carries 1..n signatures over the same PAE bytes:
    never awards E3. This recorder-attestation fact proves possession of the
    exact relying-party-named recorder key; it does not by itself prove legal,
    organisational, or operational independence between the signers. E3 is a
-   post-action evidence level, separate from the B28 Counterparty Assurance
-   handshake; neither the fact nor the level supplies a B28 authority or
+   post-action evidence level, separate from the Counterparty Assurance
+   handshake; neither the fact nor the level supplies a Counterparty Assurance
+   authority or
    replay verdict.
 
 **Legacy privileged-co-signature rule.** Offline verifiers MUST reject a

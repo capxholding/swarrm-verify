@@ -1,7 +1,7 @@
 <!-- Apache-2.0 -->
 # evd/mandate v1 — session-start mission capture (`mandate.assigned`)
 
-Status: NORMATIVE (Build 32). Wire names are frozen once shipped.
+Status: NORMATIVE. Wire names are frozen once shipped.
 
 ## 1. Purpose
 
@@ -12,7 +12,7 @@ Report can render assigned → did → source-confirms, and so log order proves
 the mandate existed before the actions it governs (an assigned-before-acted
 property that holds even though the mandate's content is customer-declared).
 
-Why a new wire type instead of an existing one (A_BUILD §0.2 rule 10):
+Why a new wire type instead of an existing one:
 `lineage.born/adopted` commits a `mandate_document` once per AGENT lifetime,
 and `authority.grant.issued` is an org-root-signed system receipt — a
 per-task assignment is repeatable, per-session, and orchestrator-declared,
@@ -31,15 +31,25 @@ Context (plaintext, dial row in SPEC/context-v1.md §1):
 | field | meaning |
 |---|---|
 | `principal_display` | display name of who assigned, as known to the orchestrator |
-| `source_channel` | one of `slack` · `email` · `ticket` · `ui` · `queue` · `other` |
+| `source_channel` | one of `slack` · `email` · `ticket` · `ui` · `queue` · `schedule` · `change_record` · `other` |
 | `action_classes[]` | declared allowed action classes (strings; same vocabulary as authority grants) |
 | `amount_cap_band` | order-of-magnitude cap band `10^N CUR` (SPEC/context-v1 §2) |
 | `expires` | RFC 3339 canonical UTC expiry of the mandate |
+| `change_ref` | the change record authorizing a standing instruction (merged PR, CloudTrail event id, ServiceNow/Jira change ticket) — optional |
+
+`schedule` types an automated firing of a standing authorization (cron,
+queue-less timer, event trigger — no human in the loop at firing time);
+`change_record` types the authorization event itself, recorded when the
+standing instruction is decided or changed rather than when it fires.
 
 The channel's own record reference (permalink / message-id / ticket id) is
 carried in the universal correlation key `external_ref` (reconcile-v1 §1):
 opaque, never validated, never interpreted. It is the future path to
-source-side corroboration, not a present claim.
+source-side corroboration, not a present claim. `change_ref` gets the same
+treatment for a change record: opaque, carried untouched. A change reference
+is a pointer, not a proof — until the named record is pulled and compared it
+remains DECLARED exactly like every other self-report (a producer can write
+any PR URL into the field), and the report says so.
 
 Commitments (salted, domain-separated, disclosable later):
 
@@ -80,6 +90,22 @@ first (by leaf index) and derives nothing across them.
   instruction text; we don't attest meaning.
 - A session without a mandate renders "no mandate recorded" — absence
   visible, never an error.
+- **Standing-instruction change point (derived, bounded).** Across one
+  agent's mandate receipts (first per session, leaf order), a run of two or
+  more IDENTICAL `instruction` commitment values followed by a different
+  value renders "the standing instruction changed at receipt N". The bound:
+  commitment equality means the committed (domain, nonce, payload) triple is
+  equal, which only a producer that deliberately emits a deterministic
+  commitment for its standing instruction produces — this SDK salts every
+  commitment with a fresh per-receipt nonce, so two firings of one
+  instruction do NOT share a fingerprint through it. Pairwise-distinct
+  fingerprints therefore support no claim in either direction and render
+  nothing. The derivation never touches the verdict.
+- **Attribution.** Who created an agent is attributed at birth
+  (`created_by_id` / `created_by_role`, birthtag-v1) and who changed a
+  standing instruction at revision (`revised_by_id` / `revised_by_role`);
+  neither attribution is corroborated until the record named by
+  `change_ref` / `external_ref` is read.
 
 ## 5. Verifier impact
 

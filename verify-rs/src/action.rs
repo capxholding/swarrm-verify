@@ -708,7 +708,7 @@ fn population(vi: &Value, trust: Option<&Value>) -> Value {
 }
 
 /// A manifest limits a history claim only when the presentation actually makes
-/// one. A no-surface presentation (the B28 handshake shape) makes no contrary
+/// one. A no-surface presentation (the Counterparty Assurance handshake shape) makes no contrary
 /// scope statement, so its named history scope remains intact — exactly as in
 /// `verify/action.py::_history_manifest_surface_classes`.
 fn history_manifest_surface_classes(vi: &Value) -> Option<BTreeSet<String>> {

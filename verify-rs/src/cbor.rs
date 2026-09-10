@@ -7,11 +7,12 @@
 //! sorted by the bytewise-lexicographic order of their ENCODED bytes.
 //!
 //! The item heads are HAND-ENCODED: ciborium (owner-sanctioned codec O·1)
-//! does not sort map keys and makes no emission-order promise, so the
-//! emitter here owns determinism outright — determinism beats convenience.
-//! ciborium is used only to materialize `ciborium::Value` on decode, AFTER
-//! an iterative structural pre-scan (explicit stack, no recursion) has
-//! enforced the depth/size caps, so hostile bytes can never crash us (H5).
+//! does not sort map keys and makes no emission-order promise, so the shared
+//! emitter in `cbor_wire` owns determinism outright — this module pins it to
+//! the certificate profile (text keys only, booleans admitted). ciborium is
+//! used only to materialize `ciborium::Value` on decode, AFTER an iterative
+//! structural pre-scan (explicit stack, no recursion) has enforced the
+//! depth/size caps, so hostile bytes can never crash us (H5).
 //! Fail-closed: every deviation is `None`/`Err` — never a panic.
 //!
 //! Mirrors core/cborcanon.py; the shared vectors in tests/golden/cbor/ pin
@@ -19,7 +20,7 @@
 
 use ciborium::Value;
 
-use crate::cbor_wire::{structural_scan, write_head};
+use crate::cbor_wire::{canonical_bytes, structural_scan, Profile};
 
 /// Same nesting cap as MAX_CBOR_DEPTH in core/cborcanon.py and the JCS cap —
 /// both engines must reject identically.
@@ -30,82 +31,14 @@ pub(crate) const MAX_BYTES: usize = 16 * 1024 * 1024;
 /// Bound aggregate materialization, not only nesting and encoded bytes.
 pub(crate) const MAX_ITEMS: usize = 100_000;
 
-pub(crate) fn write_text(out: &mut Vec<u8>, s: &str) {
-    write_head(out, 3, s.len() as u64);
-    out.extend_from_slice(s.as_bytes());
-}
-
-pub(crate) fn write_int(out: &mut Vec<u8>, i: i128) -> bool {
-    // Restricted model: signed 64-bit only (rejects the u64 > i64::MAX range).
-    if i < i64::MIN as i128 || i > i64::MAX as i128 {
-        return false;
-    }
-    if i >= 0 {
-        write_head(out, 0, i as u64);
-    } else {
-        write_head(out, 1, (-1 - i) as u64);
-    }
-    true
-}
-
-fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
-    if limit < 0 {
-        return false; // deeper than MAX_DEPTH — refuse, don't recurse on
-    }
-    match v {
-        Value::Null => out.push(0xf6),
-        Value::Bool(b) => out.push(if *b { 0xf5 } else { 0xf4 }),
-        Value::Integer(i) => return write_int(out, i128::from(*i)),
-        Value::Text(s) => write_text(out, s),
-        Value::Bytes(b) => {
-            write_head(out, 2, b.len() as u64);
-            out.extend_from_slice(b);
-        }
-        Value::Array(a) => {
-            write_head(out, 4, a.len() as u64);
-            for item in a {
-                if !write_value(item, out, limit - 1) {
-                    return false;
-                }
-            }
-        }
-        Value::Map(m) => return write_map(m, out, limit),
-        _ => return false, // floats, tags, other simple values
-    }
-    true
-}
-
-fn write_map(m: &[(Value, Value)], out: &mut Vec<u8>, limit: i64) -> bool {
-    // Sort by ENCODED key bytes; equal encoded keys are duplicates — reject.
-    let mut pairs: Vec<(Vec<u8>, Vec<u8>)> = Vec::with_capacity(m.len());
-    for (k, v) in m {
-        let Value::Text(key) = k else { return false };
-        let mut kb = Vec::new();
-        write_text(&mut kb, key);
-        let mut vb = Vec::new();
-        if !write_value(v, &mut vb, limit - 1) {
-            return false;
-        }
-        pairs.push((kb, vb));
-    }
-    pairs.sort_by(|a, b| a.0.cmp(&b.0));
-    if pairs.windows(2).any(|w| w[0].0 == w[1].0) {
-        return false;
-    }
-    write_head(out, 5, pairs.len() as u64);
-    for (kb, vb) in &pairs {
-        out.extend_from_slice(kb);
-        out.extend_from_slice(vb);
-    }
-    true
-}
+/// The certificate profile's value model (SPEC/certificate-v1.md §1).
+const CERT_PROFILE: Profile = Profile { int_keys: false, bools: true };
 
 /// Canonical bytes for a `ciborium::Value` within the restricted model;
 /// `None` on floats, tags, non-text or duplicate map keys, out-of-range
 /// integers, or over-deep nesting. Never panics.
 pub(crate) fn canonical_cbor(v: &Value) -> Option<Vec<u8>> {
-    let mut out = Vec::new();
-    write_value(v, &mut out, MAX_DEPTH).then_some(out)
+    canonical_bytes(v, MAX_DEPTH, &CERT_PROFILE)
 }
 
 fn json_to_cbor(v: &serde_json::Value, limit: i64) -> Option<Value> {

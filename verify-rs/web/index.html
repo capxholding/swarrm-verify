@@ -217,7 +217,7 @@
       controls.style.display = "block";
     }
 
-    // ---- certificate branch (B24.3): .cbor/.cert → verify_certificate_cbor.
+    // ---- certificate branch: .cbor/.cert → verify_certificate_cbor.
     // The JSON bundle path above is untouched; CBOR is detected by the first
     // byte not being '{'.
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>

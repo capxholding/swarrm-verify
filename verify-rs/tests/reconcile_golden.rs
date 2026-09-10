@@ -1,9 +1,9 @@
 // Apache-2.0 (public verifier repo)
-//! B23 reconcile golden suite: the Rust engine runs the SAME verdict-input
+//! Reconcile golden suite: the Rust engine runs the SAME verdict-input
 //! documents the reconcile pipeline built (scripts/gen_reconcile_golden.py,
 //! tests/golden/reconcile/) and must produce vectors equal to
 //! expected_vectors.json. Two independent implementations agreeing on the
-//! closed B23 gate results is the conformance contract.
+//! closed reconciliation gate results is the conformance contract.
 
 use serde_json::Value;
 use std::fs;

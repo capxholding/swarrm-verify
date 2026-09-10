@@ -2,7 +2,7 @@
 
 # SPEC: scitt-action-profile-v1 — SCITT registration for Verified Action Certificates
 
-**Status: NORMATIVE (v1). Profile frozen BEFORE implementation (B25.1).**
+**Status: NORMATIVE (v1). Profile frozen BEFORE implementation.**
 SCITT is the standard registration layer, not the product. One Swarrm
 Transparency Service (TS) registers **commitment-only** certificate
 statements — it appends the digest of a Signed Statement and returns a
@@ -13,17 +13,19 @@ truth, complete source coverage, action time, or legal admissibility.
 enumerates every divergence from it.
 
 COSE is a **small reviewed adapter** (`core/cose.py`, `verify-rs/src/cose.rs`)
-over the B24 CBOR codecs (`cbor2` / `ciborium`) — no general trust framework.
+over the certificate CBOR codecs (`cbor2` / `ciborium`) — no general trust
+framework.
 Signing reuses the existing Ed25519 keys as COSE alg **-8 (EdDSA)**; the kid
 is the existing rule `base64url(SHA-256(pubkey))[:16]`, carried as its ASCII
-bytes. As with B24, **cross-language canonical-byte vectors MUST pass before
+bytes. As with the certificate profile, **cross-language canonical-byte
+vectors MUST pass before
 any SCITT code relies on the COSE adapter** (tests/golden/cose/): `cbor2`-built
 and Rust-built COSE_Sign1 bytes are byte-identical.
 
 ## 1. Deterministic COSE_Sign1
 
 A COSE_Sign1 is the CBOR array (tag 18) `[protected: bstr, unprotected: map,
-payload: bstr / null, signature: bstr]`, encoded under the B24 deterministic
+payload: bstr / null, signature: bstr]`, encoded under the deterministic
 CBOR profile (SPEC/certificate-v1.md §1: definite lengths, no floats/tags
 inside our maps, text-or-int keys sorted by encoded bytes). The `protected`
 bstr wraps a deterministically-encoded header map. The signature is EdDSA over
@@ -46,7 +48,7 @@ certificate **issuer** key.
   the TS receives; the certificate itself never leaves the customer).
 - `statement_digest` = `SHA-256(signed_statement_bytes)`.
 
-## 3. Registration flow (B25.4 — evidence, not assertion)
+## 3. Registration flow (asynchronous — evidence, not assertion)
 
 Certificate creation NEVER waits for the TS. Before submission the issuer logs
 a **`RegistrationIntent`** receipt (`statement_digest`, `scope_digest`,
@@ -79,7 +81,7 @@ key.
 The TS log is append-only; its leaf value is the 32-byte `statement_digest`
 (RFC 6962 leaf hash `SHA-256(0x00 ‖ statement_digest)`, per `core/merkle.py`).
 
-## 5. Independent time (B25.3)
+## 5. Independent time
 
 The TS checkpoint body_hash is batched into the SAME public anchor (Base) and
 RFC 3161 worker as every other checkpoint (`anchor/worker.run_once`,
@@ -124,7 +126,7 @@ certificate verifier runs §6 whenever a registration layer is present and
 OVERRIDES any producer-supplied flag. A producer can never self-assert
 REGISTERED; the mark's registration axis is recomputed from the receipt bytes.
 
-## 7. Offline trust pack (B25.5)
+## 7. Offline trust pack
 
 `evd/scitt-pack/v1` has the exact required fields `{ schema, certificate_id,
 signed_statement, receipt, checkpoint, registration_policy, ts_jwks }` and the
@@ -148,7 +150,7 @@ local anchor it contains everything required to re-derive REGISTERED offline;
 optional independently verified anchor/time records may strengthen the
 separate time axis.
 
-## 8. Transparency Service (B25.2) — the service, not the trust path
+## 8. Transparency Service — the service, not the trust path
 
 The TS authenticates the statement issuer, allow-lists profile/version/size
 (the published, versioned `registration_policy`), appends the exact

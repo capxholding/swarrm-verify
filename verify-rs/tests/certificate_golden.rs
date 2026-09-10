@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! B24 W4 — the Rust engine runs the SAME certificate golden bytes the Python
+//! Certificate goldens — the Rust engine runs the SAME certificate golden bytes the Python
 //! engine compiled (scripts/gen_certificate_golden.py, tests/golden/
 //! certificates/) and must reproduce the hand-authored load-bearing fields in
 //! expected.json. It also replays the committed certfuzz corpus and the §4.1
@@ -7,7 +7,7 @@
 //! on UNMARKED_ASSURANCE_WITHDRAWN / CLAIM_ONLY / CONTRADICTED / ORPHAN / GAPPED /
 //! authority NOT_VERIFIED and a selectively-disclosed coreless view with no
 //! recomputed vector or mark — and never panicking on hostile bytes — is the
-//! B24 conformance contract.
+//! certificate conformance contract.
 
 use serde_json::Value;
 use std::fs;

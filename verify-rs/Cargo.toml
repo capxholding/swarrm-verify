@@ -3,7 +3,7 @@
 name = "swarrm-verify"
 version = "1.0.8"
 edition = "2021"
-description = "Public Rust/WASM second implementation for evidence bundles, certificates, and CWT/COSE-only B28 assurance"
+description = "Public Rust/WASM second implementation for evidence bundles, certificates, and CWT/COSE-only Counterparty Assurance"
 # Declared, not merely stated in the header comment above: wasm-pack reads these
 # and every published artifact carries the licence it is actually under.
 license = "Apache-2.0"
@@ -28,7 +28,7 @@ p256 = "=0.13.2"
 # dependencies and their exact pins are mirrored in ci/architecture_policy.json.
 p384 = "=0.13.1"
 rsa = "=0.9.10"
-# B24 CBOR primitives — owner sanction O·1 (§0.2·3): ciborium is the ONLY
+# Certificate CBOR primitives — owner sanction O·1 (§0.2·3): ciborium is the ONLY
 # Rust CBOR codec; the canonical emitter in src/cbor.rs owns determinism
 # (ciborium does not sort map keys). Exact pin mirrored in the policy file.
 ciborium = "=0.2.2"

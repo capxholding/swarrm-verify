@@ -1,10 +1,116 @@
 // Apache-2.0 (public verifier repo)
-//! Shared deterministic-CBOR wire primitives for both verifier profiles.
+//! Shared deterministic-CBOR wire primitives for every verifier profile.
 //!
-//! This module owns only item-head encoding and the bounded iterative scan.
-//! Profile-specific value and map rules remain in their respective modules.
+//! This module owns item-head encoding, the bounded iterative scan, and the
+//! profile-parameterized value emitter (B39.2). The emission rules — minimal
+//! hand-encoded heads, map keys sorted by their encoded bytes, duplicate keys
+//! rejected, bounded depth, fail-closed on anything outside the model — are
+//! identical for certificates, COSE envelopes and B28 CWTs; only the admitted
+//! value set differs, so each module declares a [`Profile`] and the bytes stay
+//! pinned by the shared golden vectors. This mirrors `core/cborcanon.py`,
+//! where one Python codec serves the same profiles via `allow_integer_keys`.
 
-/// Emit a minimal CBOR item head. COSE, certificates, and B28 reuse this exact
+use ciborium::Value;
+
+/// The value-model choices that distinguish the deterministic profiles.
+#[derive(Clone, Copy)]
+pub(crate) struct Profile {
+    /// Maps may carry signed 64-bit integer keys as well as text keys
+    /// (COSE/CWT header and claim maps); the certificate profile admits
+    /// text keys only.
+    pub(crate) int_keys: bool,
+    /// The model includes booleans; COSE envelope framing does not.
+    pub(crate) bools: bool,
+}
+
+fn write_int(out: &mut Vec<u8>, i: i128) -> bool {
+    // Restricted model: signed 64-bit only (rejects the u64 > i64::MAX range).
+    if i < i64::MIN as i128 || i > i64::MAX as i128 {
+        return false;
+    }
+    if i >= 0 {
+        write_head(out, 0, i as u64);
+    } else {
+        write_head(out, 1, (-1 - i) as u64);
+    }
+    true
+}
+
+fn write_text(out: &mut Vec<u8>, s: &str) {
+    write_head(out, 3, s.len() as u64);
+    out.extend_from_slice(s.as_bytes());
+}
+
+/// Emit one value under the profile's model; `false` on floats, tags,
+/// out-of-profile simple values, out-of-range integers, bad map keys, or
+/// nesting deeper than `limit` admits. Never panics.
+pub(crate) fn write_value(v: &Value, out: &mut Vec<u8>, limit: i64, p: &Profile) -> bool {
+    if limit < 0 {
+        return false; // deeper than the caller's cap — refuse, don't recurse on
+    }
+    match v {
+        Value::Null => out.push(0xf6),
+        Value::Bool(b) if p.bools => out.push(if *b { 0xf5 } else { 0xf4 }),
+        Value::Integer(i) => return write_int(out, i128::from(*i)),
+        Value::Text(s) => write_text(out, s),
+        Value::Bytes(b) => {
+            write_head(out, 2, b.len() as u64);
+            out.extend_from_slice(b);
+        }
+        Value::Array(a) => {
+            write_head(out, 4, a.len() as u64);
+            for item in a {
+                if !write_value(item, out, limit - 1, p) {
+                    return false;
+                }
+            }
+        }
+        Value::Map(m) => return write_map(m, out, limit, p),
+        _ => return false, // floats, tags, profile-excluded simple values
+    }
+    true
+}
+
+fn write_key(k: &Value, out: &mut Vec<u8>, p: &Profile) -> bool {
+    match k {
+        Value::Integer(i) if p.int_keys => write_int(out, i128::from(*i)),
+        Value::Text(s) => {
+            write_text(out, s);
+            true
+        }
+        _ => false,
+    }
+}
+
+fn write_map(m: &[(Value, Value)], out: &mut Vec<u8>, limit: i64, p: &Profile) -> bool {
+    // Sort by ENCODED key bytes; equal encoded keys are duplicates — reject.
+    let mut pairs: Vec<(Vec<u8>, Vec<u8>)> = Vec::with_capacity(m.len());
+    for (k, v) in m {
+        let (mut kb, mut vb) = (Vec::new(), Vec::new());
+        if !write_key(k, &mut kb, p) || !write_value(v, &mut vb, limit - 1, p) {
+            return false;
+        }
+        pairs.push((kb, vb));
+    }
+    pairs.sort_by(|a, b| a.0.cmp(&b.0));
+    if pairs.windows(2).any(|w| w[0].0 == w[1].0) {
+        return false;
+    }
+    write_head(out, 5, pairs.len() as u64);
+    for (kb, vb) in &pairs {
+        out.extend_from_slice(kb);
+        out.extend_from_slice(vb);
+    }
+    true
+}
+
+/// Canonical bytes for `v` under the profile, or `None` outside the model.
+pub(crate) fn canonical_bytes(v: &Value, limit: i64, p: &Profile) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    write_value(v, &mut out, limit, p).then_some(out)
+}
+
+/// Emit a minimal CBOR item head. COSE, certificates, and Counterparty Assurance reuse this exact
 /// primitive so their deterministic encodings cannot drift on width selection.
 pub(crate) fn write_head(out: &mut Vec<u8>, major: u8, arg: u64) {
     match arg {

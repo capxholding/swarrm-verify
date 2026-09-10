@@ -1,0 +1,64 @@
+{
+  "entitlement": {
+    "tenant_id": "t1",
+    "covered_scope_digest": "abababababababababababababababababababababababababababababababab",
+    "purchased_band": "A"
+  },
+  "bundle_verified": true,
+  "period_start": "2026-08-01T00:00:00Z",
+  "period_end": "2026-08-31T23:59:59Z",
+  "authority_kind": "FLOW",
+  "facts": [
+    {
+      "schema": "evd/action-fact/v1",
+      "claim": {
+        "schema": "evd/claim/v1",
+        "action_id": "act-0001",
+        "action_class": "payment",
+        "value": "25000000",
+        "currency": "EUR"
+      },
+      "linkage": "DIRECT",
+      "outcome": "CORROBORATED",
+      "corroboration_depth": 1,
+      "event": {
+        "event_key": "evt-0001",
+        "value": "25000000",
+        "currency": "EUR",
+        "finality": "settled"
+      }
+    },
+    {
+      "schema": "evd/action-fact/v1",
+      "claim": {
+        "schema": "evd/claim/v1",
+        "action_id": "act-0002",
+        "action_class": "payment",
+        "value": "15000000",
+        "currency": "EUR"
+      },
+      "linkage": "DIRECT",
+      "outcome": "CORROBORATED",
+      "corroboration_depth": 1,
+      "event": {
+        "event_key": "evt-0002",
+        "value": "15000000",
+        "currency": "EUR",
+        "finality": "settled"
+      }
+    }
+  ],
+  "signed_limits": [
+    {
+      "source_signature": "ASYMMETRIC",
+      "declaration": {
+        "kind": "FLOW",
+        "cap": "100000000",
+        "period": "P1M",
+        "timezone": "Europe/Amsterdam",
+        "currency": "EUR",
+        "term_cap": "400000000"
+      }
+    }
+  ]
+}

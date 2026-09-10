@@ -1,5 +1,5 @@
 <!-- Apache-2.0 -->
-# evd/interaction v1 — agent↔agent evidence (NORMATIVE, Build 10.5)
+# evd/interaction v1 — agent↔agent evidence (NORMATIVE)
 
 One receipt per transported message between two agents. Transport-agnostic:
 the receipt commits to the CANONICAL bytes the transport actually carried.
@@ -20,9 +20,9 @@ the receipt commits to the CANONICAL bytes the transport actually carried.
   VISIBLE gap, not silence. An alternate history (rewritten message) fails
   signature + inclusion checks like any tamper.
 
-### B28 acceptance mode
+### Counterparty Assurance acceptance mode
 
-A B28 acceptance is never the unilateral degradation form. It requires both
+A Counterparty Assurance acceptance is never the unilateral degradation form. It requires both
 agent signatures and all of these context bindings:
 
 `assurance_transcript_digest` · `challenge_envelope_hash` ·
@@ -43,7 +43,8 @@ In the current product release, a favourable candidate is recorded only as
 evidence of what both agents accepted about the exchange; it is not action
 authorization and does not pre-certify behavior.
 
-The producer emits downstream B28 evidence only from the opaque
+The producer emits downstream Counterparty Assurance evidence only from the
+opaque
 verified-and-durably-consumed exchange handle returned only after this
 bilateral receipt is finalized. The production flow is three-stage: the
 challenger verifies and consumes the ASA, durably stores one immutable
@@ -65,7 +66,8 @@ substitution.
 | `mcp` | the canonical JSON-RPC `tools/call` request or response |
 | `ap2` | the canonical AP2 mandate object (receipts can wrap payment mandates without translation — same RFC 8785 canonicalization) |
 
-For B28, the A2A v1 message contains exactly one inline `raw` Part with
+For Counterparty Assurance, the A2A v1 message contains exactly one inline
+`raw` Part with
 `mediaType=application/eat+cwt`; URL Parts, automatic fetch and multiple
 alternative copies are rejected.
 

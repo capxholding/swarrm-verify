@@ -1,5 +1,5 @@
 <!-- Apache-2.0 -->
-# evd/policy v1 — policy attestation (NORMATIVE, Build 11)
+# evd/policy v1 — policy attestation (NORMATIVE)
 
 A `policy.decision` receipt attests that an EXTERNAL policy engine (OPA is
 the reference) evaluated a policy and produced a decision. We never run the

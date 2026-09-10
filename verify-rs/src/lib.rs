@@ -1227,7 +1227,7 @@ pub fn verify_bundle(bundle: &Value) -> bool {
     verify_bundle_report(bundle).0
 }
 
-/// E3 leg (B29.1) per SPEC/receipt-v1 §5 (amended) — mirror of
+/// E3 leg (temporal-authority replay) per SPEC/receipt-v1 §5 (amended) — mirror of
 /// `verify/verifier.py::_recorder_attested`: the co-signature bytes must
 /// verify under a relying-party-named recorder key (a NON-ISSUER log kid,
 /// beside an issuer signature); log registration is necessary, never
@@ -1250,7 +1250,7 @@ fn entry_recorder_attested(env: &Value, kl: &KeyLog, trust: Option<&Value>) -> b
     })
 }
 
-/// B29 evidence-level facts (SPEC/log-v1 §4 award law). VERDICT-NEUTRAL: a
+/// Relying-party-rooted evidence-level facts (SPEC/log-v1 §4 award law). VERDICT-NEUTRAL: a
 /// NOT VERIFIED bundle earns nothing. Returns the facts verify/verifier.py
 /// exposes on its report, pinned across engines by expected_evidence.json.
 pub fn verify_bundle_levels(bundle: &Value, trust: Option<&Value>) -> Value {

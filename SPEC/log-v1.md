@@ -52,7 +52,8 @@ A checkpoint is a signed statement of the log's state:
 | E2 | independently rooted time and public commitment for the displayed receipt | the same covering checkpoint is re-read from Base (`8453`) or Base Sepolia (`84532`) in this report run **and** has an RFC 3161 token terminating at a TSA root supplied by the relying party; never bundle-carried trust material or a local/unknown chain |
 | E3 | E2 plus dual attestation by the tenant issuer and a trusted registered-recorder key | every E2 requirement holds, and the recorder co-signature and issuer signature both verify, with the recorder key supplied out of band and constrained by the authenticated log to an active non-issuer recorder role; this proves control of that named key, not legal or organisational independence |
 
-**Award law (NORMATIVE as of B29).** Evidence levels are cumulative, and a
+**Award law (NORMATIVE as of the relying-party-rooted evidence-level
+revision).** Evidence levels are cumulative, and a
 favourable level may never derive from an input the subject supplies. A
 verifier renders E2 for a receipt only when one exact checkpoint digest covering
 its leaf was (a) re-read live from the chain in that run AND (b) timestamped
@@ -64,10 +65,10 @@ the non-issuer `recorder` role stays necessary, never sufficient. A verified
 recorder attestation without E2 remains an inspectable fact and does not award
 E3. No trust context and no live read → E1, always. Levels never gate: an
 earned E1 verdict is identical with and without any trust context. These
-post-action evidence levels are separate from the B28 Counterparty Assurance
+post-action evidence levels are separate from the Counterparty Assurance
 handshake and do not establish its identity, authority, or replay verdicts.
 
-## 5. Key transparency (NORMATIVE as of Build 4)
+## 5. Key transparency (NORMATIVE as of the log-witnessed key lifecycle)
 
 Key lifecycle events are ordinary receipts with `agent_id="_system"` and
 `action_type` ∈ {`evd.key.created`, `evd.key.rotated`, `evd.key.revoked`},

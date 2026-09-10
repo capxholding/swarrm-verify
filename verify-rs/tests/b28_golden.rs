@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Native Rust half of the raw B28 Python/Rust/WASM parity corpus.
+//! Native Rust half of the raw Counterparty Assurance Python/Rust/WASM parity corpus.
 
 use serde_json::Value as J;
 use sha2::{Digest, Sha256};

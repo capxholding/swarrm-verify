@@ -1,17 +1,19 @@
 <!-- Apache-2.0 — this file ships with the public verifier repo. -->
 
-# SPEC: handshake-v1 — Counterparty Assurance (B28)
+# SPEC: handshake-v1 — Counterparty Assurance
 
 **Status: NORMATIVE (`swarrm-b28/v1`).** The verifier evaluates the full
 vector, but every otherwise-favourable result is exported as
 `INDETERMINATE/PASS_NOT_ENABLED`; the public API exposes neither a score nor a
 `WOULD_PASS` result. Official `PASS` remains gated on the independent review,
-revocation drill and limited relying-party rollout in `docs/A_BUILD.md`.
+revocation drill and limited relying-party rollout in the maintainers'
+internal release plan.
 
-B28 proves identity, present proof-bearing authority and durable replay
+Counterparty Assurance proves identity, present proof-bearing authority and
+durable replay
 acceptance for one exact action. It does not predict conduct, prove an outcome,
 or promise that post-action evidence will be created. No `Swarrm Verified` mark
-ships in B28 v1; any future designation can only be post-action.
+ships in v1; any future designation can only be post-action.
 
 ## 1. Authority and custody
 
@@ -21,7 +23,8 @@ an exchange. The raw verifier exchange has no `trust_pack` or
 the configuration that verifies it. A presentation may not introduce a trust
 anchor, embedded JWK, `jku`, `x5u`, certificate URL or network discovery
 mechanism. Any unpinned root fails closed. An additional locally pinned root is
-an independent trust anchor, not proof of succession; B28 v1 defines no
+an independent trust anchor, not proof of succession; Counterparty Assurance
+v1 defines no
 in-presentation succession mechanism.
 
 A trust pack contains 1..64 sorted unique roots. Implementations freeze the
@@ -124,7 +127,8 @@ branches cannot both become the next root head.
 ## 3. One semantic and wire profile
 
 The semantic profile is `swarrm-b28/v1`; the EAT profile URI is
-`https://swarrm.ai/spec/eat/b28/cwt/v1`. B28 v1 supports exactly one encoding:
+`https://swarrm.ai/spec/eat/b28/cwt/v1`. Counterparty Assurance v1 supports
+exactly one encoding:
 deterministic CBOR in a tagged COSE_Sign1 with media type
 `application/eat+cwt`. JWT/JWS is not implemented, advertised or negotiable.
 
@@ -262,7 +266,8 @@ action_id)`:
 - a crash after consumption burns the ASA and never authorizes a second action.
 
 The current product release replaces both favourable cases with
-`INDETERMINATE/PASS_NOT_ENABLED` and `should_execute=false`. B28 cannot
+`INDETERMINATE/PASS_NOT_ENABLED` and `should_execute=false`. The handshake
+cannot
 authorize execution until the external gates enable favourable `PASS`.
 
 Node/source/coverage/history and post-action evidence readiness are
@@ -296,7 +301,8 @@ commits the reserved row. Crashes leave the same immutable bytes recoverable;
 they never cause a new receipt body or a second replay authorization. No
 process needs, receives or loads both agents' private keys.
 
-Producer APIs do not accept caller-supplied B28 digests or merely parseable
+Producer APIs do not accept caller-supplied Counterparty Assurance digests or
+merely parseable
 envelopes for those later bindings. The normative flow is
 `verify_consume_and_prepare` → remote `countersign_prepared_acceptance` → local
 `finalize_prepared_acceptance`; only finalization returns the opaque

@@ -1,0 +1,67 @@
+{
+  "both_findings_orthogonal": [
+    {
+      "basis": {
+        "limit_digest": "eee89d7009764b6d53e9b5fbfc76e12ae0d0503259f6115c5743e503210ec936"
+      },
+      "covered_scope_digest": "abababababababababababababababababababababababababababababababab",
+      "minimum_band": "C",
+      "period_end": "2026-08-31T23:59:59Z",
+      "period_start": "2026-08-01T00:00:00Z",
+      "registered_band": "A",
+      "rule": "SIGNED_LIMIT_CONTRADICTED",
+      "schema": "evd/band-finding/v1",
+      "tenant_id": "t1"
+    },
+    {
+      "basis": {
+        "authority_kind": "FLOW",
+        "confirmed_count": 2,
+        "facts_digest": "e90203c7258fdb0ecb9b3196e35897729edd3c41cfaef34be5c56baa70d9266d"
+      },
+      "covered_scope_digest": "abababababababababababababababababababababababababababababababab",
+      "minimum_band": "B",
+      "period_end": "2026-08-31T23:59:59Z",
+      "period_start": "2026-08-01T00:00:00Z",
+      "registered_band": "A",
+      "rule": "MANDATE_EXCEEDED",
+      "schema": "evd/band-finding/v1",
+      "tenant_id": "t1"
+    }
+  ],
+  "declared_only_no_finding": [],
+  "flow_mandate_exceeded": [
+    {
+      "basis": {
+        "authority_kind": "FLOW",
+        "confirmed_count": 2,
+        "facts_digest": "e90203c7258fdb0ecb9b3196e35897729edd3c41cfaef34be5c56baa70d9266d"
+      },
+      "covered_scope_digest": "abababababababababababababababababababababababababababababababab",
+      "minimum_band": "B",
+      "period_end": "2026-08-31T23:59:59Z",
+      "period_start": "2026-08-01T00:00:00Z",
+      "registered_band": "A",
+      "rule": "MANDATE_EXCEEDED",
+      "schema": "evd/band-finding/v1",
+      "tenant_id": "t1"
+    }
+  ],
+  "flow_within_band": [],
+  "signed_limit_contradicted": [
+    {
+      "basis": {
+        "limit_digest": "eee89d7009764b6d53e9b5fbfc76e12ae0d0503259f6115c5743e503210ec936"
+      },
+      "covered_scope_digest": "abababababababababababababababababababababababababababababababab",
+      "minimum_band": "C",
+      "period_end": "2026-08-31T23:59:59Z",
+      "period_start": "2026-08-01T00:00:00Z",
+      "registered_band": "A",
+      "rule": "SIGNED_LIMIT_CONTRADICTED",
+      "schema": "evd/band-finding/v1",
+      "tenant_id": "t1"
+    }
+  ],
+  "unverified_bundle_no_finding": []
+}

@@ -1,5 +1,5 @@
 <!-- Apache-2.0 -->
-# evd/disclosure v1 — selective disclosure (NORMATIVE, Build 9.5)
+# evd/disclosure v1 — selective disclosure (NORMATIVE)
 
 A receipt commits to payloads with salted, domain-separated hashes
 (`SHA-256(domain ‖ 0x00 ‖ nonce ‖ 0x00 ‖ payload)`; canonical.py). The

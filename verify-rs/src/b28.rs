@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Offline B28 v1 verifier in the public Rust second implementation.
+//! Offline Counterparty Assurance v1 verifier in the public Rust second implementation.
 //!
 //! The host supplies pinned roots and typed local context separately; exchange
 //! bytes contain signed CWTs only and cannot nominate verifier state.
@@ -13,7 +13,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Cursor;
 
-use crate::cbor_wire::{structural_scan, write_head as head};
+use crate::cbor_wire::{canonical_bytes, structural_scan, Profile};
 use crate::merkle::{verify_consistency as merkle_consistency, verify_inclusion};
 
 const PROFILE: &str = "https://swarrm.ai/spec/eat/b28/cwt/v1";
@@ -61,73 +61,13 @@ fn sha(parts: &[&[u8]]) -> [u8; 32] {
     }
     h.finalize().into()
 }
-fn encode(value: &C, out: &mut Vec<u8>, depth: usize) -> bool {
-    if depth == 0 {
-        return false;
-    }
-    match value {
-        C::Null => out.push(0xf6),
-        C::Bool(value) => out.push(if *value { 0xf5 } else { 0xf4 }),
-        C::Integer(value) => {
-            let number = i128::from(*value);
-            if !(i128::from(i64::MIN)..=i128::from(i64::MAX)).contains(&number) {
-                return false;
-            }
-            if number >= 0 {
-                let Ok(argument) = u64::try_from(number) else { return false };
-                head(out, 0, argument);
-            } else {
-                let Ok(argument) = u64::try_from(-1 - number) else { return false };
-                head(out, 1, argument);
-            }
-        }
-        C::Bytes(value) => {
-            head(out, 2, value.len() as u64);
-            out.extend_from_slice(value);
-        }
-        C::Text(value) => {
-            head(out, 3, value.len() as u64);
-            out.extend_from_slice(value.as_bytes());
-        }
-        C::Array(values) => {
-            head(out, 4, values.len() as u64);
-            for value in values {
-                if !encode(value, out, depth - 1) {
-                    return false;
-                }
-            }
-        }
-        C::Map(entries) => return encode_map(entries, out, depth - 1),
-        _ => return false,
-    }
-    true
-}
-fn encode_map(entries: &[(C, C)], out: &mut Vec<u8>, depth: usize) -> bool {
-    let mut pairs = Vec::with_capacity(entries.len());
-    for (key, value) in entries {
-        if !matches!(key, C::Integer(_) | C::Text(_)) {
-            return false;
-        }
-        let (mut left, mut right) = (Vec::new(), Vec::new());
-        if !encode(key, &mut left, depth) || !encode(value, &mut right, depth) {
-            return false;
-        }
-        pairs.push((left, right));
-    }
-    pairs.sort_by(|left, right| left.0.cmp(&right.0));
-    if pairs.windows(2).any(|pair| pair[0].0 == pair[1].0) {
-        return false;
-    }
-    head(out, 5, pairs.len() as u64);
-    for (key, value) in pairs {
-        out.extend_from_slice(&key);
-        out.extend_from_slice(&value);
-    }
-    true
-}
+/// The B28 CWT model: integer or text map keys; booleans admitted.
+const CWT_PROFILE: Profile = Profile { int_keys: true, bools: true };
 fn canonical(value: &C) -> Option<Vec<u8>> {
-    let mut out = Vec::new();
-    encode(value, &mut out, 65).then_some(out)
+    // The shared emitter refuses BELOW zero, so a limit of MAX_CBOR_DEPTH
+    // admits exactly the 65 value levels the previous zero-refusing
+    // depth-65 counter did.
+    canonical_bytes(value, MAX_CBOR_DEPTH as i64, &CWT_PROFILE)
 }
 fn decode(data: &[u8], cap: usize) -> Option<C> {
     // Bound hostile nesting and aggregate allocation before ciborium runs.
@@ -408,29 +348,34 @@ struct RootAnchor {
     fingerprint: Vec<u8>,
     key: Vec<u8>,
 }
+/// Parse a locally supplied table: an array whose entries carry exactly
+/// `fields`, extracted by `parse` into unique keys in strictly increasing
+/// order. The shared scaffolding of every local-context map.
+fn sorted_entries<K: Ord + Clone, V>(value: &C, fields: &str, parse: impl Fn(&Doc) -> Option<(K, V)>) -> Option<BTreeMap<K, V>> {
+    let entries = array(value, MAX_LOCAL_ITEMS)?;
+    let (mut out, mut order) = (BTreeMap::new(), Vec::new());
+    for item in entries {
+        let (key, value) = parse(&document(item, None, fields)?)?;
+        order.push(key.clone());
+        if out.insert(key, value).is_some() {
+            return None;
+        }
+    }
+    order.windows(2).all(|pair| pair[0] < pair[1]).then_some(out)
+}
 fn parse_pinned_trust_pack(raw: &[u8], pin: &[u8]) -> Option<BTreeMap<String, RootAnchor>> {
     if pin.len() != 32 || pin != sha(&[raw]) || raw.len() > MAX_CWT {
         return None;
     }
     let doc = document(&decode(raw, MAX_CWT)?, Some(TRUST_PACK), "roots")?;
-    let entries = array(&doc["roots"], MAX_LOCAL_ITEMS).filter(|entries| !entries.is_empty())?;
-    let mut roots = BTreeMap::new();
-    let mut order = Vec::new();
-    for entry in entries {
-        let root = document(entry, None, "kid organisation_root public_key")?;
+    let roots = sorted_entries(&doc["roots"], "kid organisation_root public_key", |root| {
         let kid = bounded(&root["kid"], 128)?.to_owned();
         let fingerprint = fixed(&root["organisation_root"], 32)?.to_vec();
         let key = fixed(&root["public_key"], 32)?.to_vec();
         let key_raw = <&[u8; 32]>::try_from(key.as_slice()).ok()?;
-        if kid != key_id(&key) || fingerprint != sha(&[&key]) || EdKey::from_bytes(key_raw).is_err() {
-            return None;
-        }
-        order.push(kid.clone());
-        if roots.insert(kid, RootAnchor { fingerprint, key }).is_some() {
-            return None;
-        }
-    }
-    order.windows(2).all(|pair| pair[0] < pair[1]).then_some(roots)
+        (kid == key_id(&key) && fingerprint == sha(&[&key]) && EdKey::from_bytes(key_raw).is_ok()).then_some((kid, RootAnchor { fingerprint, key }))
+    })?;
+    (!roots.is_empty()).then_some(roots)
 }
 fn root_cwt(raw: &[u8], schema: &str, roots: &BTreeMap<String, RootAnchor>) -> Option<Cwt> {
     let cwt = inspect_cwt(raw, schema)?;
@@ -468,48 +413,26 @@ enum LocalContext {
     Refusal(RefusalLocal),
 }
 fn local_keys(value: &C) -> Option<BTreeMap<String, Vec<u8>>> {
-    let entries = array(value, MAX_LOCAL_ITEMS)?;
-    let (mut keys, mut order) = (BTreeMap::new(), Vec::new());
-    for entry in entries {
-        let entry = document(entry, None, "kid public_key")?;
+    sorted_entries(value, "kid public_key", |entry| {
         let kid = bounded(&entry["kid"], 128)?.to_owned();
         let key = fixed(&entry["public_key"], 32)?.to_vec();
         let key_raw = <&[u8; 32]>::try_from(key.as_slice()).ok()?;
-        if kid != key_id(&key) || EdKey::from_bytes(key_raw).is_err() {
-            return None;
-        }
-        order.push(kid.clone());
-        keys.insert(kid, key);
-    }
-    (order.windows(2).all(|pair| pair[0] < pair[1]) && order.len() == keys.len()).then_some(keys)
+        (kid == key_id(&key) && EdKey::from_bytes(key_raw).is_ok()).then_some((kid, key))
+    })
 }
 fn checkpoints(value: &C) -> Option<Checkpoints> {
-    let entries = array(value, MAX_LOCAL_ITEMS)?;
-    let (mut values, mut order) = (BTreeMap::new(), Vec::new());
-    for entry in entries {
-        let entry = document(entry, None, "digest tenant organisation_root sequence authority_root log_root log_size")?;
+    sorted_entries(value, "digest tenant organisation_root sequence authority_root log_root log_size", |entry| {
         let digest = fixed(&entry["digest"], 32)?.to_vec();
         let value = (bounded(&entry["tenant"], 128)?.to_owned(), fixed(&entry["organisation_root"], 32)?.to_vec(), uint(&entry["sequence"])?, fixed(&entry["authority_root"], 32)?.to_vec(), fixed(&entry["log_root"], 32)?.to_vec(), uint(&entry["log_size"])?);
-        order.push(digest.clone());
-        if values.insert(digest, value).is_some() {
-            return None;
-        }
-    }
-    order.windows(2).all(|pair| pair[0] < pair[1]).then_some(values)
+        Some((digest, value))
+    })
 }
 fn heads(value: &C) -> Option<Heads> {
-    let entries = array(value, MAX_LOCAL_ITEMS)?;
-    let (mut heads, mut order) = (BTreeMap::new(), Vec::new());
-    for entry in entries {
-        let entry = document(entry, None, "tenant organisation_root sequence authority_root log_root log_size")?;
+    sorted_entries(value, "tenant organisation_root sequence authority_root log_root log_size", |entry| {
         let key = (bounded(&entry["tenant"], 128)?.to_owned(), opaque(&entry["organisation_root"])?.to_vec());
         let value = (uint(&entry["sequence"])?, fixed(&entry["authority_root"], 32)?.to_vec(), fixed(&entry["log_root"], 32)?.to_vec(), uint(&entry["log_size"])?);
-        order.push(key.clone());
-        if heads.insert(key, value).is_some() {
-            return None;
-        }
-    }
-    order.windows(2).all(|pair| pair[0] < pair[1]).then_some(heads)
+        Some((key, value))
+    })
 }
 fn presentation_context(local: Doc) -> Option<PresentationLocal> {
     let lifetime = positive(&local["max_action_lifetime_s"]).filter(|value| *value <= 300)?;
