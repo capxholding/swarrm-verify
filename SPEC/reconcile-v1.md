@@ -2,13 +2,14 @@
 
 # SPEC: reconcile-v1 — corroboration, deterministic matching, coverage
 
-**Status: NORMATIVE (v1).** B23: the two-way comparison that makes both
+**Status: NORMATIVE (v1).** Reconciliation: the two-way comparison that makes
+both
 deception directions visible. The Node independently scans every event in the
 bound source scope (node-v1); it never merely looks up references the agent
 supplied. Everything here is deterministic — no model participates, ever.
 Reconciliation NEVER computes verdicts itself: it builds
-`evd/verdict-input/v1` documents; the ONE derivation path is the B21 verdict
-engine (verified-action-v1 §2), implemented identically in Python and Rust.
+`evd/verdict-input/v1` documents; the ONE derivation path is the
+verified-action verdict engine (verified-action-v1 §2), implemented identically in Python and Rust.
 
 ## 1. Correlation (`action_id` / `external_ref`)
 
@@ -107,11 +108,13 @@ Absence of the receipt is not a failure: bundles that carry none are
 verified with the conventions unbound, and the residual is stated in
 certificate-v1 §7.
 
-> OPEN (producer side, 2026-08-05). Today `build_coverage` emits NONE of the
-> four conventions into the document it digests, and `compile_certificate`
-> does not embed the coverage receipt in the bundle it carries. Until both
-> land, the binding above is inert in production and the §4.4 material
-> recomputation reads a member the real Node has never written. Closing this
+> OPEN (producer side). `build_coverage` copies into the document it digests
+> exactly those conventions the SourceManifest declares, so a source that
+> declares none leaves the binding above inert and the §4.4 material
+> recomputation with nothing to read; `compile_certificate` detects that case
+> and records a limitation rather than asserting a proof it cannot make.
+> What remains open is embedding the coverage receipt in the carried bundle,
+> so the conventions can be tied to a signed digest. Closing this
 > is a coordinated producer-side change, recorded here so the gap is visible
 > rather than implied.
 Engine inputs are built honestly from Node state:
@@ -119,7 +122,8 @@ Engine inputs are built honestly from Node state:
   `count_mismatch`, `event_root_mismatch`, `mapping_substituted`) each
   contribute a `batch.gaps` entry; an open `fork_divergence` or
   `continuity_gap` finding sets `fork_findings_open`.
-- **Triage recomputation (completes B22.13):** a finding triaged
+- **Triage recomputation (completes the finding/triage lifecycle):** a finding
+  triaged
   `RESOLVED_FACTUAL` no longer contributes its gap entry — coverage changes
   ONLY because the verifier re-derives from the updated finding set, never
   because anyone declared it. `ACCEPTED_LIMITATION` KEEPS its gap entry
@@ -146,7 +150,7 @@ Only a gap-free, replayed full scope with a sufficient basis derives
 `CLOSED`. A source outage never closes the affected window and catches up
 deterministically from the persisted cursor.
 
-## 7. Corrections (B23.7)
+## 7. Corrections
 
 Reversals, corrections and late-finality changes create LINKED new facts:
 the new `ActionFact` carries `correction_of` = the digest of the prior fact

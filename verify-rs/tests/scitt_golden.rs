@@ -1,9 +1,9 @@
 // Apache-2.0 (public verifier repo)
-//! B25 W4 — the Rust engine runs the SAME SCITT golden bytes the Python engine
+//! SCITT goldens — the Rust engine runs the SAME SCITT golden bytes the Python engine
 //! compiled (scripts/gen_scitt_golden.py, tests/golden/scitt/) and must
 //! reproduce the hand-authored `scitt_receipt_valid` in expected.json for every
 //! family. Two independent implementations agreeing on the ten §6 outcomes —
-//! and never panicking on hostile bytes (H5) — is the B25 conformance contract.
+//! and never panicking on hostile bytes (H5) — is the SCITT conformance contract.
 //!
 //! `scitt` (and its `cose` / `cbor` / `jcs` / `merkle` dependencies) are
 //! pub(crate), so — exactly like cose_canonical.rs — the modules are compiled

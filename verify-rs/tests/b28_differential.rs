@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Fresh Python -> native Rust differential parity for raw B28 inputs.
+//! Fresh Python -> native Rust differential parity for raw Counterparty Assurance inputs.
 
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -19,17 +19,17 @@ fn hex(raw: &[u8]) -> String {
 #[test]
 fn fresh_mutations_match_python_exactly_and_never_authorize() {
     let Ok(directory) = env::var("SWARRM_B28_DIFF_DIR") else {
-        println!("SWARRM_B28_DIFF_DIR unset - no fresh B28 corpus supplied; skipping");
+        println!("SWARRM_B28_DIFF_DIR unset - no fresh differential corpus supplied; skipping");
         return;
     };
     let directory = PathBuf::from(directory);
-    let manifest: Value = serde_json::from_slice(&fs::read(directory.join("manifest.json")).expect("read B28 differential manifest")).expect("parse B28 differential manifest");
+    let manifest: Value = serde_json::from_slice(&fs::read(directory.join("manifest.json")).expect("read differential manifest")).expect("parse differential manifest");
     assert_eq!(manifest["schema"], "swarrm-b28/differential-corpus/v1");
-    let cases = manifest["cases"].as_array().expect("B28 differential cases must be an array");
+    let cases = manifest["cases"].as_array().expect("differential cases must be an array");
     assert_eq!(manifest["case_count"].as_u64(), Some(cases.len() as u64));
     assert!(manifest["seed_count"].as_u64().is_some_and(|n| n >= 90));
 
-    let trust_pack = fs::read(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../tests/golden/b28/trust-pack.cbor")).expect("read pinned B28 trust pack");
+    let trust_pack = fs::read(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../tests/golden/b28/trust-pack.cbor")).expect("read pinned trust pack");
     assert_eq!(digest(&trust_pack), hex(&TRUST_PACK_PIN));
 
     let mut surfaces = BTreeSet::new();
@@ -41,11 +41,11 @@ fn fresh_mutations_match_python_exactly_and_never_authorize() {
         assert_eq!(digest(&exchange), case["exchange_sha256"], "{name}");
         assert_eq!(digest(&context), case["context_sha256"], "{name}");
 
-        let got: Value = serde_json::from_str(&verify_b28_cwt(&exchange, &context, &trust_pack, &TRUST_PACK_PIN)).expect("B28 verifier must always return JSON");
+        let got: Value = serde_json::from_str(&verify_b28_cwt(&exchange, &context, &trust_pack, &TRUST_PACK_PIN)).expect("verifier must always return JSON");
         assert_eq!(got, case["expected"], "{name}: Rust diverged from Python");
         assert_ne!(got["verdict"], "PASS", "{name}: verifier returned PASS");
         assert_eq!(got["should_execute"], false, "{name}: read-only verifier authorized execution");
     }
     assert_eq!(manifest["mutation_surface_count"].as_u64(), Some(surfaces.len() as u64));
-    println!("B28 differential: Rust == Python on {} fresh mutations", cases.len());
+    println!("differential: Rust == Python on {} fresh mutations", cases.len());
 }

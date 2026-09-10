@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! Certificate verification (SPEC/certificate-v1.md §4) — B24.3, Rust side.
+//! Certificate verification (SPEC/certificate-v1.md §4) — independent verification, Rust side.
 //!
 //! `verify_certificate_cbor` takes raw bytes (bare CertificateCore or a
 //! CertificateView envelope, deterministic CBOR per §1) → JSON result
@@ -14,7 +14,7 @@
 //! (a doctored input could otherwise upgrade the headline unchecked), and
 //! `coverage_doc` must sit consistent with `events`/`batch` (event_count ==
 //! deduped carried events, event_key_root recomputed over their keys).
-//! Any mismatch forces integrity INVALID before the B21 engine derives the
+//! Any mismatch forces integrity INVALID before the verdict engine derives the
 //! vector — never a partial pass. The view's detached `signature` verifies
 //! under a bundle key-log key over `b"evd/v1/certificate/view\x00"` +
 //! canonical CBOR of the view minus `signature`/`*_sig` (authority-v1 §2

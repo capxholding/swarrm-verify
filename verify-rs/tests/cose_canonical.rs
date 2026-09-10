@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! COSE_Sign1 canonical-byte gate (B25 W1) — the Rust twin of
+//! COSE_Sign1 canonical-byte gate — the Rust twin of
 //! tests/test_cose_canonical.py. Every golden vector must build byte-identical
 //! to its `.cose` file, sign over exactly the `.sig_input.bin` Sig_structure,
 //! verify and round-trip, and reject every tamper — hostile bytes are a clean

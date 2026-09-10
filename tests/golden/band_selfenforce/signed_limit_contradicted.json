@@ -1,0 +1,25 @@
+{
+  "entitlement": {
+    "tenant_id": "t1",
+    "covered_scope_digest": "abababababababababababababababababababababababababababababababab",
+    "purchased_band": "A"
+  },
+  "bundle_verified": true,
+  "period_start": "2026-08-01T00:00:00Z",
+  "period_end": "2026-08-31T23:59:59Z",
+  "authority_kind": "FLOW",
+  "facts": [],
+  "signed_limits": [
+    {
+      "source_signature": "ASYMMETRIC",
+      "declaration": {
+        "kind": "FLOW",
+        "cap": "100000000",
+        "period": "P1M",
+        "timezone": "Europe/Amsterdam",
+        "currency": "EUR",
+        "term_cap": "400000000"
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 // Apache-2.0 (public verifier repo)
-//! B29 evidence-level parity: both engines derive the SAME upgrade facts from
+//! Evidence-level parity: both engines derive the SAME upgrade facts from
 //! the shared fixtures under the shared trust context. `recorder_attested`
 //! (E3: co-signature under the relying-party-named recorder key) and
 //! `trusted_tst_checkpoints` (E2 time leg: token chain terminating at the

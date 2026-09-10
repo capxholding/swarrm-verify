@@ -1,16 +1,16 @@
 // Apache-2.0 (public verifier repo)
-//! COSE_Sign1 (RFC 9052) — the deterministic hand adapter for SCITT (B25 W1).
+//! COSE_Sign1 (RFC 9052) — the deterministic hand adapter for SCITT.
 //!
 //! The Rust twin of `core/cose.py`. A COSE_Sign1 is the CBOR array (tag 18)
 //! `[protected: bstr, unprotected: map, payload: bstr / null, signature: bstr]`
-//! under the B24 deterministic profile (scitt-action-profile-v1 §1). The
+//! under the certificate deterministic profile (scitt-action-profile-v1 §1). The
 //! SIGNED bytes — the `Sig_structure` — flow through the sanctioned canonical
 //! emitter in `crate::cbor`, so Ed25519 covers exactly the canonical CBOR the
 //! rest of the stack emits. Only the envelope framing and the COSE header maps
-//! carry INTEGER labels, which `crate::cbor` (text keys only) cannot express,
-//! so those few pieces are hand-encoded here with the SAME rules — minimal
-//! heads, no tags/floats, map keys sorted by their encoded bytes — that
-//! `src/cbor.rs` and `core/cborcanon.py` already pin. Byte-identical to Python;
+//! carry INTEGER labels, which the certificate profile cannot express, so this
+//! module pins the shared `cbor_wire` emitter to the COSE model instead —
+//! integer keys admitted, booleans excluded, the same minimal heads and
+//! encoded-byte key order `core/cborcanon.py` pins. Byte-identical to Python;
 //! the shared vectors in `tests/golden/cose/` are the gate.
 //!
 //! Fail-closed: `verify_sign1` returns `None` on hostile input, never panics.
@@ -21,128 +21,28 @@ use ciborium::Value;
 use ed25519_dalek::{Signer, SigningKey};
 use std::collections::BTreeMap;
 
-use crate::cbor_wire::{read_head, write_head};
+use crate::cbor_wire::{canonical_bytes, structural_scan, write_value, Profile};
 
 const TAG_SIGN1: u8 = 0xD2; // CBOR tag 18 wrapping the COSE_Sign1 array
 const BUILD_DEPTH: i64 = 32;
 
-// ---- minimal deterministic CBOR for the COSE envelope (int + text keys) ----
-// The shared head emitter lives in `cbor_wire` and integer values in `cbor`;
-// this module owns only the extra integer-key map profile certificates forbid.
+/// COSE's envelope model: integer or text map keys; no booleans.
+const COSE_PROFILE: Profile = Profile { int_keys: true, bools: false };
 
-fn enc(v: &Value, out: &mut Vec<u8>, limit: i64) -> bool {
-    if limit < 0 {
-        return false;
-    }
-    match v {
-        Value::Null => out.push(0xf6),
-        Value::Integer(i) => return crate::cbor::write_int(out, i128::from(*i)),
-        Value::Text(s) => crate::cbor::write_text(out, s),
-        Value::Bytes(b) => {
-            write_head(out, 2, b.len() as u64);
-            out.extend_from_slice(b);
-        }
-        Value::Array(a) => {
-            write_head(out, 4, a.len() as u64);
-            for item in a {
-                if !enc(item, out, limit - 1) {
-                    return false;
-                }
-            }
-        }
-        Value::Map(m) => return enc_map(m, out, limit),
-        _ => return false, // floats, tags, bool, other simple values
-    }
-    true
-}
-
-fn enc_key(k: &Value, out: &mut Vec<u8>) -> bool {
-    match k {
-        Value::Integer(i) => crate::cbor::write_int(out, i128::from(*i)),
-        Value::Text(s) => {
-            crate::cbor::write_text(out, s);
-            true
-        }
-        _ => false,
-    }
-}
-
-fn enc_map(m: &[(Value, Value)], out: &mut Vec<u8>, limit: i64) -> bool {
-    let mut pairs: Vec<(Vec<u8>, Vec<u8>)> = Vec::with_capacity(m.len());
-    for (k, v) in m {
-        let mut kb = Vec::new();
-        let mut vb = Vec::new();
-        if !enc_key(k, &mut kb) || !enc(v, &mut vb, limit - 1) {
-            return false;
-        }
-        pairs.push((kb, vb));
-    }
-    pairs.sort_by(|a, b| a.0.cmp(&b.0));
-    if pairs.windows(2).any(|w| w[0].0 == w[1].0) {
-        return false;
-    }
-    write_head(out, 5, pairs.len() as u64);
-    for (kb, vb) in &pairs {
-        out.extend_from_slice(kb);
-        out.extend_from_slice(vb);
-    }
-    true
-}
-
-fn cose_simple_allowed(data: &[u8], start: usize, major: u8) -> bool {
-    major != 7 || data.get(start).is_some_and(|byte| byte & 0x1f == 22)
-}
-
-fn dec_item(data: &[u8], i: usize, depth: i64) -> Option<(Value, usize)> {
-    if depth < 0 {
-        return None;
-    }
-    let start = i;
-    let (major, arg, i) = read_head(data, i)?;
-    cose_simple_allowed(data, start, major).then_some(())?; // COSE admits null, not bool
-    match major {
-        0 => Some((Value::Integer(i64::try_from(arg).ok()?.into()), i)),
-        1 => Some((Value::Integer((-1 - i64::try_from(arg).ok()?).into()), i)),
-        2 | 3 => {
-            let end = i.checked_add(usize::try_from(arg).ok()?)?;
-            let raw = data.get(i..end)?;
-            let v = if major == 3 { Value::Text(std::str::from_utf8(raw).ok()?.to_owned()) } else { Value::Bytes(raw.to_vec()) };
-            Some((v, end))
-        }
-        4 => dec_seq(data, i, arg, depth, false),
-        5 => dec_seq(data, i, arg, depth, true),
-        _ => Some((Value::Null, i)), // major 7: null (read_head admits nothing else)
-    }
-}
-
-fn dec_seq(data: &[u8], mut i: usize, count: u64, depth: i64, is_map: bool) -> Option<(Value, usize)> {
-    let mut items: Vec<Value> = Vec::new();
-    let mut pairs: Vec<(Value, Value)> = Vec::new();
-    for _ in 0..count {
-        let (key, ni) = dec_item(data, i, depth - 1)?;
-        i = ni;
-        if !is_map {
-            items.push(key);
-            continue;
-        }
-        if !matches!(key, Value::Integer(_) | Value::Text(_)) {
-            return None;
-        }
-        let (value, nj) = dec_item(data, i, depth - 1)?;
-        i = nj;
-        pairs.push((key, value));
-    }
-    let v = if is_map { Value::Map(pairs) } else { Value::Array(items) };
-    Some((v, i))
-}
-
+/// Decode envelope bytes that are EXACTLY what the shared emitter would emit
+/// under the COSE profile; `None` otherwise, never a panic. The bounded
+/// pre-scan rejects tags/floats/indefinite forms, over-deep nesting and
+/// trailing bytes before ciborium materializes anything, and the re-encode
+/// compare rejects unsorted or duplicate keys, non-minimal heads and every
+/// value outside the model (booleans included). The item cap can never bind
+/// below the callers' 64 KiB byte caps: every CBOR item costs at least one
+/// byte, so `items <= len(data) <= max_bytes < MAX_ITEMS`.
 fn decode_canonical(data: &[u8], max_depth: usize) -> Option<Value> {
-    let (v, end) = dec_item(data, 0, max_depth as i64)?;
-    let mut re = Vec::new();
-    if end != data.len() || !enc(&v, &mut re, max_depth as i64) || re != data {
+    if structural_scan(data, max_depth, crate::cbor::MAX_ITEMS)? != data.len() {
         return None;
     }
-    Some(v)
+    let v: Value = ciborium::de::from_reader(data).ok()?;
+    (canonical_bytes(&v, max_depth as i64, &COSE_PROFILE)? == data).then_some(v)
 }
 
 // ---- COSE_Sign1 ----
@@ -155,19 +55,16 @@ fn sig_structure(protected_bytes: &[u8], payload: Option<&[u8]>) -> Option<Vec<u
 
 /// Deterministic COSE_Sign1 bytes signed by the Ed25519 `seed` (alg -8).
 pub(crate) fn build_sign1(protected: &Value, unprotected: &Value, payload: Option<&[u8]>, seed: &[u8; 32]) -> Option<Vec<u8>> {
-    let mut protected_bytes = Vec::new();
-    if !enc(protected, &mut protected_bytes, BUILD_DEPTH) {
-        return None;
-    }
+    let protected_bytes = canonical_bytes(protected, BUILD_DEPTH, &COSE_PROFILE)?;
     let sig_input = sig_structure(&protected_bytes, payload)?;
     let signature = SigningKey::from_bytes(seed).sign(&sig_input).to_bytes().to_vec();
     let array = Value::Array(vec![Value::Bytes(protected_bytes), unprotected.clone(), payload.map_or(Value::Null, |b| Value::Bytes(b.to_vec())), Value::Bytes(signature)]);
     let mut out = vec![TAG_SIGN1];
-    enc(&array, &mut out, BUILD_DEPTH).then_some(out)
+    write_value(&array, &mut out, BUILD_DEPTH, &COSE_PROFILE).then_some(out)
 }
 
 /// A verified COSE_Sign1's decoded pieces (kid resolved from protected label 4).
-#[allow(dead_code)] // fields consumed by later B25 weeks and the W1 test
+#[allow(dead_code)] // fields consumed by later SCITT stages and the W1 test
 pub(crate) struct Sign1 {
     pub(crate) protected: Value,
     pub(crate) unprotected: Value,

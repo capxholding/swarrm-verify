@@ -36,9 +36,53 @@ identity exists to permanent evidence lineage.
   `model_ref`, `code_digest`, `purpose` (short, human-readable),
   `created_by_role`, `owner_org` (legal entity, not a person),
   `lineage_from_seq` (adopted only), `prior_history` = `"unevidenced"`
-  (adopted only).
-- `lineage.revised` carries the same commitment slots (changed ones) and
-  context `{revises: <birthtag_id>, reason}`.
+  (adopted only), and the ADDITIVE `field_provenance` string (context-v1
+  §1a): per-field `asserted` vs `observed:<basis>` labels for `model_ref`,
+  `tool_manifest`, `code_digest` and `created_by_id`, so a report can say
+  which values a door observed and which a human typed. Capture surfaces
+  MAY populate those four from live observation when the caller omits them;
+  an explicit caller value always wins and is labelled `asserted`; an
+  ambiguous observation populates nothing (observation never guesses).
+  `observed:mcp-wrap` specifically requires a strict initialize request and
+  response for the same supported protocol, the subsequent
+  `notifications/initialized`, one correlated root `tools/list` request, and a
+  final JSON-RPC result with no request cursor, continuation cursor, or
+  partial-result marker. `swarrm init` binds each wrapped server to the bounded
+  `mcpServers` object key it actually rewrites; that configured key groups the
+  advisory snapshot across restarts and server renames. A direct legacy wrap
+  without `--server-id` may use bounded `serverInfo.name` only under a
+  single-server identity epoch; a second distinct self-report makes the epoch
+  incomplete. A configured key and `serverInfo.name` are identifiers, not
+  evidence of who operated the server. The complete array is admitted as one
+  unit: at most 256 tools, every name nonempty/bounded/control-free, no
+  duplicates, and a bounded canonical persisted snapshot; the empty list is
+  valid. Malformed, paginated, oversized, expired, changed, uninitialized,
+  persistence-failed, or mutually different snapshots populate nothing and
+  invalidate older state until every expected identity has a later complete
+  refresh. Tool names are never sliced, filtered, deduplicated, or unioned.
+  A birth emitted by `swarrm init` MUST also populate the existing `config`
+  commitment with canonical `evd/init-configuration-binding/v1`: a `files`
+  object whose exact members are `.env`, `mcp.json`, and `.mcp.json`, each
+  either null when absent or `sha256:<lowercase hex>` over the bounded bytes
+  init admitted. Raw configuration bytes are not placed in that manifest.
+  Init rechecks this snapshot through a pre-commit admission guard. Because
+  POSIX cannot atomically transact an uncooperative editor's files with the
+  receipt database, the committed digest manifest is the durable statement;
+  a later file change invalidates the run's success but cannot make the birth
+  claim that the older snapshot remained current.
+- `lineage.revised` carries the same commitment slots (changed ones) plus
+  `revised_by_id` (the revising principal's identifier is PII — always
+  committed, never plaintext; generic disclosure lane `evd/v1/x/revised_by_id`,
+  since the verifier's per-field domain map is frozen) and context
+  `{revises: <birthtag_id>, reason, revised_by_role, change_ref}` —
+  `change_ref` names the change record (merged PR, CloudTrail event id,
+  change ticket) that authorized the revision, carried untouched.
+- Attribution: creation is attributed at birth (`created_by_id` /
+  `created_by_role`) and revision at revision (`revised_by_id` /
+  `revised_by_role`). Both are customer-declared self-reports; neither
+  attribution is corroborated until the record named by `change_ref` (or the
+  channel record in `external_ref`) is actually read. Presence or absence of
+  either moves no verdict.
 
 ## IDs are derived, never allocated
 

@@ -67,7 +67,8 @@ explicit concurrency) · `root_sig`.
 context: `subject_birthtag_id` · `binding_id` (optional) · `action_classes`
 (list) · `scope` (canonical scope descriptor object: `org` · `source_system` ·
 `account` · `action_classes` · `selector`) · `limits` (static object; see
-declaration types in A_BUILD B27.2A — `FLOW`/`STOCK`/`ONE_SHOT` shapes) ·
+declaration types in the published value-band function, SPEC/band-v1.md —
+`FLOW`/`STOCK`/`ONE_SHOT` shapes) ·
 `policy_commitment` (hex digest) · `valid_from` · `valid_to` · `org_root_kid` ·
 `transfers_grant_id` (optional; mandate transfer, §6) · `root_sig`.
 **subject ids:** `grant_id` = receipt_hash; `grant_version` = 1.
@@ -95,7 +96,7 @@ context: `source_system` · `account` · `credential_identity` ·
 `valid_to` · `org_root_kid` · `root_sig`.
 commitments (optional): `source_manifest`.
 **subject id:** `source_binding_id` = receipt_hash. (Full SourceManifest
-semantics are consumed in B23; the binding shape is frozen here.)
+semantics are consumed by reconciliation; the binding shape is frozen here.)
 
 ### 3.7 `source.binding.revoked` (agent `_authority`)
 context: `source_binding_id` · `effective_ts` · `org_root_kid` · `root_sig`.
@@ -106,7 +107,8 @@ execution, reused across retries) · `action_class` · `grant_id` ·
 `grant_version` · `binding_id` · `policy_version` ·
 `assurance_transcript_digest` + `challenge_envelope_hash` +
 `presentation_envelope_hash` + `asa_envelope_hash` (optional as one all-or-none
-B28 group, lowercase SHA-256 hex; derived from the exact signed envelopes).
+Counterparty Assurance group, lowercase SHA-256 hex; derived from the exact
+signed envelopes).
 commitments: `inputs` · `context_doc`.
 **subject id:** `intent_id` = receipt_hash.
 `action.intent` claims neither hidden reasoning nor a successful outcome.
@@ -253,10 +255,11 @@ No claim that a policy commitment proves the policy was followed. No runtime
 authentication: Birthtag remains lineage; the PrincipalBinding is the runtime
 link and it is time-bounded, root-approved and revocable.
 
-## 10. B28 proof-bearing authority profile
+## 10. Counterparty Assurance proof-bearing authority profile
 
-The receipt forms above remain the historical evidence authority model. B28
-adds closed, deterministic-CBOR authority objects under the
+The receipt forms above remain the historical evidence authority model.
+Counterparty Assurance adds closed, deterministic-CBOR authority objects under
+the
 `swarrm-b28/*/v1` schemas; it does not reinterpret an ordinary evidence issuer
 as organisational authority.
 
@@ -268,7 +271,7 @@ as organisational authority.
 | Passport & Status Authority | issue a credential from active supplied state; sign a read-only status snapshot |
 | Action Authority | reserve capacity and issue an exact ASA inside an active root grant |
 | Admin passkey | authenticate and select an existing template within one root-bound role |
-| Agent key | registration PoP, holder proof, B28 messages, intents and receipts |
+| Agent key | registration PoP, holder proof, Counterparty Assurance messages, intents and receipts |
 | Tenant evidence issuer | evidence receipts/checkpoints only |
 
 Only the root creates, revises, supersedes or revokes templates,
@@ -277,7 +280,8 @@ agent successor links and assumed-risk releases. A Passport Authority signature
 cannot widen or create those facts. A console account without a valid active
 `AdminBindingV1` has no selection authority.
 
-B28 v1 supports an offline, dual-controlled organisation-root successor
+Counterparty Assurance v1 supports an offline, dual-controlled
+organisation-root successor
 ceremony. It does not turn server administration into root recovery: the
 currently enrolled old root authorizes the exact successor core and the new
 root proves possession by signing those identical bytes. Loss of the old root
@@ -402,8 +406,8 @@ mandate, revision or successor first requires a root mutation; an earlier
 credential is immutable.
 
 A status snapshot contains checkpoint and proof-set digests, state time and a
-short expiry. Its signature attests to those supplied proofs only. A B28
-presentation embeds the checkpoint, objects and proofs so the relying party can
+short expiry. Its signature attests to those supplied proofs only. A
+Counterparty Assurance presentation embeds the checkpoint, objects and proofs so the relying party can
 recompute them rather than trusting references or a server-side “not revoked”
 claim.
 

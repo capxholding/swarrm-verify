@@ -3,7 +3,7 @@
 # SPEC: node-v1 — Customer Evidence Node
 
 **Status: NORMATIVE (v1).** The Node is ONE private, out-of-path component in
-the customer's boundary (A_BUILD B22). It receives agent receipts
+the customer's boundary. It receives agent receipts
 asynchronously, independently reads authoritative sources with least
 privilege, and never proxies or authorises the business action. Contract
 shapes it produces are frozen in SPEC/action-fact-v1.md +
@@ -22,10 +22,21 @@ customer's action; missing evidence becomes an explicit gap.
 - **One configuration file**: `EVD_NODE_CONFIG` (JSON). It declares the Node
   identity and the bound sources:
   `{ "deployment_id", "hosted_url"?, "sources": [ {"name", "kind":
-  "https_feed"|"signed_webhook"|"emulator", "base_url"?, "auth": {"mode":
-  "env"|"token_cmd", "ref", "stdin_ref"?}, "cursor_param"?, "page_size"?,
+  "https_feed"|"signed_webhook"|"emulator"|"bulk_file"|"log_stream",
+  "base_url"?, "auth": {"mode": "env"|"token_cmd", "ref", "stdin_ref"?},
+  "cursor_param"?, "page_size"?, "drop_path"?, "field_map"?,
+  "filename_glob"?, "landing"?, "prefix"?, "enumeration"?,
   "event_key_field", "mapping_version", "correlation_field"?,
   "material_fields": [..], "identity": SourceIdentity } ] }`.
+  A `bulk_file` source names a local landing `drop_path` plus a declarative
+  `field_map` (shipped: `camt053-v1`, which also supplies the event-key /
+  mapping / correlation / material defaults when the config omits them); it
+  declares NO `auth` — no credential exists for a directory the customer's
+  own process drops into, and configuring one is refused at load.
+  A `log_stream` source instead declares `landing: {"store": "filesystem",
+  "root"}`, `prefix`?, `field_map`, and a REQUIRED `enumeration`; it takes no
+  `auth`, no `base_url` and no per-source mapping fields — the field map owns
+  the mapping (§4).
   Config profile `node` (core/config.py) adds: `EVD_NODE_CONFIG` (required),
   `EVD_NODE_KEY_FILE`, `EVD_NODE_MASTER_KEY` / `EVD_NODE_MASTER_KEY_FILE`,
   `EVD_NODE_DATA_DIR`, `EVD_NODE_SCAN_INTERVAL`, `EVD_TENANT`. Local demo may
@@ -36,7 +47,7 @@ customer's action; missing evidence becomes an explicit gap.
   source: reachability, auth mode, cursor capability, last complete cursor,
   lag, spool depth/age, key/attestation state.
 
-## 2. Customer vault (B22.2)
+## 2. Customer vault
 
 Two layers, both under customer-held key material, dev mode visibly
 non-production:
@@ -70,7 +81,7 @@ non-production:
   only after every live digest decrypts; unreadable or quarantined material
   refuses adoption rather than being re-keyed or overwritten.
 
-## 3. Durable intake (B22.3)
+## 3. Durable intake
 
 Per source batch, strictly in this order — crash anywhere earlier repeats
 safely (at-least-once, idempotent):
@@ -98,9 +109,9 @@ Coverage receipts are revisioned: an exact source/period/document retry
 deduplicates, while changed coverage for the same source/period appends a new
 `coverage_revision`, names `prev_coverage_receipt`, and links it as a parent.
 
-## 4. Connectors (B22.5) and emulator (B22.7)
+## 4. Connectors and emulator
 
-`node/connectors.py` implements the frozen interface (A_BUILD B22):
+`node/connectors.py` implements the frozen connector interface:
 `authenticate() -> SourceIdentity`, `scan(cursor) -> SourceBatch` (events +
 per-event and batch proofs), `normalise(raw) -> SourceEvent`,
 `verify_source_proof(raw) -> SourceProof | None`, `health() ->
@@ -131,34 +142,175 @@ reconciliation and verification contain no vendor branch.
   capture failure is never swallowed as merely `verified=false`.
   An inbound source MUST NOT use `auth.mode = "token_cmd"`: verification of
   attacker-selected requests never has authority to launch a credential
+  subprocess. HMAC webhooks use an environment-backed secret, resolved at
+  delivery time and never stored (B22.9); asymmetric webhooks use only their
+  pre-bound public source key.
+  **Replay (B22.15):** every admitted delivery is bound to three durable
+  identities — its raw digest, its canonical-body digest, and its configured
+  immutable delivery id — in a bounded per-source seen-set written in the
+  same transaction as intake; an exact retry acknowledges idempotently, a
+  reused delivery id over different bytes is a `409` conflict, and a
+  non-expiring tombstone preserves the id→raw binding after the active cache
+  is pruned. **Clock skew:** a source config may name `delivery_time_field`,
+  a body field carrying the Z-suffixed RFC 3339 send time of THIS delivery
+  attempt; when named, deliveries outside the fixed ±300 s window
+  (`MAX_WEBHOOK_CLOCK_SKEW_S`, a protocol ceiling, not a tunable) are refused
+  before signature work, and a missing/malformed timestamp is refused too. A
+  sender retries by re-signing a fresh timestamp; the immutable delivery id
+  keeps the retry idempotent. A config naming no field has NO time bound —
+  replay refusal then rests solely on the finite seen-set retention.
+  **Enumeration (B22.15/B23.6A):** a signed_webhook source is bound to
+  `enumeration: "PUSH_INDIVIDUAL_EVENTS"` in its validated manifest and a
+  config declaring any other value is refused: a push feed of individual
+  events cannot prove its own population — a silently dropped delivery is
+  indistinguishable from a quiet hour — so webhook-only coverage is
+  `GAPPED`/`UNKNOWN` at best and never `CLOSED`. Coverage assembly
+  (`node/coverage.py`) copies a declared `enumeration` into the signed
+  coverage document, so a manifest that states the bound produces documents
+  that state it too; `swarrm node doctor` prints the standing ceiling line. **Ingress boundary:** bind private-only;
+  when TLS terminates at one reverse proxy, `EVD_NODE_TRUSTED_PROXY_CIDRS`
+  names its narrow CIDRs (1..32, never prefix `/0`) and the proxy must
+  overwrite `X-Forwarded-For` with one client IP — a repeated header, a comma
+  chain, or a non-address from a trusted proxy is refused with a static
+  `webhook_forwarded_chain` 400 that mints no state, while forwarded headers
+  from every other peer are ignored (docs/NODE.md).
   subprocess. HMAC webhooks use an environment-backed secret; asymmetric
   webhooks use only their pre-bound public source key.
+- **BulkFileConnector** (`node/bulk_file.py`, B22.14) — a watched local
+  landing directory of statement files the customer's existing process
+  already delivers (SFTP, an S3 sync, a bank portal export), mapped by a
+  declarative field map (shipped: ISO 20022 `camt.053` as `camt053-v1`).
+  Ordering is by DECLARED statement period, never arrival; the durable
+  cursor is over periods (`<period_end>#<sequence>`), not rows. Per-file
+  idempotency: an identical file redelivered inside one scan is excluded by
+  content digest, and one redelivered after its period was consumed is
+  excluded by the period cursor — never double-counted. The cursor format is
+  unchanged and carries no balance: before an advancing scan verifies
+  cross-period continuity, it MUST re-derive the unique statement matching
+  the stored cursor from the same bounded landing snapshot and compare that
+  statement's verified closing balance with the first new opening balance.
+  If the cursor statement is absent, ambiguous, lacks a closing balance or
+  fails its own statement checks, the batch MUST carry a
+  `balance_chain_predecessor_*` gap and `population_proof.verified` MUST be
+  false. Existing cursors therefore remain accepted without migration, but
+  cannot silently verify continuity after their predecessor was archived.
+  The landing path MUST be opened without following symlinks and its directory
+  descriptor MUST remain pinned across enumeration and all member opens. Each
+  member MUST be a single-link regular file opened relative to that descriptor;
+  symlinks and hard links fail closed, while path replacement cannot redirect
+  an admitted scan to a different directory inode. Ceilings: one file
+  16 MiB, one scan 64 MiB / 256 files / 20,000 entries, XML depth 64 /
+  200,000 nodes, any text value 64 KiB; DTD/entity constructs are refused
+  outright before parsing. A member that cannot be mapped to a declared
+  period (unparseable, over-limit, foreign account) makes the directory
+  unorderable: that scan ingests NOTHING, keeps its cursor, retains every
+  read byte as evidence and surfaces an explicit gap. Statement structure is
+  checked, never repaired: the OPBD→CLBD balance identity, `ElctrncSeqNb`
+  continuity and declared entry counts pass through as gaps; the batch
+  records `population_proof` (kind `camt053_statement_balance`,
+  `source_scope_defined: true`). HONESTY BOUNDS, stated not engineered
+  around: a dropped file proves WHAT was read, never FROM WHOM — every
+  advancing batch carries an `unauthenticated_file_origin:` gap (coverage
+  denies `authenticated_read`; the period renders `GAPPED`, the Node never
+  claims it OBSERVED an unauthenticatable source), every SourceProof is
+  `verified: false`, and a MISSING LATEST statement is undetectable — a
+  directory cannot prove that no newer statement exists.
+- **LogStreamConnector** (`node/log_stream.py`) — intake shape (d):
+  an object-store landing zone the customer's audit-log stream already
+  writes into, read as declarative config plus a per-vendor field map
+  (`cloudtrail-v1` ships; a map names `records_path`, the event key, time,
+  outcome and material mappings, and its normalisation rule: every mapped
+  value is the exact decoded JSON string, verbatim — byte-exact,
+  case-sensitive, never trimmed). The durable cursor is the last CONSUMED
+  object key in exact S3 ListObjectsV2 order (lexicographic ASCII,
+  `start_after` exclusive); `FilesystemObjectStore` implements the two-method
+  list/read interface locally, and a native S3 client is a drop-in behind it
+  (the `s3` store id is refused at load while no such client exists — a
+  mounted bucket satisfies it). ENUMERATION IS DECLARED, NEVER ASSUMED:
+  configuration REFUSES a source without `enumeration` and refuses
+  `source_proven_population` while no vendor population mechanism
+  (e.g. CloudTrail digest-chain validation) exists; the
+  batch never carries `population_proof`, so coverage basis stays
+  `INSUFFICIENT` and can never reach `CLOSED` from this shape. A consuming
+  batch always carries an `unauthenticated_read:` gap and each object proof
+  is an `authenticated_read_transcript` with `verified=false` — a
+  landing-zone read authenticates nothing about origin. Hostile-input
+  ceilings, enforced before parsing or evidence writes: one object 2 MiB
+  raw / 8 MiB decoded (single-member gzip only); one scan 64 objects,
+  16 MiB, 10,000 records; 1,000 records per object; keys ASCII ≤ 1 KiB with
+  no dot/empty segments; JSON limits identical to the declarative feed page.
+  Redelivered object bytes are an explicit `duplicate_object:` exclusion
+  in-scan; cross-scan redelivery deduplicates by `event_key` at
+  reconciliation. An invalid or unreadable object stops the scan BEFORE
+  advancing past it — an explicit gap, never a silent skip. A filesystem
+  landing source holds no credential and adds no egress authority.
+- **Corporate egress records** (`proxy-cef-v1`) arrive through
+  that same sink and are a SOURCE, never a fifth door: we do not author them,
+  they have no integrity before ingest, and they are reconciled like any
+  other book — a connection to a provider with no receipt against it is
+  `ORPHAN`, identical in shape to a bank line with no receipt. The map reads
+  an ArcSight-CEF connection line (Zscaler-class broker / forward proxy) and
+  takes CONNECTION FACTS ONLY: `dhost` → `counterparty`, `dst` →
+  `reference`, `rt` → `source_effect_time`, and the broker's verdict `act` →
+  `outcome` through a map-declared `outcome_ok_values` closed set (a proxy
+  writes a verdict on every line, so absence of an error is not consent, and
+  an unrecognised verdict reads as refused). Payload-bearing CEF keys are not
+  mapped and never read; octet counts stay in the retained raw object rather
+  than on the event, because the only SourceEvent magnitude field (`value`)
+  is in the NORMATIVE material floor and a byte count there would make every
+  honest match UNCOMPARABLE. **It proves connections, not content** — bounds
+  in `docs/THREAT_MODEL.md` under "the agent takes a road with no door",
+  not restated here. **Enumeration is the rung**: `enumeration` declares
+  which rung of the egress observation ladder produced the book
+  (`egress_point_enforced` · `landing_zone_only` · `unknown`); NONE of them
+  is a proven population, so every consuming batch carries an
+  `egress_enumeration_not_proven:<declared>` gap, and a batch gap derives
+  coverage `GAPPED` in both engines — an egress source can therefore never
+  reach `CLOSED`, whatever the Node's integrity basis. Egress evidence moves
+  no provenance level in either direction; only `linkage`/`outcome` (which
+  is this source's whole purpose) and a downward coverage move.
 - **Emulator** (`node/emulator.py`) — ships WITH the Node: an in-process
   deterministic fake source (fixed seed; cursor pages; Ed25519-signed or MAC
-  modes; injectable gaps/rollbacks/duplicates) so the whole loop runs before
-  any real credential exists, and so chaos tests are reproducible.
+  modes; injectable gaps/rollbacks/duplicates; a deterministic `camt.053`
+  statement writer for `bulk_file` landing directories) so the whole loop
+  runs before any real credential exists, and so chaos tests are
+  reproducible.
 - **Autodiscovery**: `swarrm node discover <base_url>` probes known feed
-  shapes and emits a DRAFT SourceManifest for the reviewer to correct.
+  shapes, then prompts for exactly the facts nobody can infer — the source
+  identity (`source_system`/`account`/`declared_controller`), the declared
+  control domain (default `UNKNOWN`, NEVER inferred), the pre-bound signing
+  kid and the credential env var — and emits a config that passes preflight
+  with no hand-editing (`--out` writes it). Probed fields stay DRAFT guesses
+  the reviewer corrects; `--non-interactive` prints the raw DRAFT manifest
+  with its `FILL_IN` markers exactly as before.
+  **Templates**: `"template": "<name>"` in a source config fills the
+  format-determined fields (`event_key_field`, `correlation_field`,
+  `material_fields`, `cursor_param`, `page_size`, `mapping_version`,
+  `kind`) from a named registry entry (`node/templates.py`; first entry
+  `camt053-v1`), leaving only URL, credential ref and identity per
+  customer. An explicitly configured key always wins; an unknown template
+  name fails configuration.
   **Pre-flight**: `swarrm node preflight` checks five readiness facts
   (dedicated service identity declared · signing source · cursor-capable
   feed · writable correlation field · no configured secret value detected in
-  token argv) and prints an honest report. The fifth check cannot detect a
+  token argv) and prints an honest report in which every FAIL line names the
+  exact command or config key that fixes it. The fifth check cannot detect a
   hard-coded secret value that the config does not name (§6).
 - **Read-only law**: connector config declaring any write/execute
   credential scope fails configuration (mechanical check at load).
 
-## 5. Egress allow-list (B22.4)
+## 5. Egress allow-list
 
 All Node outbound goes through one guarded client (`node/egress.py`): the
 allow-list is derived from config (source base_urls for reads; `hosted_url`;
 opt-in anchor RPC / TSA when set) and any other host raises
 `EgressDenied` before a connection is attempted. Only signed commitments,
 permitted provenance, health and transparency submissions leave the
-boundary. The Node sentinel test (B22.9) drives sentinel bytes through
+boundary. The Node sentinel test drives sentinel bytes through
 payloads, nonces AND credentials and asserts none appear in any outbound
 request or in hosted storage.
 
-## 6. Credentials never at rest (B22.9)
+## 6. Credentials never at rest
 
 `auth.mode = "env"`: the credential lives in the named env var, read at scan
 time, never written to disk, receipts, logs, config or support bundles.
@@ -201,7 +353,7 @@ can carry secrets, and these proofs are retained in the evidence vault and the
 encrypted recovery plan, so neither the command text nor a truncated identity
 is stored.
 
-## 7. Node identity, heartbeats, fork detection (B22.10–B22.11)
+## 7. Node identity, heartbeats, fork detection
 
 - Node key: first-boot generated like the recorder key (0600, kid printed,
   registered hosted-side before ingest).
@@ -211,7 +363,8 @@ is stored.
   committed). Without a valid `ISSUED`, in-window attestation the basis is
   `LOG_WITNESSED_SOFTWARE` — never silently upgraded
   (verified-action-v1 §2.4). Witness-grade claims require
-  `HARDWARE_ATTESTED` (B22.10); this spec adds no exception.
+  `HARDWARE_ATTESTED` (the Node-integrity measurement basis, §7 above); this
+  spec adds no exception.
 - **`node.heartbeat`** receipt each sync interval: `epoch` (increments on
   every restart/upgrade), `beat` (dense within epoch), per-source
   `cursor_digest`, spool depth. The heartbeat chain is what makes a CLONED
@@ -221,7 +374,8 @@ is stored.
   `fork_findings_open` → coverage `GAPPED`. **Exclusive use of an extracted
   key after the original stops produces no divergence and is NOT
   detectable** — stated here, in the threat model, and in every report.
-- **`node.upgraded`** receipt (B22.12): binds release/config digests,
+- **`node.upgraded`** receipt (upgrade and key handover): binds
+  release/config digests,
   predecessor kid + final heartbeat hash, per-source cursor digests, vault
   root, successor kid, an explicit handover interval, and the
   org-root detached approval (`root_sig`, authority-v1 §2 rule). Blue-green
@@ -229,7 +383,7 @@ is stored.
   possible via the Organisation Root but raises a CONTINUITY-GAP finding
   that renders. No silent auto-update, no sequence reuse.
 
-## 8. Findings, gaps, recovery (B22.8, B22.13)
+## 8. Findings, gaps, recovery
 
 - **`evd.finding.raised`** (`_node` agent) — raised by PUBLISHED
   deterministic rules only, never by a person: `rule_id ∈ {cursor_gap,
@@ -248,7 +402,8 @@ is stored.
   statement text, practitioner identity + detached signature. A practitioner
   can never declare coverage closed, invent a finding, or waive a hard
   failure (cryptographic gap, fork, invalid signature, open coverage gap);
-  coverage changes only by recomputation (B23 implements the recomputation;
+  coverage changes only by recomputation (reconciliation implements the
+  recomputation, SPEC/reconcile-v1.md;
   untriaged findings past their window degrade coverage to `UNKNOWN`).
 - **`evd.gap.declared`** — the explicit signed gap: scope, period, what is
   unrecoverable and why. Emitted on restore-without-backup, vault
@@ -272,13 +427,13 @@ is stored.
   than guess. Preserve that directory and restore it under its original tenant
   or perform an explicit supported migration; do not repoint or hand-edit it.
 
-## 9. Honest health (B22.6)
+## 9. Honest health
 
 `/evd/health` (Node role) exposes: role, kid, attestation state/basis, spool
 depth and age, per-source `ConnectorHealth` verbatim (last cursor + wall
 time, lag, consecutive failures, credential validity remaining, declared vs
 observed algorithm family, degradation reason), open findings count,
-transparency lag (null until B25). A broken evidence plane is LOUD here and
+transparency lag (null until transparency registration ships). A broken evidence plane is LOUD here and
 in `swarrm node doctor`, and never blocks the agent.
 
 ## 10. New receipt vocabulary (dial rows land with this spec)
@@ -291,8 +446,8 @@ lifecycle document with its own context keys and finding/gap semantics):
 `node.upgraded` · `evd.finding.raised` · `evd.finding.triaged` ·
 `evd.gap.declared`. Exact plaintext/committed key sets live in
 SPEC/context-v1.md rows added in the same commit as the emitters; no verdict
-enum changes (the matrix is untouched — B22 produces evidence, B21 already
-derives from it).
+enum changes (the matrix is untouched — the Node produces evidence, the
+verdict engine already derives from it).
 
 ## 11. Claim boundary
 

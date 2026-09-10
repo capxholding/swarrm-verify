@@ -290,7 +290,7 @@ console.log(`WASM agrees with all ${Object.keys(certExpected).length} certificat
 
 const b28Dir = path.join(__dirname, "..", "..", "tests", "golden", "b28");
 const b28Expected = JSON.parse(fs.readFileSync(path.join(b28Dir, "manifest.json"), "utf8"));
-// This is browser configuration, not exchange data. The B28 API separately
+// This is browser configuration, not exchange data. The Counterparty Assurance API separately
 // validates these bytes against this pinned digest before examining an input.
 const b28TrustPack = fs.readFileSync(path.join(b28Dir, "trust-pack.cbor"));
 const b28TrustPackPin = Buffer.from("042b49806fbe4e175828bdbfc96386e8ec88a71d386ed2536d8c30459c25c5cc", "hex");
@@ -300,38 +300,38 @@ const refusalContext = fs.readFileSync(path.join(b28Dir, "refusal-context.cbor")
 const b28Input = fs.readFileSync(path.join(b28Dir, "verify-input.cbor"));
 const b28Got = JSON.parse(verifyB28Exchange(b28Input, presentationContext));
 if (JSON.stringify(b28Got) !== JSON.stringify(b28Expected.expected_read_only)) failures++;
-console.log(`${JSON.stringify(b28Got) === JSON.stringify(b28Expected.expected_read_only) ? "OK " : "XX "} B28 valid read-only`);
+console.log(`${JSON.stringify(b28Got) === JSON.stringify(b28Expected.expected_read_only) ? "OK " : "XX "} Counterparty Assurance valid read-only`);
 const successorInput = fs.readFileSync(path.join(b28Dir, "successor-input.cbor"));
 const successorContext = fs.readFileSync(path.join(b28Dir, "successor-context.cbor"));
 const successorGot = JSON.parse(verifyB28Exchange(successorInput, successorContext));
 const successorOk = JSON.stringify(successorGot) === JSON.stringify(b28Expected.expected_successor_read_only);
 if (!successorOk) failures++;
-console.log(`${successorOk ? "OK " : "XX "} B28 valid successor`);
+console.log(`${successorOk ? "OK " : "XX "} Counterparty Assurance valid successor`);
 const refusalInput = fs.readFileSync(path.join(b28Dir, "refusal-input.cbor"));
 const refusalGot = JSON.parse(verifyB28Exchange(refusalInput, refusalContext));
 const refusalOk = JSON.stringify(refusalGot) === JSON.stringify(b28Expected.expected_refusal);
 if (!refusalOk) failures++;
-console.log(`${refusalOk ? "OK " : "XX "} B28 signed refusal`);
+console.log(`${refusalOk ? "OK " : "XX "} Counterparty Assurance signed refusal`);
 for (const [name, item] of Object.entries(b28Expected.hostile)) {
   const input = fs.readFileSync(path.join(b28Dir, "hostile", `${name}.input.cbor`));
   const got = JSON.parse(verifyB28Exchange(input, presentationContext));
   const ok = JSON.stringify(got) === JSON.stringify(item.expected);
   if (!ok) failures++;
-  console.log(`${ok ? "OK " : "XX "} B28 hostile ${name}`);
+  console.log(`${ok ? "OK " : "XX "} Counterparty Assurance hostile ${name}`);
 }
 for (const [name, item] of Object.entries(b28Expected.successor_hostile)) {
   const input = fs.readFileSync(path.join(b28Dir, "successor-hostile", `${name}.input.cbor`));
   const got = JSON.parse(verifyB28Exchange(input, successorContext));
   const ok = JSON.stringify(got) === JSON.stringify(item.expected);
   if (!ok) failures++;
-  console.log(`${ok ? "OK " : "XX "} B28 hostile successor ${name}`);
+  console.log(`${ok ? "OK " : "XX "} Counterparty Assurance hostile successor ${name}`);
 }
 for (const [name, item] of Object.entries(b28Expected.context_hostile)) {
   const context = fs.readFileSync(path.join(b28Dir, "context-hostile", `${name}.context.cbor`));
   const got = JSON.parse(verifyB28Exchange(b28Input, context));
   const ok = JSON.stringify(got) === JSON.stringify(item.expected);
   if (!ok) failures++;
-  console.log(`${ok ? "OK " : "XX "} B28 hostile context ${name}`);
+  console.log(`${ok ? "OK " : "XX "} Counterparty Assurance hostile context ${name}`);
 }
 for (const [name, item] of Object.entries(b28Expected.refusal_hostile)) {
   const input = fs.readFileSync(path.join(b28Dir, "refusal-hostile", `${name}.exchange.cbor`));
@@ -339,7 +339,7 @@ for (const [name, item] of Object.entries(b28Expected.refusal_hostile)) {
   const got = JSON.parse(verifyB28Exchange(input, context));
   const ok = JSON.stringify(got) === JSON.stringify(item.expected);
   if (!ok) failures++;
-  console.log(`${ok ? "OK " : "XX "} B28 hostile refusal ${name}`);
+  console.log(`${ok ? "OK " : "XX "} Counterparty Assurance hostile refusal ${name}`);
 }
 for (const [name, item] of Object.entries(b28Expected.state_hostile)) {
   const input = fs.readFileSync(path.join(b28Dir, "state-hostile", `${name}.exchange.cbor`));
@@ -347,7 +347,7 @@ for (const [name, item] of Object.entries(b28Expected.state_hostile)) {
   const got = JSON.parse(verifyB28Exchange(input, context));
   const ok = JSON.stringify(got) === JSON.stringify(item.expected);
   if (!ok) failures++;
-  console.log(`${ok ? "OK " : "XX "} B28 hostile authority state ${name}`);
+  console.log(`${ok ? "OK " : "XX "} Counterparty Assurance hostile authority state ${name}`);
 }
 const b28DiffDir = process.env.SWARRM_B28_DIFF_DIR;
 if (b28DiffDir) {
@@ -355,11 +355,11 @@ if (b28DiffDir) {
   if (diffManifest.schema !== "swarrm-b28/differential-corpus/v1" ||
       diffManifest.case_count !== diffManifest.cases.length ||
       diffManifest.seed_count < 90) {
-    throw new Error("malformed B28 differential manifest");
+    throw new Error("malformed differential manifest");
   }
   const mutatedSurfaces = new Set(diffManifest.cases.map(item => `${item.seed}\0${item.target}`));
   if (mutatedSurfaces.size !== diffManifest.mutation_surface_count) {
-    throw new Error("B28 differential corpus omitted a declared seed surface");
+    throw new Error("differential corpus omitted a declared seed surface");
   }
   for (const item of diffManifest.cases) {
     const input = fs.readFileSync(path.join(b28DiffDir, item.exchange));
@@ -372,15 +372,15 @@ if (b28DiffDir) {
     const readOnly = got.verdict !== "PASS" && got.should_execute === false;
     if (!exact || !readOnly) {
       failures++;
-      console.log(`XX B28 differential ${item.name}`);
+      console.log(`XX differential ${item.name}`);
     }
   }
-  console.log(`WASM == Python on ${diffManifest.cases.length} fresh B28 mutations; read-only/no authorization`);
+  console.log(`WASM == Python on ${diffManifest.cases.length} fresh mutations; read-only/no authorization`);
 } else {
-  console.log("B28 fresh differential skipped: SWARRM_B28_DIFF_DIR unset");
+  console.log("fresh differential skipped: SWARRM_B28_DIFF_DIR unset");
 }
 if (failures) {
   console.error(`\nPARITY FAILED: ${failures} fixture(s) disagree`);
   process.exit(1);
 }
-console.log(`WASM agrees with B28 valid plus ${Object.keys(b28Expected.hostile).length} presentation, ${Object.keys(b28Expected.context_hostile).length} context, ${Object.keys(b28Expected.refusal_hostile).length} refusal, and ${Object.keys(b28Expected.state_hostile).length} authority-state hostile fixtures`);
+console.log(`WASM agrees with Counterparty Assurance valid plus ${Object.keys(b28Expected.hostile).length} presentation, ${Object.keys(b28Expected.context_hostile).length} context, ${Object.keys(b28Expected.refusal_hostile).length} refusal, and ${Object.keys(b28Expected.state_hostile).length} authority-state hostile fixtures`);

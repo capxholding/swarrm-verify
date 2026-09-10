@@ -1,7 +1,7 @@
 <!-- Apache-2.0 -->
 # evd/context v1 — the context dial (what is plaintext, what is committed)
 
-Status: NORMATIVE (Build 6). This table is the single authority for which
+Status: NORMATIVE. This table is the single authority for which
 fields may appear in a receipt's PLAINTEXT `context` per `action_type`.
 Extending it requires a PR that updates the leak test
 (`tests/test_context_dial.py`) in the same change. Anything not listed as
@@ -20,13 +20,14 @@ disclosable later by the payload holder) or must not exist anywhere.
 | `payment.execute` | currency, amount_band, counterparty_class, mandate_present | amount_exact, counterparty_id, mandate_ref | amounts/counterparty in context |
 | `agent.deployed/config_changed/tool_granted/revoked` | change_kind, model_ref, tool_name (grants) | config blobs (prompt text etc. as commitments) | prompt text in context |
 | `agent.session_started` | upstream_base, hosted_url, tenant (a recorder's resolved routing config at startup — not secrets, `core/session_log.py`) | — | credentials of any kind |
-| `interaction.message` | sender, receiver, transport, rel_seq, bilateral; for bilateral B28 acceptance only: assurance_transcript_digest, challenge_envelope_hash, presentation_envelope_hash, asa_envelope_hash, acceptance_result_digest, assurance_message_digest, assurance_verdict | message (the canonical transported payload) | message content in context |
+| `interaction.message` | sender, receiver, transport, rel_seq, bilateral; for bilateral Counterparty Assurance acceptance only: assurance_transcript_digest, challenge_envelope_hash, presentation_envelope_hash, asa_envelope_hash, acceptance_result_digest, assurance_message_digest, assurance_verdict | message (the canonical transported payload) | message content in context |
 | `policy.decision` | engine, engine_version, decision, policy_bundle_hash | policy_input, policy_output | io values in context |
 | `guardrail.blocked` | guardrail_name, rule_kind, action_taken | trigger_content | trigger content in context |
 | `evd.alert.raised` | rule_id, rule_semantic_version, detection_profile, severity, triggering_receipt_hashes[], window, triggering_count, triggering_sequence_digest, triggering_sequence_digest_profile, triggering_hashes_truncated | — | payload of any triggering receipt; rate alerts carry at most 32 hashes and bind the exact leaf-ordered trigger count/digest under the named digest profile when truncated |
-| `lineage.born` / `lineage.adopted` | kind, model_ref, code_digest, purpose, created_by_role, owner_org, lineage_from_seq, prior_history | system_prompt, tool_manifest, config, mandate_document, created_by_id | creator PII in context; prompt/mandate text in context |
-| `lineage.revised` | revises, reason | system_prompt, tool_manifest, config, mandate_document | prompt/mandate text in context |
-| `mandate.assigned` | principal_display, source_channel, action_classes[], amount_cap_band, expires | instruction, principal_id, amount_cap_exact | instruction text in context; assigner PII in context |
+| `lineage.born` / `lineage.adopted` | kind, model_ref, code_digest, purpose, created_by_role, owner_org, lineage_from_seq, prior_history, field_provenance | system_prompt, tool_manifest, config, mandate_document, created_by_id | creator PII in context; prompt/mandate text in context |
+| `lineage.revised` | revises, reason, revised_by_role, change_ref | system_prompt, tool_manifest, config, mandate_document, revised_by_id | prompt/mandate text in context; reviser PII in context |
+| `mandate.assigned` | principal_display, source_channel, action_classes[], amount_cap_band, expires, change_ref | instruction, principal_id, amount_cap_exact | instruction text in context; assigner PII in context |
+| `deployment.declared` | doors_installed[], provider_credential_in_gateway, tool_surfaces_wrapped[], egress_allowlist_applied (customer-asserted posture, SPEC/deployment-v1.md — all plaintext, no commitments) | — | credentials of any kind |
 | `evd.key.*` / `evd.report.*` / `evd.grant.*` / `evd.disclosure.*` | (system — full plaintext, no secrets exist here) | — | — |
 | `authority.root.enrolled` | root_jwk, root_kid, legal_entity, enrolment_basis, effective_ts, prev_root_kid, prev_root_sig, self_sig (system — public key material + detached sigs, SPEC/authority-v1.md §3.1) | enrolment_evidence | private keys of any kind |
 | `authority.principal.bound` | birthtag_id, revision_id, principal, runtime_kid, environment, valid_from, valid_to, org_root_kid, prev_binding_id, concurrent_with, root_sig (§3.2) | — | private keys of any kind |
@@ -35,16 +36,28 @@ disclosable later by the payload holder) or must not exist anywhere.
 | `authority.grant.revoked` | grant_id, effective_ts, org_root_kid, root_sig (§3.5) | — | private keys of any kind |
 | `source.bound` | source_system, account, credential_identity, mapping_version, event_key_field, finality_rule, valid_from, valid_to, org_root_kid, root_sig (§3.6) | source_manifest | private keys of any kind |
 | `source.binding.revoked` | source_binding_id, effective_ts, org_root_kid, root_sig (§3.7) | — | private keys of any kind |
-| `action.intent` | action_id, action_class, grant_id, grant_version, binding_id, policy_version, assurance_transcript_digest, challenge_envelope_hash, presentation_envelope_hash, asa_envelope_hash (§3.8; B28 fields appear as one all-or-none group) | inputs, context_doc | input/context values in context; private keys of any kind |
+| `action.intent` | action_id, action_class, grant_id, grant_version, binding_id, policy_version, assurance_transcript_digest, challenge_envelope_hash, presentation_envelope_hash, asa_envelope_hash (§3.8; Counterparty Assurance fields appear as one all-or-none group) | inputs, context_doc | input/context values in context; private keys of any kind |
 | `action.submitted` | action_id, source_ref (§3.9) | request (the exact request as submitted) | request values in context; private keys of any kind |
 | `source.batch.recorded` | source, cursor_start, cursor_end, mapping_version, declared_count, event_key_root, finality_watermark, gaps, exclusions (system — node-v1 §3) | batch (the canonical SourceBatch document) | credentials; master keys; payload bytes |
 | `node.registered` | deployment_id, node_kid, measured_digest, attestation_state, attestation_method (node-v1 §7) | attestation (the signed NodeAttestation document) | credentials; master keys; private keys of any kind |
 | `node.heartbeat` | epoch, beat, spool_depth, cursors (source → sha256(cursor)), cursors_digest (node-v1 §7) | — | raw cursor values; credentials; master keys |
 | `node.upgraded` | release_digest, config_digest, prev_node_kid, prev_final_heartbeat, cursors, cursors_digest, vault_root, successor_kid, handover_start, handover_end, emergency, org_root_kid, root_sig (node-v1 §7) | — | credentials; master keys; private keys of any kind |
 | `evd.finding.raised` | rule_id, source, period, evidence_digests (node-v1 §8) | — | payload bytes of any evidenced material |
-| `evd.finding.triaged` | finding_id, state, practitioner_id, practitioner_sig (node-v1 §8) | statement (the practitioner's factual statement) | coverage claims of any kind (coverage changes only by recomputation, B23) |
+| `evd.finding.triaged` | finding_id, state, practitioner_id, practitioner_sig (node-v1 §8) | statement (the practitioner's factual statement) | coverage claims of any kind (coverage changes only by recomputation, reconcile-v1) |
 | `evd.gap.declared` | scope, period, reason (node-v1 §8) | — | credentials; master keys; payload bytes |
 | `evd.coverage.recorded` | source, period_start, period_end, cursor_start, cursor_end, claim_count, event_count, orphan_count, gaps_count, exclusions_count, event_key_root, finality_watermark (system — reconcile-v1 §6) | coverage (the canonical `evd/coverage-manifest/v1` document, domain `evd/v1/node/coverage`) | credentials; master keys; payload bytes |
+
+## 1a. `field_provenance` (lineage establishment only — ADDITIVE, advisory)
+
+One flat string labelling how each of `model_ref`, `tool_manifest`,
+`code_digest` and `created_by_id` entered the establishment receipt:
+space-separated `field=label` pairs, sorted by field, where `label` is
+`asserted` (typed by the caller) or `observed:<basis>` (captured by a live
+door — e.g. `observed:gateway`, `observed:mcp-wrap`, `observed:artifact`,
+`observed:env:GITHUB_ACTOR`). It carries no payload and no PII — only how a
+value was obtained, so a report can say which values were observed and which
+were asserted. Verifiers treat it as an opaque context field; it never moves
+a verification level.
 
 ## 1b. Universal keys (birthtag-v1, reconcile-v1 §1)
 
@@ -81,7 +94,7 @@ means the capture surface made no v1 projection claim; it never means `exact`.
 If `outcome_observed=false`, `is_error` MUST be absent.
 If `outcome_observed=true`, `is_error` MUST be present.
 
-## 3. Sessions (normative algorithm — implemented in Build 7)
+## 3. Sessions (normative algorithm — implemented in the session engine)
 
 1. `x-evd-session` header present → use it, `session_inferred=false`.
 2. else an OpenAI-style `user` field (or `metadata.conversation_id`) is

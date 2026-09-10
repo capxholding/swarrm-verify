@@ -50,7 +50,7 @@ proves who said it, never that it is so.
 | scope_relation | RELATED · UNRELATED · *UNKNOWN* |
 | population_status | PROVEN · *INDETERMINATE* |
 | history_state | CLOSED_SINCE_BIRTH(surfaces) · NO_EVIDENCED_HISTORY_IN_PRESENTED_SCOPE · null (evidenced history exists) |
-| authority_proof (legacy pre-B28 producer axis) | ACTION_SPECIFIC_AUTHORIZATION · DISCLOSED_LIMIT · *NONE* |
+| authority_proof (legacy pre-Counterparty-Assurance producer axis) | ACTION_SPECIFIC_AUTHORIZATION · DISCLOSED_LIMIT · *NONE* |
 | technical_eligibility | ELIGIBLE · INELIGIBLE · *NOT_RECOMPUTED* |
 | registration_status | REGISTERED · PENDING · *UNREGISTERED* |
 | mark (render) | UNMARKED_ASSURANCE_WITHDRAWN · UNMARKED_TECHNICAL · UNMARKED_UNREGISTERED · PENDING_REGISTRATION · *NOT_RECOMPUTED* — **no value awards assurance; see §2.15** |
@@ -85,7 +85,7 @@ about a counterparty from *the source signed and this view cannot check it*.
 Rendering the second as the first understates evidence that genuinely exists,
 and records a bank that signs its webhooks identically to one that does not.
 The common case is a connector that verifies a webhook signature at intake over
-the RAW delivery: B22.9 retains that material digest-addressed, so it never
+the RAW delivery: the Node retains that material digest-addressed, so it never
 travels to a relying party by default — and a fuller disclosure view carrying
 the signed bytes lets the recipient recompute and earn `ASYMMETRIC`.
 `NOT_RECOMPUTED` is NOT favourable: every mark path requires `ASYMMETRIC`.
@@ -215,7 +215,7 @@ evidenced history in the presented scope →
 `NO_EVIDENCED_HISTORY_IN_PRESENTED_SCOPE`. Evidenced history exists → null
 (history is presented as population-rooted facts, not a state).
 
-### 2.14 authority_proof (legacy pre-B28 producer axis)
+### 2.14 authority_proof (legacy pre-Counterparty-Assurance producer axis)
 `ACTION_SPECIFIC_AUTHORIZATION` iff root-signed and binding ALL of: exact
 `action_id`, action class, exact value+currency, challenge nonce, authorising
 and subject parties, `grant_id` AND `grant_version`, issue time, expiry, and
@@ -225,7 +225,8 @@ commitment-plus-assertion → `NONE` (a commitment cannot prove a predicate
 over its own preimage).
 
 These values are preserved for historical evidence/certificate compatibility.
-They are not `swarrm-b28/v1`, cannot satisfy a B28 challenge or presentation,
+They are not `swarrm-b28/v1`, cannot satisfy a Counterparty Assurance
+challenge or presentation,
 and cannot substitute for the proof-bearing CWT/COSE profile in
 SPEC/handshake-v1.md.
 
@@ -329,6 +330,6 @@ Swarrm proves registered evidence and deterministic comparison. It does not
 prove hidden reasoning, activity outside the bound source scope, the truth of
 a colluding/compromised accepted source, or that any guarantee is legally
 enforceable. No assurance mark ships: the withdrawn mark vocabulary is
-historical render state, not technical certification. Neither that state nor a
-B28 result is a legal opinion, statutory audit, admissibility ruling, insurance
+historical render state, not technical certification. Neither that state nor
+a Counterparty Assurance result is a legal opinion, statutory audit, admissibility ruling, insurance
 decision or guarantee that an accepted source was truthful.

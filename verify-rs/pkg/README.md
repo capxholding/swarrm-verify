@@ -54,7 +54,7 @@ certificate chain and verifies `evd/disclosure/v1` packages against an
 already-verified bundle. Networked `--live` chain reads remain outside this
 Rust/WASM verifier; externally grounded trust must be supplied out of band.
 
-The B28 export accepts one deterministic-CBOR exchange, one local verification
+The Counterparty Assurance export accepts one deterministic-CBOR exchange, one local verification
 context, canonical trust-pack bytes and that pack's separately configured
 SHA-256 pin. It rejects JWT/JWS, algorithm negotiation, embedded keys and
 network discovery. The launched profile converts every otherwise favourable
@@ -62,7 +62,7 @@ candidate to `INDETERMINATE/PASS_NOT_ENABLED` with
 `should_execute=false`; the read-only WASM function does not consume replay
 state or authorize execution.
 
-Every bundle, certificate, and B28 result is bounded by the evidence supplied
+Every bundle, certificate, and Counterparty Assurance result is bounded by the evidence supplied
 to the local verifier. Internal consistency is not proof that a presented log
 or authority checkpoint is globally latest or complete; compare an
 independently obtained later checkpoint or high-water before relying on that

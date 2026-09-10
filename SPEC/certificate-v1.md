@@ -2,11 +2,12 @@
 
 # SPEC: certificate-v1 — the portable Verified Action Certificate
 
-**Status: NORMATIVE (v1). Profile frozen BEFORE implementation (B24.1).**
+**Status: NORMATIVE (v1). Profile frozen BEFORE implementation.**
 Media type `application/vnd.swarrm.action-certificate+cbor`. The certificate
 is a deterministic-CBOR projection COMPILED from artifacts that first pass
 ordinary verification; it is never a new source of authority. The external
-signed wrapper is B25's SCITT profile; internal receipts remain DSSE/JCS.
+signed wrapper is the SCITT profile (scitt-action-profile-v1); internal
+receipts remain DSSE/JCS.
 
 ## 1. Deterministic CBOR profile (the codec contract)
 
@@ -56,15 +57,15 @@ measurement basis) · `open_findings` (EVERY open finding for the covered
 period — an omitted finding is a silent overclaim) · `proof_digests`
 (retained source-proof material, digest-addressed) ·
 `assurance_transcript_digest?` + `challenge_envelope_hash?` +
-`presentation_envelope_hash?` + `asa_envelope_hash?` (one all-or-none B28
-group, derived only from the verifier's opaque durably-consumed exchange handle
+`presentation_envelope_hash?` + `asa_envelope_hash?` (one all-or-none
+Counterparty Assurance group, derived only from the verifier's opaque durably-consumed exchange handle
 and required to match `subject.action_id`; the compiler has no public raw-hash
 inputs) · `presentation_digest?` (legacy
-pre-B28 seam; never substitutes for the exact group) ·
+pre-Counterparty-Assurance seam; never substitutes for the exact group) ·
 `agent_context_digest` (SHA-256 over JCS of `{surface_manifest_digest,
 org_bindings_digest, mandate_lineage_digest}` as they stood at the
-`intent_interval` — the artifacts themselves are NOT inline; a B28
-presentation must reproduce this digest; a verifier holding only the
+`intent_interval` — the artifacts themselves are NOT inline; a Counterparty
+Assurance presentation must reproduce this digest; a verifier holding only the
 certificate renders "context bound, not carried", never "absent") ·
 `verdict_input` (the complete `evd/verdict-input/v1`) · `limitations`
 (closed text codes, enumerated below) ·
@@ -87,19 +88,20 @@ enclosing the set; the set is exactly:
   SHA-256(JCS(`coverage_doc`)). Also a BICONDITIONAL, and VERIFIER-DERIVED: the
   verifier computes the binding itself and refuses a core that disagrees in
   either direction, so a producer can neither omit the code when it applies nor
-  assert it when the conventions really are bound. It applies to every
-  certificate the shipped compiler emits today, because
-  `node/coverage.py::build_coverage` writes none of the four mapping
-  conventions (`correlation_field`, `unique_fields`, `finality_rule`,
-  `material_fields`) — so §4.4's material recomputation is VACUOUS in
-  production and a certificate silent about that is making a false proof. A
+  assert it when the conventions really are bound. `node/coverage.py::
+  build_coverage` copies the four mapping conventions (`correlation_field`,
+  `unique_fields`, `finality_rule`, `material_fields`) into the signed
+  document only for those the SourceManifest declares, so a source declaring
+  none leaves §4.4's material recomputation nothing to recompute against, and
+  a certificate silent about that would be making a false proof. A
   limitation is cheaper than a false proof. When the Node begins emitting and
   signing the conventions, the code disappears on its own.
 
 A list member outside this set, a duplicate member, or a non-text member is
 an invalid certificate. `limitations` carries no more than 10 000 members.
 
-A NON-zero `agent_context_digest` is a COMMITMENT a B28 presentation must
+A NON-zero `agent_context_digest` is a COMMITMENT a Counterparty Assurance
+presentation must
 reproduce, never a verified fact: nothing in `evd/bundle/v1` carries
 `surface_manifest_digest`, `org_bindings_digest` or
 `mandate_lineage_digest`, so no verifier reading the certificate alone can
@@ -179,7 +181,8 @@ paragraph above requires, stated as its verification consequence.
    golden `batch` member likewise omits members `SourceBatch` marks
    mandatory. The two CDDLs need reconciling; until then key-set closure must
    NOT be extended to the nested maps.
-5. The verdict vector derives ONLY via the B21 engine (`derive_vector`) from
+5. The verdict vector derives ONLY via the verified-action verdict engine
+   (`derive_vector`) from
    a carried full core. A full view has an empty `withheld_field_set`; its
    manifest's `mark_result` must equal the recomputed mark, else the envelope
    is invalid. A selective view has a non-empty `withheld_field_set`, MUST NOT
@@ -207,7 +210,7 @@ budget; operators control cadence and scope), and computes `certificate_id`.
 view carries the digest commitment and manifest, never the hidden core bytes.
 Adverse verdicts are compiled verbatim.
 
-## 6. Report rendering (B24.4)
+## 6. Report rendering
 
 Human text derives exclusively from verified fields. A coreless selective
 manifest's field labels are not rendered as facts because its signer cannot be

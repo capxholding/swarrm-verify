@@ -1,5 +1,5 @@
 ; Apache-2.0 — ships with the public verifier repo.
-; CDDL for certificate-v1 (B24). Encoded per SPEC/certificate-v1.md §1:
+; CDDL for certificate-v1. Encoded per SPEC/certificate-v1.md §1:
 ; RFC 8949 core deterministic encoding, definite lengths, text map keys
 ; sorted by encoded bytes, no floats, no tags. Types referenced from
 ; SPEC/cddl/verified-action-v1.cddl. FROZEN: extending any object here

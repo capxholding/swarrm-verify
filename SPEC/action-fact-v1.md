@@ -1,12 +1,14 @@
 <!-- Apache-2.0 — this file ships with the public verifier repo. -->
 
-# SPEC: action-fact-v1 — B21.7 contract objects (frozen here, consumed later)
+# SPEC: action-fact-v1 — contract objects (frozen here, consumed later)
 
 **Status: NORMATIVE (v1). Shapes are frozen in
 SPEC/cddl/verified-action-v1.cddl — the CDDL is the shape authority; this
 document adds semantics only. No build may reference a type a later build
-defines: B22/B23 populate these objects, B24 binds the registration objects,
-B25 operates the registration service, B28 implements the handshake — none of
+defines: the Customer Evidence Node and the reconciliation layer populate
+these objects, the certificate profile binds the registration objects, the
+transparency service operates the registration service, Counterparty Assurance
+implements the handshake — none of
 them defines a shape.** Verdict derivation over these objects lives in
 SPEC/verified-action-v1.md; conformance rows live in `ci/verdict_matrix.json`
 (referenced below as *matrix:* by dimension name).
@@ -62,7 +64,7 @@ The **pairing** of exactly one claim with zero or one event, plus the derived
 `linkage` and `outcome` — **never a merged record**. The claim's fields and
 the event's fields keep their provenance; material comparison (fields named
 per action class in the SourceManifest, never chosen at comparison time)
-happens across the pair. B23 populates and matches; it defines nothing.
+happens across the pair. Reconciliation populates and matches; it defines nothing.
 Canonical digest: SHA-256 of JCS of the whole pairing.
 Matrix: `linkage`, `outcome`.
 
@@ -194,7 +196,7 @@ names the surfaces over which `history_state = CLOSED_SINCE_BIRTH(surfaces)`
 may ever be claimed — never the agent globally.
 Matrix: `surface_mechanism`, `surface_scope`, `history_state`.
 
-## 13. Registration and view objects (frozen HERE; B24 binds, B25 operates)
+## 13. Registration and view objects (frozen HERE; the certificate binds, the transparency service operates)
 
 ### 13.1 ScopeRegistration (`evd/scope-registration/v1`)
 A registry-signed statement that a scope is registered for a term.
@@ -222,21 +224,22 @@ field forces `technical_eligibility = NOT_RECOMPUTED` and
 `mark = NOT_RECOMPUTED` — never a pass. Matrix: `technical_eligibility`,
 `mark` (`NOT_RECOMPUTED`).
 
-## 14. Retired pre-B28 handshake seams
+## 14. Retired pre-Counterparty-Assurance handshake seams
 
 The dictionary-era `evd/trust-*/v1` and `evd/status-snapshot/v1` objects are
 retained only so historical artifacts remain readable. They are **not** the
-current B28 protocol, producers MUST NOT emit them as Counterparty Assurance
-v1, and their legacy verifier route is disabled. In particular, a legacy
+current Counterparty Assurance protocol, producers MUST NOT emit them as
+Counterparty Assurance v1, and their legacy verifier route is disabled. In particular, a legacy
 `authority_proof_kind`, `disclosed_limit`, producer-selected trust policy, or
-status reference cannot satisfy B28 identity, authority, freshness, replay or
+status reference cannot satisfy Counterparty Assurance identity, authority, freshness, replay or
 transcript checks.
 
-The sole normative B28 profile is `swarrm-b28/v1` in
+The sole normative Counterparty Assurance profile is `swarrm-b28/v1` in
 SPEC/handshake-v1.md: deterministic CBOR in one tagged COSE_Sign1 envelope,
 with proof-bearing authority state and an exact action-specific authorization.
 The legacy matrix dimensions `authority_proof` and `assurance_linkage` remain
-part of the evidence/certificate verifier only; they do not stand in for a B28
+part of the evidence/certificate verifier only; they do not stand in for a
+Counterparty Assurance
 verdict.
 
 ## 15. ConnectorHealth (`evd/connector-health/v1`)

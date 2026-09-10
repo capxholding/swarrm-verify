@@ -173,7 +173,7 @@ material used for cryptographic validation, but when that chain travels inside
 the same bundle it is not an independently supplied TSA trust root. The token
 therefore remains a bound claim rather than an E2 award.
 
-### Trust-rooted time — the E2 time leg (NORMATIVE as of B29)
+### Trust-rooted time — the E2 time leg (NORMATIVE as of the relying-party-rooted evidence-level revision)
 
 The verification above is the INTEGRITY GATE: it proves the token binds to
 this chain and its cryptography is internally coherent. It proves nothing

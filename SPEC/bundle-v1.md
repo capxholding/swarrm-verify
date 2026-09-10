@@ -143,5 +143,6 @@ carried; sparse proof is never rendered as a complete checkpoint-history export.
   their two signatures can be checked. They do not establish independent
   counterparty control and never award E3. The only E3 route is the cumulative
   receipt-envelope profile above. E1/E2/E3 are post-action evidence levels and
-  are separate from the B28 Counterparty Assurance handshake; no evidence level
-  supplies a B28 identity, authority, exact-action or replay verdict.
+  are separate from the Counterparty Assurance handshake; no evidence level
+  supplies a Counterparty Assurance identity, authority, exact-action or
+  replay verdict.
