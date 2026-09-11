@@ -51,3 +51,13 @@ a835c6b0609b15ffa4c2e57a414fea96c04f651c:tests/golden/fuzz/case_027.json:generic
 f27100b87ea26df6a828600a2cf91292bd7b534f:tests/golden/fuzz/case_004.json:generic-api-key:55
 f27100b87ea26df6a828600a2cf91292bd7b534f:tests/golden/fuzz/case_026.json:generic-api-key:55
 ad92bb8e1ba1f448b8644fd929e7221be4f45d3c:tests/golden/fuzz/case_015.json:generic-api-key:55
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_007.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_011.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_017.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_019.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_020.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_021.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_022.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_023.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_025.json:generic-api-key:1
+88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_027.json:generic-api-key:55
