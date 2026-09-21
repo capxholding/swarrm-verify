@@ -51,17 +51,32 @@ fn pae(payload_type: &str, payload: &[u8]) -> Vec<u8> {
     out
 }
 
-/// Hex string → bytes; None on non-ASCII, odd length, or a bad nibble. The one
-/// hex decode for the whole verifier — the certificate layer's pack decode, the
-/// trust anchors and the bundle layer's roots/proofs/nonce all read through it,
-/// so no caller can drift into a laxer rule (H5: no panic on hostile input).
+fn hex_nibble(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(b - b'a' + 10),
+        b'A'..=b'F' => Some(b - b'A' + 10),
+        _ => None,
+    }
+}
+
+/// Hex string → bytes; None unless every octet is ASCII `0-9a-fA-F` and the
+/// length is even. Sign, prefix, whitespace, Unicode, separators, and a
+/// partial pair all refuse. The one hex decode for the whole verifier — pack
+/// fields, trust anchors, roots, proofs, and nonce all read through it, so no
+/// caller can drift into `u8::from_str_radix` (which accepts `+f` as 15).
 pub(crate) fn hex_to_bytes(s: &str) -> Option<Vec<u8>> {
-    // is_ascii first: byte-slicing a multi-byte char boundary would panic,
-    // and hex is ASCII by definition anyway (H5: no panic on hostile input)
-    if !s.is_ascii() || !s.len().is_multiple_of(2) {
+    let raw = s.as_bytes();
+    if !raw.len().is_multiple_of(2) {
         return None;
     }
-    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).ok()).collect()
+    let mut out = Vec::with_capacity(raw.len() / 2);
+    let mut i = 0;
+    while i < raw.len() {
+        out.push((hex_nibble(raw[i])? << 4) | hex_nibble(raw[i + 1])?);
+        i += 2;
+    }
+    Some(out)
 }
 
 fn imap(v: &Value, key: i128) -> Option<&Value> {
@@ -313,3 +328,7 @@ pub(crate) fn verify_scitt_receipt(signed_statement: &[u8], receipt: &[u8], ts_k
 pub(crate) fn verify_scitt_receipt_with_checkpoint(signed_statement: &[u8], receipt: &[u8], ts_keys: &BTreeMap<String, [u8; 32]>, issuer_keys: &BTreeMap<String, [u8; 32]>, certificate_id: &str, expected_checkpoint: &Json) -> bool {
     verify_scitt_receipt_inner(signed_statement, receipt, ts_keys, issuer_keys, certificate_id, Some(expected_checkpoint))
 }
+
+#[cfg(test)]
+#[path = "../tests/internal/hex_tests.rs"]
+mod hex_decode_tests;

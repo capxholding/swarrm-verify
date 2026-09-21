@@ -16,7 +16,7 @@ fn lsb(n: u64) -> bool {
 }
 
 /// RFC 9162 §2.1.3.2 inclusion proof verification.
-pub fn verify_inclusion(leaf_hash: &[u8], leaf_index: u64, tree_size: u64, proof: &[[u8; 32]], root: &[u8]) -> bool {
+pub(crate) fn verify_inclusion(leaf_hash: &[u8], leaf_index: u64, tree_size: u64, proof: &[[u8; 32]], root: &[u8]) -> bool {
     if leaf_index >= tree_size || leaf_hash.len() != 32 {
         return false;
     }
@@ -46,7 +46,7 @@ pub fn verify_inclusion(leaf_hash: &[u8], leaf_index: u64, tree_size: u64, proof
 }
 
 /// RFC 9162 §2.1.4.2 consistency proof verification.
-pub fn verify_consistency(first: u64, second: u64, first_root: &[u8], second_root: &[u8], proof: &[[u8; 32]]) -> bool {
+pub(crate) fn verify_consistency(first: u64, second: u64, first_root: &[u8], second_root: &[u8], proof: &[[u8; 32]]) -> bool {
     if first > second || first == 0 {
         return false;
     }

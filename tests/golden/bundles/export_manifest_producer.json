@@ -46,3 +46,54 @@
       },
       "inclusion_proof": [
         "1398368dff8cab0a44c523451bed320505c5a2f5ab884025ee9214a8e09ad6c7",
+        "90e508747a7cb42d63bd6d644c2621cebca0d46cf4eaa4123bc3bec6fe8818b0"
+      ],
+      "leaf_index": 0
+    }
+  ],
+  "export_manifest": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "producer": {
+        "capability_digest": "a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7",
+        "metadata_sha256": "5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f",
+        "version": "1.1.4"
+      },
+      "receipt_hashes": [
+        "58724dcbfaa106906423f6718dba7d4cc714c95e5d07996d64504a27b36c209d",
+        "86cf831c2ff9cf13523aa62919775c6f6553c91b15092b09db2eb118873b495e"
+      ],
+      "schema": "evd/export-manifest/v1",
+      "target_checkpoint_hash": "823e3b70b5d2d4261cce6c2c9089ecc5db8c9a0f1bd6d492e471271d36d66e19",
+      "ts": "2026-01-01T00:00:00.000000Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "aa4RgSWb0j8LPdCZW1mRb24HuVqJjRj0JJyZ/TMwaSibtKudF697jFsqncp/EALLSQea0+QQ0slZ94b+MbdfCA=="
+  },
+  "jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "Vkdap1RjR0wChd9d",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+      }
+    ]
+  },
+  "origin": "evd://tenant/t_golden",
+  "schema": "evd/bundle/v1",
+  "target_checkpoint": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "prev_hash": "",
+      "root_hash": "e9356523a73d11ccc943f2d9ff2c0fd4d6d82024ba722e8baba1030cc111d9c9",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 4,
+      "ts": "2026-01-01T00:00:00.000000Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "lh2GzRGWQY4QU0qMULWF0zMy1nDiO9kkk8E90SEkqSK7hroizcoBbyODOrIeQqQIvkhZ+Un8/2qKzP/vFv7PAQ=="
+  }
+}

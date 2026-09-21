@@ -177,7 +177,7 @@ never an edit of a frozen one.** `"v1"` denotes the complete observed formula
   (SPEC/context-v1.md §2) appearing in **≥1% of value-bearing leaves in the
   term** — read mechanically off the customer's own leaf log. Cross-currency
   bands are ranked by their euro value at the ECB euro reference rate on the
-  order date, fixed for the term (the B27.2A FX rule). Coverage is
+  order date, fixed for the term (the term-fixed ECB FX rule). Coverage is
   dial-scoped: today `payment.execute` carries `amount_band` (and
   `mandate.assigned` carries `amount_cap_band`); a class with no
   amount-bearing dial entry prices on throughput alone until SPEC adds one.

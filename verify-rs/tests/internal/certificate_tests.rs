@@ -18,3 +18,15 @@ fn scitt_override_resolves_the_named_local_root() {
     apply_scitt_override(&mut vi, &id, &bundle, None);
     assert_eq!(vi["registration"]["scitt_receipt_valid"], json!(false));
 }
+
+#[test]
+fn hostile_hex_fails_certificate_pack_fields() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("tests/golden/scitt");
+    let mut pack: J = serde_json::from_str(&fs::read_to_string(dir.join("registered_valid.pack.json")).unwrap()).unwrap();
+    let statement = pack["signed_statement"].as_str().unwrap().to_string();
+    assert!(hex_to_bytes(&statement).is_some());
+    pack["signed_statement"] = J::String(format!("+{}", &statement[1..]));
+    assert!(hex_to_bytes(pack["signed_statement"].as_str().unwrap()).is_none());
+    pack["receipt"] = J::String("+f".repeat(32));
+    assert!(hex_to_bytes(pack["receipt"].as_str().unwrap()).is_none());
+}

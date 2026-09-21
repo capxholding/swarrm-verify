@@ -57,7 +57,33 @@ for tool in wasm-bindgen wasm-bindgen-test-runner wasm2es6js; do
 done
 install -m 0755 "$stage_dir/binaryen-version_117/bin/wasm-opt" "$bin_dir/wasm-opt"
 
-[[ $("$bin_dir"/wasm-pack --version) == 'wasm-pack 0.15.0' ]]
-[[ $("$bin_dir"/wasm-bindgen --version) == 'wasm-bindgen 0.2.126' ]]
-[[ $("$bin_dir"/wasm-opt --version) == 'wasm-opt version 117 (version_117)' ]]
+
+# MEASURED 2026-09-09: as bare `[[ ]]` these pins asserted NOTHING on macOS bash
+# 3.2.57, where a failed standalone predicate does not stop the script -- and
+# verify-rs/README.md tells the reader to run this file with `bash`, which is
+# 3.2.57 there. So the canonical WASM module of the PUBLIC verifier could be
+# built by a documented command with the wrong rustc, wasm-bindgen or wasm-opt
+# and report success. bash 5 and zsh do stop; the defect was invisible to anyone
+# on a modern shell.
+#
+# `observed` is declared and assigned on SEPARATE lines on purpose: a combined
+# `local observed=$(...)` returns the status of `local`, not of the command, so
+# a tool that fails to run would look like a version mismatch instead.
+require_tool_version() {
+  local tool=$1 expected=$2
+  local observed
+  shift 2
+  observed=$("$@" 2>&1) || {
+    printf 'canonical build: %s could not be run (%s)\n' "$tool" "$*" >&2
+    exit 1
+  }
+  [[ $observed == "$expected" ]] || {
+    printf 'canonical build: %s is %s, expected %s\n' "$tool" "$observed" "$expected" >&2
+    exit 1
+  }
+}
+
+require_tool_version wasm-pack 'wasm-pack 0.15.0' "$bin_dir"/wasm-pack --version
+require_tool_version wasm-bindgen 'wasm-bindgen 0.2.126' "$bin_dir"/wasm-bindgen --version
+require_tool_version wasm-opt 'wasm-opt version 117 (version_117)' "$bin_dir"/wasm-opt --version
 printf '%s\n' "$bin_dir"

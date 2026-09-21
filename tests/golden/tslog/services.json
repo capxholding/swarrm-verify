@@ -1,0 +1,12 @@
+{
+  "checkpoint_body_hash": "84ff14f04ec903e4b8eb25a4292572b21f4e54bf184f3114f65fc29fd501db1f",
+  "rekor": {
+    "service_id": "rekor.sigstore.dev",
+    "service_key_id": "c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d"
+  },
+  "scitt": {
+    "service_id": "ts.agentactioncapsule.org",
+    "service_key_id": "19a9ab3e02fad55c",
+    "service_pubkey": "39bb654c9dc0afe1c0edef0deffaa69099b8518836c9ba26e0491535840f96b5"
+  }
+}

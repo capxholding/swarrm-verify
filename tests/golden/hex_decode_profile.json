@@ -1,0 +1,18 @@
+{
+  "empty": {"input": "", "accepted": true, "bytes": []},
+  "mixed_case": {"input": "aBcD", "accepted": true, "bytes": [171, 205]},
+  "valid_lowercase": {"input": "0f", "accepted": true, "bytes": [15]},
+  "valid_uppercase": {"input": "0F", "accepted": true, "bytes": [15]},
+  "plus_f": {"input": "+f", "accepted": false},
+  "plus_zero": {"input": "+0", "accepted": false},
+  "minus_f": {"input": "-f", "accepted": false},
+  "ox_prefix": {"input": "0x", "accepted": false},
+  "ox_prefixed": {"input": "0xab", "accepted": false},
+  "leading_space": {"input": " ab", "accepted": false},
+  "trailing_space": {"input": "ab ", "accepted": false},
+  "interior_space": {"input": "a b", "accepted": false},
+  "leading_tab": {"input": "\tab", "accepted": false},
+  "trailing_newline": {"input": "ab\n", "accepted": false},
+  "odd_length": {"input": "abc", "accepted": false},
+  "non_ascii": {"input": "\u00ff", "accepted": false}
+}

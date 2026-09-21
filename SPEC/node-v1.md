@@ -143,9 +143,9 @@ reconciliation and verification contain no vendor branch.
   An inbound source MUST NOT use `auth.mode = "token_cmd"`: verification of
   attacker-selected requests never has authority to launch a credential
   subprocess. HMAC webhooks use an environment-backed secret, resolved at
-  delivery time and never stored (B22.9); asymmetric webhooks use only their
+  delivery time and never stored; asymmetric webhooks use only their
   pre-bound public source key.
-  **Replay (B22.15):** every admitted delivery is bound to three durable
+  **Replay:** every admitted delivery is bound to three durable
   identities — its raw digest, its canonical-body digest, and its configured
   immutable delivery id — in a bounded per-source seen-set written in the
   same transaction as intake; an exact retry acknowledges idempotently, a
@@ -159,7 +159,7 @@ reconciliation and verification contain no vendor branch.
   sender retries by re-signing a fresh timestamp; the immutable delivery id
   keeps the retry idempotent. A config naming no field has NO time bound —
   replay refusal then rests solely on the finite seen-set retention.
-  **Enumeration (B22.15/B23.6A):** a signed_webhook source is bound to
+  **Enumeration:** a signed_webhook source is bound to
   `enumeration: "PUSH_INDIVIDUAL_EVENTS"` in its validated manifest and a
   config declaring any other value is refused: a push feed of individual
   events cannot prove its own population — a silently dropped delivery is
@@ -176,7 +176,7 @@ reconciliation and verification contain no vendor branch.
   from every other peer are ignored (docs/NODE.md).
   subprocess. HMAC webhooks use an environment-backed secret; asymmetric
   webhooks use only their pre-bound public source key.
-- **BulkFileConnector** (`node/bulk_file.py`, B22.14) — a watched local
+- **BulkFileConnector** (`node/bulk_file.py`) — a watched local
   landing directory of statement files the customer's existing process
   already delivers (SFTP, an S3 sync, a bank portal export), mapped by a
   declarative field map (shipped: ISO 20022 `camt.053` as `camt053-v1`).
