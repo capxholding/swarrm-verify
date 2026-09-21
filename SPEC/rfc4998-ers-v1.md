@@ -1,7 +1,7 @@
 <!-- Apache-2.0 -->
 # RFC 4998 Evidence Record Syntax — comparison (INFORMATIVE)
 
-Status: INFORMATIVE. One page so the next session does not re-derive
+Status: INFORMATIVE. One page so subsequent maintenance does not re-derive
 whether Swarrm is an ERS encoding. It is not. Timestamp **renewal** is
 the non-breaking post-quantum story; it is not implemented here.
 
