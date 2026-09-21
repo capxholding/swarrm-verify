@@ -22,6 +22,70 @@ vectors MUST pass before
 any SCITT code relies on the COSE adapter** (tests/golden/cose/): `cbor2`-built
 and Rust-built COSE_Sign1 bytes are byte-identical.
 
+## 0. Profiled revision and divergences
+
+This profile is of **`draft-ietf-scitt-architecture-22`** (latest revision
+2025-10-10), published June 2026 as **RFC 9943**, *An Architecture for
+Trustworthy and Transparent Digital Supply Chains*. The Internet-Draft
+revision is named because that is the identifier this document used before
+the RFC was assigned; RFC 9943 is the stable successor of that exact draft.
+This is a **profile**, not a claim of conformance. Where the profile is
+deliberately stricter than RFC 9943, that is a documented divergence, not
+an accident to be quietly dropped.
+
+### Divergences
+
+Each item is a place we differ from RFC 9943 / the draft, with the reason
+a reader should not have to rediscover by diffing the two documents.
+
+1. **Commitment-only registration.** RFC 9943 permits registering a Signed
+   Statement whose payload is the artifact (or a statement about it). This
+   profile's statement payload is exactly the 32-byte `certificate_id`.
+   Reason: payloads never persist server-side; the TS appends a digest and
+   must never see certificate content.
+
+2. **EdDSA / COSE alg -8 only.** RFC 9943 and COSE allow other signature
+   algorithms. This profile admits only Ed25519 as alg `-8`.
+   Reason: boring crypto only — reuse the existing Ed25519 keys; no
+   algorithm agility in the trust path.
+
+3. **One VDS: `RFC9162_SHA256` (COSE header `395: 1`).** RFC 9942 registers
+   a family of verifiable data structures. This profile uses only RFC 9162
+   SHA-256 inclusion over the existing RFC 6962 log.
+   Reason: `core/merkle.py` is the CT golden-vector implementation; a second
+   VDS would be novel cryptography in the trust path.
+
+4. **The Transparency Service is outside the trust path.** RFC 9943 places
+   the TS at the centre of the architecture as the keeper of the VDS. Offline
+   verification here requires a *locally supplied* TS trust anchor; a pack
+   cannot supply that anchor, and a producer cannot self-assert REGISTERED.
+   Reason: a TS that can equivocate is not a trust root. Public anchor plus
+   RFC 3161 close time without the TS holding time itself.
+
+5. **Registration is asynchronous.** RFC 9943 describes a registration flow
+   the issuer can wait on. Certificate creation here never waits for the TS.
+   Reason: fail-open — evidence machinery may never block agent traffic.
+
+6. **One TS, no federation.** RFC 9943 contemplates multiple transparency
+   services. This profile requires one TS for first production use.
+   Reason: plural transparency services (1.6) is a later property and must not be simulated
+   by standing up a second private log and calling it federation.
+
+7. **Managed admission is a product layer, not a SCITT claim.** Tenant API
+   credentials, `x-evd-scope-digest`, and commercial entitlements are not in
+   RFC 9943.
+   Reason: tenant isolation and billing are operator concerns. Entitlement
+   state is not embedded in the statement, Receipt, checkpoint, or trust
+   pack and is never read by offline verification, so historical receipt
+   validity is unchanged by later commercial state.
+
+8. **Receipt payload is the checkpoint `body_hash`.** RFC 9943 receipts wrap
+   a VDS proof; this profile's receipt payload is
+   `SHA-256(JCS(checkpoint body))`, not merely the Merkle root.
+   Reason: bind the receipt to the exact checkpoint the public anchor and
+   RFC 3161 token cover, so a root-only match against a different checkpoint
+   body cannot pass.
+
 ## 1. Deterministic COSE_Sign1
 
 A COSE_Sign1 is the CBOR array (tag 18) `[protected: bstr, unprotected: map,

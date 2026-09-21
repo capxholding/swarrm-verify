@@ -224,3 +224,29 @@ fn genesis_has_no_role_and_delegated_roles_only_apply_to_creation() {
         assert!(!key_role_ok(1, "evd.key.revoked", &serde_json::json!({"role": role})));
     }
 }
+
+const SIGNED_ROOT: &str = "+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f";
+
+#[test]
+fn hostile_hex_fails_checkpoint_roots_proofs_nonce_and_trust_keys() {
+    let mut bundle: Value = serde_json::from_str(VALID).unwrap();
+    bundle["checkpoint_chain"][0]["checkpoint"]["body"]["root_hash"] = Value::String(SIGNED_ROOT.to_string());
+    assert!(!verify_bundle(&bundle));
+
+    let mut proof: Value = serde_json::from_str(VALID).unwrap();
+    proof["entries"][0]["inclusion_proof"][0] = Value::String(SIGNED_ROOT.to_string());
+    assert!(!verify_bundle(&proof));
+
+    let disclosure = include_str!("../../../tests/golden/bundles/disclosure_cases.json");
+    let cases: Value = serde_json::from_str(disclosure).unwrap();
+    let mut pkg = cases.as_array().unwrap().iter().find(|row| row["expected"] == true).unwrap()["package"].clone();
+    pkg["nonce_hex"] = Value::String("+f".repeat(16));
+    let bundle_json = include_str!("../../../tests/golden/bundles/disclosure_bundle.json");
+    let disclosure_bundle: Value = serde_json::from_str(bundle_json).unwrap();
+    assert!(!verify_disclosure(&pkg, &disclosure_bundle));
+
+    let trust = serde_json::json!({"source_keys": {"k": "+f"}});
+    assert!(trust::key_for(Some(&trust), "source_keys", Some("k")).is_none());
+    let mixed = serde_json::json!({"source_keys": {"k": "aB"}});
+    assert_eq!(trust::key_for(Some(&mixed), "source_keys", Some("k")).as_deref(), Some(&[0xabu8][..]));
+}

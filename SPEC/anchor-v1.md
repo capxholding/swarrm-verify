@@ -128,7 +128,8 @@ guarantee of the public CLI.
 ## 6. RFC 3161 timestamp claims (§tsa)
 
 The same checkpoint `body_hash` may be anchored on-chain and submitted to an
-RFC 3161 timestamp authority. Either operation can fail without affecting the
+RFC 3161 timestamp authority (RFC 5816 updates the same protocol; tokens
+here remain **non-qualified**). Either operation can fail without affecting the
 other. They are not independent trust roots when the bundle supplies its own
 chain endpoint, TSA certificates or labels, and neither currently upgrades an
 offline report to E2.
@@ -301,3 +302,100 @@ outage = skip and retry next cycle; it never blocks checkpointing or anchoring.
   suggestions never expand this profile.
 - The signing key is a burner holding faucet/dust funds only, supplied via
   env (`EVD_ANCHOR_PRIVATE_KEY`), never a file in the repo.
+
+## 8. External transparency-log registrations (§tslog)
+
+The same checkpoint `body_hash` may additionally be registered with EXISTING
+public transparency logs that the producer does not operate. Plurality is the
+property: one log the producer chose can misbehave for it; several
+independently operated logs must all misbehave together, and each carried
+proof is verifiable offline forever from the record's own bytes even if the
+service later disappears. Registration is opt-in per service and OFF by
+default — the zero-egress posture is the default and stays the default. The
+producer registers a 32-byte digest and nothing else: no receipt content, no
+certificate content, no statement bytes leave the deployment
+(commitment-only, the same privacy rule as the in-house TS profile).
+
+### TsRegistrationRecord (wire format, embedded in bundles)
+
+```json
+{
+  "checkpoint_body_hash": "<hex, no 0x — the digest that was registered>",
+  "service_profile": "scitt-vds1-v1 | rekor-dsse-v1",
+  "service_id": "<stable service instance identifier — its hostname>",
+  "service_key_id": "<the service's own identifier for its signing key>",
+  "service_pubkey": "<the service log's public key — profile-defined encoding>",
+  "artifact_b64": "<the returned proof artifact, profile-defined bytes, base64>"
+}
+```
+
+Bundles gain an ADDITIVE `ts_registration_records` list (absent when nothing
+is registered), mirroring `anchor_records` / `tst_records`. Several records
+may name one checkpoint — one per service — and per (checkpoint, service)
+the stored row is exact-write-once: a differing retry fails closed.
+
+### The verifier treats this member as OPAQUE (v1, deliberate)
+
+The bundle verifier neither validates nor consumes `ts_registration_records`:
+its presence, absence or content NEVER changes a bundle verdict, in either
+engine. Registration evidence is a claims-level report concern — the verdict
+must not depend on third-party service formats, and a bundle is exactly as
+VERIFIED without the member as with it. This is a documented decision, not a
+hidden gap: the whole reading lives in the report (`report/tslog.py`), and a
+present-but-malformed member yields an explicit REFUSED finding there rather
+than silence.
+
+### Normative offline verification (report-side, NO network)
+
+For each record, against the record's CARRIED `service_pubkey`:
+
+- **`scitt-vds1-v1`** — `artifact_b64` is a COSE_Sign1 receipt (RFC 9942
+  vds=1 shape): protected `{1: -8 (EdDSA), 395: 1}`, unprotected
+  `{396: {-1: [bstr(cbor([tree_size, leaf_index, [audit_path]]))]}}`,
+  payload DETACHED. Verification: `entry_hash = SHA-256(body_hash bytes)`;
+  leaf = RFC 6962 `SHA-256(0x00 || entry_hash)`; fold the audit path
+  (`0x01`-prefixed interior nodes) to a root; the Ed25519 signature must
+  verify over `["Signature1", protected, h'', root]` with the root as the
+  raw 32-byte detached payload. (The service hashes the submitted digest
+  once more — the double-hash leaf convention is the profile's, empirically
+  pinned by the golden artifact.)
+- **`rekor-dsse-v1`** — `artifact_b64` is canonical JSON
+  `{"entry": …, "envelope": …}` where `entry` is a Rekor v1 log entry and
+  `envelope` the DSSE envelope it logs. Verification: (1) `logID` equals
+  SHA-256 of the DER SubjectPublicKeyInfo of `service_pubkey`; (2) the
+  signed entry timestamp is an ECDSA-P256-SHA256 signature over the RFC 8785
+  canonical JSON of `{body, integratedTime, logID, logIndex}`; (3) the
+  envelope payload's SHA-256 equals the logged `payloadHash` and the payload
+  names exactly this record's `checkpoint_body_hash`; (4) leaf =
+  `SHA-256(0x00 || base64decode(body))` folds through the SHARD-local
+  inclusion proof to `rootHash`; (5) the checkpoint note covers the same
+  tree size and root, its key hint equals `logID[:4]`, and its signature
+  verifies over the note body. The DSSE envelope's own signature is made
+  with a burner submission key and is NOT part of the claim — the log's
+  commitment is.
+
+Any failure → that record renders as **NOT VERIFIED** in the report's
+claims section; the bundle verdict is untouched. Absence of the member never
+fails anything.
+
+### Claims ≤ mechanism
+
+A verified record proves exactly: *an external log whose signing key is the
+one carried in this record committed to this checkpoint digest, no later
+than the artifact's own signed time*. It does not prove the log is honest,
+that the log has not equivocated, or anything about the receipts under the
+checkpoint. And because `service_pubkey` travels in the same unsigned bundle
+member the holder edits, verification against it is a BOUND CLAIM — the §6
+rule verbatim: independence exists only when the relying party re-checks the
+artifact against a service key pinned OUT OF BAND. The report offers no
+upgrade input for that in v1 (documented limitation, not a hidden gap); no
+result here contributes to any evidence level.
+
+### Worker semantics
+
+Same §7 posture: async decoration (checkpointing never waits), idempotent
+per (checkpoint, service), a service outage is skip-and-retry-next-cycle,
+and one service's outage never blocks another service, the anchor, or the
+TSA (`tslog` is a third phase beside `anchor` and `tsa`). A stored record
+that fails its own offline re-verification is a phase failure, never
+silently resent.

@@ -22,10 +22,36 @@ cargo_root=${CARGO_HOME:-${HOME:?HOME is required}/.cargo}
 mkdir -p "$cargo_root"
 cargo_root=$(cd "$cargo_root" && pwd -P)
 
-[[ $(rustc --version) == 'rustc 1.90.0 (1159e78c4 2025-09-14)' ]]
-[[ $(wasm-pack --version) == 'wasm-pack 0.15.0' ]]
-[[ $(wasm-bindgen --version) == 'wasm-bindgen 0.2.126' ]]
-[[ $(wasm-opt --version) == 'wasm-opt version 117 (version_117)' ]]
+
+# MEASURED 2026-09-09: as bare `[[ ]]` these pins asserted NOTHING on macOS bash
+# 3.2.57, where a failed standalone predicate does not stop the script -- and
+# verify-rs/README.md tells the reader to run this file with `bash`, which is
+# 3.2.57 there. So the canonical WASM module of the PUBLIC verifier could be
+# built by a documented command with the wrong rustc, wasm-bindgen or wasm-opt
+# and report success. bash 5 and zsh do stop; the defect was invisible to anyone
+# on a modern shell.
+#
+# `observed` is declared and assigned on SEPARATE lines on purpose: a combined
+# `local observed=$(...)` returns the status of `local`, not of the command, so
+# a tool that fails to run would look like a version mismatch instead.
+require_tool_version() {
+  local tool=$1 expected=$2
+  local observed
+  shift 2
+  observed=$("$@" 2>&1) || {
+    printf 'canonical build: %s could not be run (%s)\n' "$tool" "$*" >&2
+    exit 1
+  }
+  [[ $observed == "$expected" ]] || {
+    printf 'canonical build: %s is %s, expected %s\n' "$tool" "$observed" "$expected" >&2
+    exit 1
+  }
+}
+
+require_tool_version rustc 'rustc 1.90.0 (1159e78c4 2025-09-14)' rustc --version
+require_tool_version wasm-pack 'wasm-pack 0.15.0' wasm-pack --version
+require_tool_version wasm-bindgen 'wasm-bindgen 0.2.126' wasm-bindgen --version
+require_tool_version wasm-opt 'wasm-opt version 117 (version_117)' wasm-opt --version
 
 # Rust embeds panic-source paths in the optimized module. Map both variable
 # roots to stable virtual locations through Cargo's unit-separator encoding so

@@ -57,6 +57,8 @@ for (const [name, fixture, mutate] of [
   ["boolean leaf index", "valid_e1.json", b => { b.entries[0].leaf_index = false; }],
   ["empty timestamp fraction", "b21_authority_valid.json", b => { b.anchor_records[0].block_ts = "2026-01-01T00:00:00.Z"; }],
   ["impossible Gregorian date", "b21_authority_valid.json", b => { b.anchor_records[0].block_ts = "2026-02-30T00:00:00Z"; }],
+  ["signed hex checkpoint root", "valid_e1.json", b => { b.checkpoint_chain[0].checkpoint.body.root_hash = "+f".repeat(32); }],
+  ["signed hex inclusion proof", "valid_e1.json", b => { b.entries[0].inclusion_proof[0] = "+f".repeat(32); }],
 ]) {
   const bundle = JSON.parse(fs.readFileSync(path.join(dir, fixture), "utf8"));
   mutate(bundle);
@@ -167,6 +169,13 @@ for (const item of disclosureCases) {
   const ok = got === item.expected;
   if (!ok) failures++;
   console.log(`${ok ? "OK " : "XX "} disclosure ${item.name}`);
+}
+{
+  const hostileNonce = JSON.parse(JSON.stringify(disclosureCases.find(item => item.expected).package));
+  hostileNonce.nonce_hex = "+f".repeat(16);
+  const nonceOk = !verify_disclosure_json(JSON.stringify(hostileNonce), disclosureBundle);
+  if (!nonceOk) failures++;
+  console.log(`${nonceOk ? "OK " : "XX "} disclosure signed-hex nonce`);
 }
 const duplicateDisclosure = '{"schema":"evd/disclosure/v1","schema":"evd/disclosure/v1"}';
 if (verify_disclosure_json(duplicateDisclosure, disclosureBundle)) failures++;

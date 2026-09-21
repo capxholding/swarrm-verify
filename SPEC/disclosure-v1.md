@@ -3,7 +3,10 @@
 
 A receipt commits to payloads with salted, domain-separated hashes
 (`SHA-256(domain ‖ 0x00 ‖ nonce ‖ 0x00 ‖ payload)`; canonical.py). The
-standard evidence log persists the commitment, not the payload body. Custody of
+standard evidence log persists the commitment, not the payload body.
+RFC 9942 names a COSE receipt proof type "proof of disclosure"; this
+package is that vocabulary in prose only — it is not a new CDDL proof
+type and not a verifier union member. Custody of
 the nonce depends on the capture surface: recorder/Node deployments keep it in
 the customer volume, while the hosted gateway retains it in the tenant's
 encrypted service vault and necessarily handles the payload in transit.

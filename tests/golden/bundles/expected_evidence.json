@@ -1,5 +1,5 @@
 {
-  "_note": "B29 cross-engine evidence-level rows: for each fixture, verify with trust_evidence.json and with no trust context; recorder_attested lists leaf indexes whose co-signature verifies under the NAMED recorder key, trusted_tst_checkpoints lists checkpoint digests whose token chains to the SUPPLIED root. evidence_tst_forged_ca (unrelated self-signed CA) and evidence_tst_leaf_issuer (a NON-CA leaf under the real root that mints its own signer) are THE audit fixtures: each satisfies the carried-chain gate (VERIFIED) and must never satisfy the supplied root.",
+  "_note": "Cross-engine evidence-level rows: for each fixture, verify with trust_evidence.json and with no trust context; recorder_attested lists leaf indexes whose co-signature verifies under the NAMED recorder key, trusted_tst_checkpoints lists checkpoint digests whose token chains to the SUPPLIED root. evidence_tst_forged_ca (unrelated self-signed CA) and evidence_tst_leaf_issuer (a NON-CA leaf under the real root that mints its own signer) are THE audit fixtures: each satisfies the carried-chain gate (VERIFIED) and must never satisfy the supplied root.",
   "evidence_tst_decoy_a": {
     "with_trust": {
       "recorder_attested": [],

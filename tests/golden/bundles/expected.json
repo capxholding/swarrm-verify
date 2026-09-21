@@ -40,6 +40,8 @@
   "evidence_tst_unknown_critical_ee": "VERIFIED",
   "export_manifest_bad_ts": "NOT_VERIFIED",
   "export_manifest_dropped": "NOT_VERIFIED",
+  "export_manifest_producer": "VERIFIED",
+  "export_manifest_producer_edited": "NOT_VERIFIED",
   "export_manifest_recorder": "NOT_VERIFIED",
   "export_manifest_recorder_child": "NOT_VERIFIED",
   "export_manifest_recorder_rotation": "NOT_VERIFIED",
@@ -72,6 +74,7 @@
   "recorder_delegates_scitt_issuer": "NOT_VERIFIED",
   "rotation_valid": "VERIFIED",
   "tampered_payload": "NOT_VERIFIED",
+  "ts_registration_bundle": "VERIFIED",
   "valid_e1": "VERIFIED",
   "valid_finite_float_receipt": "VERIFIED",
   "wrong_leaf_index": "NOT_VERIFIED"

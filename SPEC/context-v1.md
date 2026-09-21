@@ -73,7 +73,7 @@ universal context keys; everything else stays per-type.
 ## 2. Bands (normative)
 
 - `amount_band` = `"10^N CUR"` (floor of log10 of the absolute amount, plus
-  ISO currency), e.g. €49.90 → `"10^1 EUR"`.
+  ISO 4217 alphabetic currency code), e.g. €49.90 → `"10^1 EUR"`.
 - `result_size_band` / `record_count_band` ∈ {`0`, `<1k`, `<100k`, `≥100k`}
   (bytes for results, rows for record counts).
 - `latency_band` ∈ {`<1s`, `<1m`, `<1h`, `≥1h`}.

@@ -2,7 +2,7 @@
 //! Shared deterministic-CBOR wire primitives for every verifier profile.
 //!
 //! This module owns item-head encoding, the bounded iterative scan, and the
-//! profile-parameterized value emitter (B39.2). The emission rules — minimal
+//! profile-parameterized value emitter. The emission rules — minimal
 //! hand-encoded heads, map keys sorted by their encoded bytes, duplicate keys
 //! rejected, bounded depth, fail-closed on anything outside the model — are
 //! identical for certificates, COSE envelopes and B28 CWTs; only the admitted
