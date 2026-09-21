@@ -226,7 +226,7 @@ product's honesty with it.
 | E015.3 | Config: Log storage | out of scope | org · carrier: Swarrm's OWN evidence log is append-only with salted commitments, so payload deletion stays compatible with retained integrity (SPEC/disclosure-v1.md). The retention periods, access controls and masking rules this control asks for govern the operator's AI logs and are the operator's; note the dial deliberately admits some identifiers (`principal`, `principal_display`) as plaintext, so 'no PII in plaintext' would be false as stated |
 | E016.1 | Demonstration: Text AI disclosure | out of scope | org |
 | E016.2 | Demonstration: Voice AI disclosure | out of scope | org |
-| E016.3 | Demonstration: Labelling AI-generated content | out of scope | org |
+| E016.3 | Demonstration: Labelling AI-produced content | out of scope | org |
 | E016.4 | Demonstration: Automation AI disclosure | out of scope | org |
 | E016.5 | Demonstration: System response to AI inquiry | out of scope | org |
 | E017.1 | Documentation: AI system transparency documentation | out of scope | org *(binds on opt-in: requirement E017 is Optional)* |
