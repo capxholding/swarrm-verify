@@ -61,3 +61,14 @@ ad92bb8e1ba1f448b8644fd929e7221be4f45d3c:tests/golden/fuzz/case_015.json:generic
 88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_023.json:generic-api-key:1
 88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_025.json:generic-api-key:1
 88d656d72bda575339e2d46d46af0ea04461cc73:tests/golden/fuzz/case_027.json:generic-api-key:55
+
+# Reviewed 2026-09-26: regenerated seed-7 fixtures retain public CMS timestamp
+# tokens and a synthetic signed rotation receipt from the named golden bundles.
+# Exact values match duplicate_rotation_target, evidence_tst_forged_ca,
+# evidence_tst_decoy_b, evidence_tst_pathlen and evidence_tst_unknown_critical_ca.
+# These are public verification inputs, not authentication credentials.
+dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_011.json:generic-api-key:55
+dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_020.json:generic-api-key:185
+dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_019.json:generic-api-key:73
+dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_022.json:generic-api-key:208
+dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_007.json:generic-api-key:294
