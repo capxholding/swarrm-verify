@@ -1,1 +1,37 @@
-{"checkpoint_chain": [{"checkpoint": {"body": {"origin": "evd://tenant/t_golden", "prev_hash": "", "root_hash": "72006ff1fa92da6c40722dd0d35562fa650810f7495cbc4e886613986023e704", "schema": "evd/checkpoint/v1", "tree_size": 3, "ts": "2026-01-01T00:00:00.000000Z"}, "kid": "Vkdap1RjR0wChd9d", "sig": "Y1Rx+384nB+fd75owyIbahHufKdZHsuLTmWcS+I8DSQv6fc3n1CMcrn+8dOLGGmBS9KuYwxl/lzcpEBJ/MaaAw=="}}], "entries": [{"envelope": [1.5], "inclusion_proof": ["2d802f493e81f0b58d9b0dd88b23cf3775802864f16b3add206d3a32356b64e8"], "leaf_index": 2}, {"envelope": {"payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYm9ybiIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7Im1hbmRhdGVfZG9jdW1lbnQiOiJjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkIn0sImNvbnRleHQiOnsia2luZCI6ImJvcm4iLCJtb2RlbF9yZWYiOiJtLTEiLCJwdXJwb3NlIjoic3RhbmRpbmcgYWdlbnQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1hZ2VudF9hIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X2dvbGRlbiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDAuMDAwMDAwWiJ9", "payloadType": "application/vnd.evd.receipt.v1+json", "signatures": [{"keyid": "Vkdap1RjR0wChd9d", "sig": "0WWuNdhMKfgp1Xc2zyl3g+3NIURFg0xRl1IgjQ059MTA0JNmvuD5jEo+G2pwvDnZb42cYYGXSO9lJONO6vyWDw=="}]}, "inclusion_proof": ["fd5ae5c122d3ed5d51bdf20538262797c98e71aa9388392946e8fecf4b877785", "0c5d1e2d976f882962e4d9e064f18912d848be5c9b53fe3d915ae583dd7918aa"], "leaf_index": 1}, {"envelope": {"payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==", "payloadType": "application/vnd.evd.receipt.v1+json", "signatures": [{"keyid": "Vkdap1RjR0wChd9d", "sig": "VBqI3aephPAuAxzMrr8a+1ejPItV4MNOjPrzKaTZsm9k4mhbNSt/mzRxTcezK5y+L4/nL35tY4mQbLevL8P8Dg=="}]}, "inclusion_proof": ["a5864e66f0c7bcbc2c80c4b6ffec7727763374f697c40b5c6b9950c612b14224", "0c5d1e2d976f882962e4d9e064f18912d848be5c9b53fe3d915ae583dd7918aa"], "leaf_index": 0}], "jwks": {"keys": [{"alg": "EdDSA", "crv": "Ed25519", "kid": "Vkdap1RjR0wChd9d", "kty": "OKP", "use": "sig", "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"}]}, "origin": "evd://tenant/t_golden", "schema": "evd/bundle/v1", "target_checkpoint": {"body": {"origin": "evd://tenant/t_golden", "prev_hash": "", "root_hash": "72006ff1fa92da6c40722dd0d35562fa650810f7495cbc4e886613986023e704", "schema": "evd/checkpoint/v1", "tree_size": 3, "ts": "2026-01-01T00:00:00.000000Z"}, "kid": "Vkdap1RjR0wChd9d", "sig": "Y1Rx+384nB+fd75owyIbahHufKdZHsuLTmWcS+I8DSQv6fc3n1CMcrn+8dOLGGmBS9KuYwxl/lzcpEBJ/MaaAw=="}}
+{
+  "checkpoint_chain": [
+    {
+      "checkpoint": {
+        "body": {
+          "origin": "evd://tenant/t_golden",
+          "prev_hash": "",
+          "root_hash": "3aef7e9cf48ef31fb1002417927e0f50cd1e2c609ffef3b7e3491abf417a9c27",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 3,
+          "ts": "2026-01-01T00:00:00.000000Z"
+        },
+        "kid": "Vkdap1RjR0wChd9d",
+        "sig": "AlSsdNjwGRNfikUnbuSuMGtgjdesyBYeegLd+QRpgtSZjiwZD3sTTAa5xrJbZfFrBmve1K3rO/uSurMzb+9kBQ=="
+      }
+    }
+  ],
+  "entries": [
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiYmlydGh0YWdfaWQiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwicmV2aXNpb25faWQiOiJlOTZjMjNkMzg1ZDZhNWFkZjc0MGVmMTFlODUxYTM3MGIyMThiMWY5N2VmNzVlZDQzNGE5N2M4ODU1MWJmMWY5In0sImlkZW1wb3RlbmN5X2tleSI6ImZvcmdlZC1idCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "jKt9h5sZUaijjWkx73SqpqFLX0CXm+BiBZrpVDZjvfRrNuAVsHGj/Qlm1HIhzhwB4jMJRhNkyINBaUprzZ8cDg=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "976ee2c05e67b00c3e4c5e9e19bb97b420d742a23f648dc3390c25278fff6189"
+      ],
+      "leaf_index": 2
+    },
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJraW5k

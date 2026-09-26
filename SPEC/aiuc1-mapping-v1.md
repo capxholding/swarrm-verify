@@ -3,7 +3,7 @@
 
 This document is the artifact that makes **"satisfies AIUC-1 evidence
 requirements (as mapped, revision 2026-07-15)"** a checkable sentence
-(A_BUILD B49.5). It licenses exactly that sentence and nothing stronger.
+(see CHECK below). It licenses exactly that sentence and nothing stronger.
 Swarrm satisfies evidence requirements of the standard; it never replaces,
 grades, or administers the standard. Certification is AIUC's act, an AIUC-1
 score is AIUC's number, and no Swarrm surface computes, stores, or renders
@@ -50,12 +50,12 @@ carried byte-identical datasets:**
 - **Supersedes the launch-era shape** "51 requirements / 130 controls /
   65 mandatory / 65 optional" still quoted by secondary sources and by
   this build item's own planning sentence: at the 2026-07-15 text the
-  mandatory (Core) count is **82**, not 65. The B49.5 CHECK is read
+  mandatory (Core) count is **82**, not 65. The mapping CHECK is read
   against the pinned revision's Core set.
 
 A mismatch found later between this pin and the standard's text of
 2026-07-15 is a defect in THIS document and must be corrected here, never
-argued around (the B38.0 discipline).
+argued around.
 
 ## §1 Classification rule (mechanical, so the table is checkable)
 
@@ -222,7 +222,7 @@ product's honesty with it.
 | E013.1 | Documentation: Quality objectives and risk management | out of scope | org *(binds on opt-in: requirement E013 is Optional)* |
 | E013.2 | Documentation: Change management procedures | out of scope | org *(binds on opt-in: requirement E013 is Optional)* |
 | E013.3 | Config: Issue tracking and monitoring | out of scope | org · carrier: dispute and incident surfaces (report/dispute.py, report/incident.py) *(binds on opt-in: requirement E013 is Optional)* |
-| **E015.1** | Config: Logging implementation | **SATISFIED** | the flight recorder itself: a captured action is a receipt committing its inputs and outputs with the three times (SPEC/receipt-v1.md, SPEC/action-fact-v1.md B21.4A), append-only under signed checkpoints (SPEC/log-v1.md); example entries are producible from any store. **No capture completeness is claimed or implied** — SPEC/receipt-v1.md §1 and the E1 row of SPEC/log-v1.md refuse it in normative text, and this row inherits that refusal |
+| **E015.1** | Config: Logging implementation | **SATISFIED** | the flight recorder itself: a captured action is a receipt committing its inputs and outputs with the three times (SPEC/receipt-v1.md, SPEC/action-fact-v1.md §4), append-only under signed checkpoints (SPEC/log-v1.md); example entries are producible from any store. **No capture completeness is claimed or implied** — SPEC/receipt-v1.md §1 and the E1 row of SPEC/log-v1.md refuse it in normative text, and this row inherits that refusal |
 | E015.3 | Config: Log storage | out of scope | org · carrier: Swarrm's OWN evidence log is append-only with salted commitments, so payload deletion stays compatible with retained integrity (SPEC/disclosure-v1.md). The retention periods, access controls and masking rules this control asks for govern the operator's AI logs and are the operator's; note the dial deliberately admits some identifiers (`principal`, `principal_display`) as plaintext, so 'no PII in plaintext' would be false as stated |
 | E016.1 | Demonstration: Text AI disclosure | out of scope | org |
 | E016.2 | Demonstration: Voice AI disclosure | out of scope | org |
@@ -261,7 +261,7 @@ the standard, re-pin §0, re-measure the shape from the site's own dataset,
 re-classify §2 in full, and re-examine §3. Until that recheck lands, the
 licensed sentence may cite only the pinned revision by date. A stale
 mapping is a false claim, and the claim must be withdrawn rather than
-argued. The recheck rides A_BUILD B49.5 as a standing obligation.
+argued. The recheck is a standing obligation of this mapping.
 
 ## CHECK (how to verify this document)
 
