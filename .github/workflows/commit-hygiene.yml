@@ -1,0 +1,55 @@
+name: commit-hygiene
+# Fails when commits, authors or PR text carry AI-tool attribution.
+# PRs: checks the PR's commits + title/body. Branch pushes: the pushed commits.
+# Tag pushes (releases): every commit since the previous tag.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: ['**']
+    tags: ['**']
+permissions:
+  contents: read
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check commits and PR text
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          PAT='co-authored-by:.*(claude|anthropic|cursor|codex|openai|chatgpt|copilot)|claude-session:|made-with:.*(claude|cursor|codex)|generated (with|by) [[]?(claude|codex|cursor|chatgpt)|claude[.]com/claude-code|claude[.]ai/code|chatgpt[.]com/codex|@anthropic[.]com|cursoragent@cursor[.]com'
+          ZERO=0000000000000000000000000000000000000000
+          if [ "$EVENT" = pull_request ]; then
+            RANGE="$PR_BASE..$PR_HEAD"
+            if printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | grep -inE "$PAT|🤖"; then
+              echo "::error::PR title/body contains AI attribution"; FAIL=1; fi
+          elif [ "$REF_TYPE" = tag ]; then
+            PREV=$(git describe --tags --abbrev=0 "$REF_NAME^" 2>/dev/null || true)
+            RANGE="${PREV:+$PREV..}$REF_NAME"
+          elif [ "$BEFORE" = "$ZERO" ]; then
+            RANGE="origin/$DEFAULT..$AFTER"
+          else
+            RANGE="$BEFORE..$AFTER"
+          fi
+          echo "Checking $RANGE"
+          HITS=$(git log --format='@@C@@ %h %an <%ae> | %cn <%ce>%n%B' "$RANGE" | awk -v pat="$PAT" '
+            /^@@C@@ / {hdr=substr($0,7); if (tolower(hdr) ~ pat) print hdr; next}
+            tolower($0) ~ pat {print hdr " :: " $0}' | sort -u || true)
+          if [ -n "$HITS" ]; then
+            echo "::error::AI attribution found in commits ($RANGE):"; echo "$HITS"; FAIL=1; fi
+          [ "${FAIL:-0}" = 0 ] && echo "clean"
+          exit "${FAIL:-0}"
