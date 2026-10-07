@@ -21,7 +21,7 @@ fn presentation_context_bytes() -> Vec<u8> {
 }
 
 fn parse_fixture(raw: &[u8]) -> InputContext {
-    parse_input(raw, presentation_context(), &fixture_trust()).unwrap()
+    InputContext { roots: fixture_trust(), ..parse_input(raw, presentation_context()).unwrap() }
 }
 
 #[derive(Default)]
@@ -274,7 +274,7 @@ fn local_action_lifetime_is_closed_and_enforced_before_presentation_use() {
     set_member(&mut context, "max_action_lifetime_s", C::Integer(1.into()));
     let bytes = canonical(&context).unwrap();
     let Ok(LocalContext::Presentation(local)) = parse_local_context(&bytes) else { unreachable!() };
-    let input = parse_input(include_bytes!("../../../tests/golden/b28/verify-input.cbor"), local, &fixture_trust()).unwrap();
+    let input = InputContext { roots: fixture_trust(), ..parse_input(include_bytes!("../../../tests/golden/b28/verify-input.cbor"), local).unwrap() };
     let (result, _) = evaluate(&input);
     assert_eq!(result.reason, "ACTION_LIFETIME_EXCEEDS_LOCAL_POLICY");
     for value in [C::Integer(0.into()), C::Integer(301.into()), C::Text("60".to_owned())] {
@@ -292,7 +292,7 @@ fn challenge_must_be_current_before_expiry_or_lifetime() {
     set_member(&mut context, "max_action_lifetime_s", C::Integer(300.into()));
     set_member(&mut context, "now", C::Integer((issued_at - 1).into()));
     let Ok(LocalContext::Presentation(local)) = parse_local_context(&canonical(&context).unwrap()) else { unreachable!() };
-    let input = parse_input(include_bytes!("../../../tests/golden/b28/verify-input.cbor"), local, &fixture_trust()).unwrap();
+    let input = InputContext { roots: fixture_trust(), ..parse_input(include_bytes!("../../../tests/golden/b28/verify-input.cbor"), local).unwrap() };
     let (result, _) = evaluate(&input);
     assert_eq!(result.verdict, "INDETERMINATE");
     assert_eq!(result.reason, "CHALLENGE_NOT_CURRENT");
@@ -342,13 +342,13 @@ fn webauthn_origin_is_exact_canonical_https_host() {
 fn exchange_cannot_supply_or_replace_root_trust() {
     let clean = include_bytes!("../../../tests/golden/b28/verify-input.cbor");
     let context = presentation_context_bytes();
-    assert!(parse_input(clean, presentation_context(), &fixture_trust()).is_some());
+    assert!(parse_input(clean, presentation_context()).is_some());
 
     let C::Map(mut entries) = decode(clean, MAX_INPUT).unwrap() else { unreachable!() };
     entries.push((C::Text("trust_pack".to_owned()), C::Bytes(vec![0; 1])));
     entries.push((C::Text("trust_pack_digest".to_owned()), C::Bytes(vec![0; 32])));
     let supplied = canonical(&C::Map(entries)).unwrap();
-    assert!(parse_input(&supplied, presentation_context(), &fixture_trust()).is_none());
+    assert!(parse_input(&supplied, presentation_context()).is_none());
 
     let pack = include_bytes!("../../../tests/golden/b28/trust-pack.cbor");
     let rejected: J = serde_json::from_str(&verify_b28_cwt(&supplied, &context, pack, &sha(&[pack]))).unwrap();
@@ -365,4 +365,26 @@ fn exchange_cannot_supply_or_replace_root_trust() {
     let result: J = serde_json::from_str(&verify_b28_cwt(clean, &context, pack, &[0; 32])).unwrap();
     assert_eq!(result["verdict"], "INDETERMINATE");
     assert_eq!(result["reasons"], serde_json::json!(["NO_PINNED_TRUST_PACK"]));
+}
+
+// A generation is something a signer DECLARED, so MIXED_PROFILE_GENERATION is a
+// finding about an exchange this verifier actually read.  Scanning the raw blob
+// before parsing reported it for input whose framing was corrupt -- a confident
+// claim about fields never decoded -- while Python answered the honest
+// VERIFIER_CONTEXT_INVALID for the same bytes.  Both engines now agree.
+#[test]
+fn mixed_generation_is_a_finding_only_once_the_exchange_parses() {
+    let pack = include_bytes!("../../../tests/golden/b28/trust-pack.cbor");
+    let (context, pin) = (presentation_context_bytes(), sha(&[pack]));
+    let verdict = |exchange: &[u8]| -> J { serde_json::from_str(&verify_b28_cwt(exchange, &context, pack, &pin)).unwrap() };
+    let mixed = include_bytes!("../../../tests/golden/b28/hostile/mixed_profile_generation.input.cbor").to_vec();
+    let intact = verdict(&mixed);
+    assert_eq!(intact["verdict"], "FAIL", "a well-formed mixed exchange is still refused");
+    assert_eq!(intact["reasons"], serde_json::json!(["MIXED_PROFILE_GENERATION"]));
+    let mut corrupt = mixed.clone();
+    corrupt.push(0);
+    let broken = verdict(&corrupt);
+    assert_eq!(broken["verdict"], "INDETERMINATE", "unparsed bytes declared no generation");
+    assert_eq!(broken["reasons"], serde_json::json!(["VERIFIER_CONTEXT_INVALID"]));
+    assert_eq!(broken["should_execute"], false);
 }

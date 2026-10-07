@@ -71,6 +71,23 @@ fn certificate_suite_agrees_with_expected() {
     assert!(checked >= 9, "expected at least 9 certificate families, ran {checked}");
 }
 
+/// issuer_cases.json — a pinned origin must have signed the embedded log, and
+/// only an unrevoked log issuer signs a view; Python replays the same cases.
+#[test]
+fn issuer_cases_agree_with_expected() {
+    let dir = certs_dir();
+    let cases: Value = serde_json::from_str(&fs::read_to_string(dir.join("issuer_cases.json")).unwrap()).unwrap();
+    for case in cases["cases"].as_array().unwrap() {
+        let mut trust = trust();
+        trust["log_keys"] = case["pin"].as_str().map_or(serde_json::json!({}), |pin| cases["pins"][pin].clone());
+        let bytes = fs::read(dir.join(case["file"].as_str().unwrap())).unwrap();
+        let got: Value = serde_json::from_str(&swarrm_verify::certificate::verify_certificate_cbor_with_trust(&bytes, Some(&trust))).unwrap();
+        for key in ["cross_checks_ok", "errors", "origin_attested"] {
+            assert_eq!(got[key], case[key], "{} pin={}: {key}", case["file"], case["pin"]);
+        }
+    }
+}
+
 #[test]
 fn certfuzz_corpus_replays_crash_free() {
     let mut count = 0;

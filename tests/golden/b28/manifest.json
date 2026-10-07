@@ -1754,6 +1754,36 @@
       },
       "sha256": "1c91b0e1c016b0e089075f70017e55cbad2bea6a6baa4d062a706e5d8954d14f"
     },
+    "mixed_profile_generation": {
+      "expected": {
+        "reasons": [
+          "MIXED_PROFILE_GENERATION"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "INDETERMINATE",
+          "challenge": "INDETERMINATE",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "INDETERMINATE",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "INDETERMINATE",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "INDETERMINATE",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "INDETERMINATE",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "INDETERMINATE",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "FAIL"
+      },
+      "sha256": "59983b9cf4e6436be16f185ef053afba1bf54b1b6ef2a91bc840dc0907cf8137"
+    },
     "network_jku": {
       "expected": {
         "reasons": [

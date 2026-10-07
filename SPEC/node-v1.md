@@ -269,6 +269,32 @@ reconciliation and verification contain no vendor branch.
   reach `CLOSED`, whatever the Node's integrity basis. Egress evidence moves
   no provenance level in either direction; only `linkage`/`outcome` (which
   is this source's whole purpose) and a downward coverage move.
+- **Microsoft Purview audit records** (`purview-copilot-v1`) arrive through
+  that same sink and are a SOURCE of the weakest kind this document names:
+  after-the-fact detection from Microsoft's books. The map ingests unified
+  audit log export objects shaped `{"value": [records]}` and scopes itself by
+  a declared filter — `Workload: Copilot`, `Operation: CopilotInteraction` —
+  so records of any other workload are OUTSIDE the map, not errors. Its
+  normalisation rule: every mapped value is the exact decoded JSON string,
+  verbatim, byte-exact, never trimmed; nested values are named by a declared
+  path whose only grammar is object keys and a `[n]` index (the invoked
+  plugin is `CopilotEventData.AISystemPlugin[0].Name`); and `CreationTime`,
+  which Purview writes as UTC with NO zone designator, gains a trailing `Z`
+  and nothing else — declared on the map, never inferred by the engine,
+  because a zone-less instant against a zoned one is INCOMPARABLE under
+  reconcile-v1 §5 and the engine returns no-disagreement for it rather than
+  a verdict it cannot compute. **What it can and cannot establish.** A record
+  means Copilot SAYS a plugin was invoked by that user in that host; it never
+  shows the model turn, and it echoes no token the agent supplied — so the
+  only linkage channel to a claim is the manifest-approved unique field, the
+  plugin name. One invocation of a name inside tolerance links
+  DETERMINISTIC; two are AMBIGUOUS and render CLAIM_ONLY; an invocation with
+  no claim against it is an ORPHAN — which is the purpose: an action that
+  bypassed the action door becomes visible. The enumeration declaration is
+  bound into every batch as `purview_export_completeness_not_proven:` — an
+  export never proves it holds every interaction, retention and export scope
+  are the tenant's assertions — so coverage from this source is `GAPPED`
+  and can never reach `CLOSED`. Never presented as capture.
 - **Emulator** (`node/emulator.py`) — ships WITH the Node: an in-process
   deterministic fake source (fixed seed; cursor pages; Ed25519-signed or MAC
   modes; injectable gaps/rollbacks/duplicates; a deterministic `camt.053`

@@ -1,0 +1,81 @@
+{
+  "action": {
+    "action_class": "m365.action",
+    "action_id": "m365-23-0001"
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "purview/00000017-0000-4000-8000-000000000023/CopilotInteraction/2026/01/01/0100Z_e5cba8e3.json.gz",
+    "cursor_start": "",
+    "declared_count": 4,
+    "event_key_root": "d45708420391e2135025649aeae062d498cd1e5a52a0c38b3be9bb64d6c362e6",
+    "exclusions": [],
+    "filter_digest": "a53a124d98ba98242934c598133a62d6e5c12ada1e9eb8e3ae670bd2511be382",
+    "finality_watermark": "",
+    "gaps": [
+      "unauthenticated_read:purview/00000017-0000-4000-8000-000000000023/CopilotInteraction/2026/01/01/0100Z_e5cba8e3.json.gz",
+      "purview_export_completeness_not_proven:landing_zone_only"
+    ],
+    "mapping_version": "purview-copilot-v1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "microsoft-purview/00000017-0000-4000-8000-000000000023"
+  },
+  "claim": {
+    "action_class": "m365.action",
+    "action_id": "m365-23-0001",
+    "counterparty": "hr.leave.request",
+    "schema": "evd/claim/v1"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": false,
+      "event_key": "pv-23-000001",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": true
+    }
+  ],
+  "events": [
+    {
+      "app_host": "BizChat",
+      "counterparty": "hr.leave.request",
+      "event_key": "pv-23-000001",
+      "finality": "final",
+      "outcome": "succeeded",
+      "proof_digests": [
+        "606d8b57e2bbf2e15eaaa6e73514533d4b2603ec7e737cfd50af4b7a0568942b"
+      ],
+      "reference": "pv-23-000001",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T09:01:00Z",
+      "source_identity_ref": "microsoft-purview/00000017-0000-4000-8000-000000000023",
+      "thread": "thread-23-0000",
+      "user": "agent-1@tenant.example"
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": false,
+    "batch_digest": "9e1a34ca1760c81847cca9301eab7af4a0a8fe4d979132e1db096b16a2cb807c",
+    "complete": true,
+    "cursor_gap_free": true,
+    "node_id": "s3YkkeLhSDposbKe",
+    "node_signed": true,
+    "performed": true,
+    "signature": "vScR848FIUno+/8Nas+vAyR/8cciluQtb8TcyaUli+tSJUj0ZpFbUyaZFpFxpia0oYISeOiI9aOMW8/h0oSRBQ=="
+  },
+  "schema": "evd/verdict-input/v1"
+}

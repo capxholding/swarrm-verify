@@ -125,7 +125,14 @@ paragraph above requires, stated as its verification consequence.
    scan-member inconsistency noted in §4.4.
 2. `certificate_id` recomputed over the core bytes; envelope/registration
    references must match it.
-3. The embedded `bundle` passes ordinary `verify_bundle`.
+3. The embedded `bundle` passes ordinary `verify_bundle`, run under the
+   relying party's trust context. When that context names a `log_keys` key for
+   the bundle's origin and that key did not sign the target checkpoint, the
+   certificate fails with `ORIGIN_NOT_ATTESTED` (pinned right after
+   `SUBJECT_ORIGIN_MISMATCH`): anyone can mint an internally sound log under a
+   victim's origin. The result carries the bundle's `origin_attested`
+   three-state (null when no key was named for the origin, or the bundle did
+   not verify).
 4. **Cross-checks — the producer-shaped `verdict_input` is NOT authoritative:**
    `subject.origin` must equal the embedded bundle's verified origin;
    `subject.action_class` must equal `verdict_input.action.action_class`; and
@@ -185,7 +192,12 @@ paragraph above requires, stated as its verification consequence.
    (`derive_vector`) from
    a carried full core. A full view has an empty `withheld_field_set`; its
    manifest's `mark_result` must equal the recomputed mark, else the envelope
-   is invalid. A selective view has a non-empty `withheld_field_set`, MUST NOT
+   is invalid. Its detached signature must verify under a log-issuer key of
+   the embedded key log (not a `recorder` or `scitt-issuer` role key, nor a key
+   only such a key sponsored) that the log never revokes; anything else is
+   `VIEW_SIGNATURE_INVALID`. The view commits to the `certificate_id`, which
+   hashes this very bundle, so it is made after every revocation the log
+   carries; historical membership in the key log is not authority. A selective view has a non-empty `withheld_field_set`, MUST NOT
    carry `core`, and therefore renders view-only with no recomputed vector or
    mark (never a pass, never implied). Because the view issuer's witnessed key
    log is itself inside the omitted core, the current artifact-alone API also

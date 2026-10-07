@@ -1,0 +1,66 @@
+{
+  "action": {
+    "action_class": "",
+    "action_id": ""
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "purview/00000017-0000-4000-8000-000000000023/CopilotInteraction/2026/01/01/0100Z_e5cba8e3.json.gz",
+    "cursor_start": "",
+    "declared_count": 4,
+    "event_key_root": "d45708420391e2135025649aeae062d498cd1e5a52a0c38b3be9bb64d6c362e6",
+    "exclusions": [],
+    "filter_digest": "f44df0393f12bded635140ad1d80f2c8f3e6bd14c5e61da0d331c3641b6b06e4",
+    "finality_watermark": "",
+    "gaps": [
+      "unauthenticated_read:purview/00000017-0000-4000-8000-000000000023/CopilotInteraction/2026/01/01/0100Z_e5cba8e3.json.gz",
+      "purview_export_completeness_not_proven:landing_zone_only"
+    ],
+    "mapping_version": "purview-copilot-v1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "microsoft-purview/00000017-0000-4000-8000-000000000023"
+  },
+  "client_attestation_present": false,
+  "event_matches": [],
+  "events": [
+    {
+      "app_host": "BizChat",
+      "counterparty": "crm.refund",
+      "event_key": "pv-23-000000",
+      "finality": "final",
+      "outcome": "succeeded",
+      "proof_digests": [
+        "606d8b57e2bbf2e15eaaa6e73514533d4b2603ec7e737cfd50af4b7a0568942b"
+      ],
+      "reference": "pv-23-000000",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T09:00:00Z",
+      "source_identity_ref": "microsoft-purview/00000017-0000-4000-8000-000000000023",
+      "thread": "thread-23-0000",
+      "user": "agent-0@tenant.example"
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": false,
+    "batch_digest": "2926e7a124765ca2fda6ecb72cd404b0d0162087445e95139b00350c5cdf76d5",
+    "complete": true,
+    "cursor_gap_free": true,
+    "node_id": "s3YkkeLhSDposbKe",
+    "node_signed": true,
+    "performed": true,
+    "signature": "pXgVvto7ad4iVNykp+fjPX12L/hJf+qVhAdjYyt8dGTzyUqef3Ocg64oUNfvnqOTCXez7sJVfMSj/M4rFLM8Dg=="
+  },
+  "schema": "evd/verdict-input/v1"
+}

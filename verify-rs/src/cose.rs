@@ -14,20 +14,19 @@
 //! the shared vectors in `tests/golden/cose/` are the gate.
 //!
 //! Fail-closed: `verify_sign1` returns `None` on hostile input, never panics.
-//! No new dependency (ed25519-dalek and ciborium are already in the graph);
-//! `build_sign1` is exercised only by the canonical-byte test.
+//! No new dependency (ed25519-dalek and ciborium are already in the graph).
+//! Construction lives test-side in tests/internal/cose_build.rs: this crate
+//! verifies COSE_Sign1 and holds no private key.
 
 use ciborium::Value;
-use ed25519_dalek::{Signer, SigningKey};
 use std::collections::BTreeMap;
 
-use crate::cbor_wire::{canonical_bytes, structural_scan, write_value, Profile};
+use crate::cbor_wire::{canonical_bytes, structural_scan, Profile};
 
-const TAG_SIGN1: u8 = 0xD2; // CBOR tag 18 wrapping the COSE_Sign1 array
-const BUILD_DEPTH: i64 = 32;
+pub(crate) const TAG_SIGN1: u8 = 0xD2; // CBOR tag 18 wrapping the COSE_Sign1 array
 
 /// COSE's envelope model: integer or text map keys; no booleans.
-const COSE_PROFILE: Profile = Profile { int_keys: true, bools: false };
+pub(crate) const COSE_PROFILE: Profile = Profile { int_keys: true, bools: false };
 
 /// Decode envelope bytes that are EXACTLY what the shared emitter would emit
 /// under the COSE profile; `None` otherwise, never a panic. The bounded
@@ -47,20 +46,10 @@ fn decode_canonical(data: &[u8], max_depth: usize) -> Option<Value> {
 
 // ---- COSE_Sign1 ----
 
-fn sig_structure(protected_bytes: &[u8], payload: Option<&[u8]>) -> Option<Vec<u8>> {
+pub(crate) fn sig_structure(protected_bytes: &[u8], payload: Option<&[u8]>) -> Option<Vec<u8>> {
     let body = payload.unwrap_or(&[]);
     let s = Value::Array(vec![Value::Text("Signature1".to_owned()), Value::Bytes(protected_bytes.to_vec()), Value::Bytes(Vec::new()), Value::Bytes(body.to_vec())]);
     crate::cbor::canonical_cbor(&s)
-}
-
-/// Deterministic COSE_Sign1 bytes signed by the Ed25519 `seed` (alg -8).
-pub(crate) fn build_sign1(protected: &Value, unprotected: &Value, payload: Option<&[u8]>, seed: &[u8; 32]) -> Option<Vec<u8>> {
-    let protected_bytes = canonical_bytes(protected, BUILD_DEPTH, &COSE_PROFILE)?;
-    let sig_input = sig_structure(&protected_bytes, payload)?;
-    let signature = SigningKey::from_bytes(seed).sign(&sig_input).to_bytes().to_vec();
-    let array = Value::Array(vec![Value::Bytes(protected_bytes), unprotected.clone(), payload.map_or(Value::Null, |b| Value::Bytes(b.to_vec())), Value::Bytes(signature)]);
-    let mut out = vec![TAG_SIGN1];
-    write_value(&array, &mut out, BUILD_DEPTH, &COSE_PROFILE).then_some(out)
 }
 
 /// A verified COSE_Sign1's decoded pieces (kid resolved from protected label 4).

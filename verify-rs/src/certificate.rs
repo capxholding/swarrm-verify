@@ -16,7 +16,7 @@
 //! deduped carried events, event_key_root recomputed over their keys).
 //! Any mismatch forces integrity INVALID before the verdict engine derives the
 //! vector — never a partial pass. The view's detached `signature` verifies
-//! under a bundle key-log key over `b"evd/v1/certificate/view\x00"` +
+//! under an unrevoked log-issuer key over `b"evd/v1/certificate/view\x00"` +
 //! canonical CBOR of the view minus `signature`/`*_sig` (authority-v1 §2
 //! prefix rule in this profile's one canonical form). A view without core
 //! bytes renders the layer it holds and recomputes nothing.
@@ -142,6 +142,8 @@ struct Report<'a> {
     /// never reached the bundle, and on every legitimate absence — bundles
     /// predating the manifest, and key-less replica exports.
     export_complete: Option<bool>,
+    /// The verified embedded bundle's origin-pin tri-state (None: no pin named).
+    origin_attested: Option<bool>,
 }
 
 impl Report<'_> {
@@ -150,6 +152,7 @@ impl Report<'_> {
             "parse_ok": self.parse_ok, "layers": self.layers, "certificate_id": self.certificate_id,
             "core_present": self.core_present, "cross_checks_ok": self.cross_checks_ok,
             "vector": self.vector, "mark": self.mark, "errors": self.errors, "export_complete": self.export_complete,
+            "origin_attested": self.origin_attested,
         })
     }
 }
@@ -264,7 +267,7 @@ fn limitations_consistent(core: &J, bundle: &J) -> bool {
 /// material_fields — none of it echoed or cross-checked. No floor rule reaches
 /// finality, which has no safe normative default (sources spell it
 /// "settled"/"booked"/"POSTED"): finality_rule="pending" on `claim_only`
-/// against a carried final=true upgraded CLAIM_ONLY → CORROBORATED in both
+/// against a carried final=true upgraded CLAIM_ONLY → MATCHED in both
 /// engines. One digest equality binds all four, and node/coverage.py
 /// ::record_coverage puts that digest in the receipt's PLAINTEXT context, so no
 /// commitment opening is needed. Conditional because none of the nine golden
@@ -501,7 +504,7 @@ fn batch_consistent(batch: Option<&J>, cov: &J) -> bool {
 
 // -------------------------------------------------------- view layer checks
 
-/// Detached signature: any bundle key-log key over VIEW_DOMAIN + canonical
+/// Detached signature: an unrevoked log-issuer key over VIEW_DOMAIN + canonical
 /// CBOR of the view minus `signature`/`*_sig` (authority-v1 §2 rule).
 fn view_sig_ok(view: &C, bundle: &J) -> bool {
     let C::Map(members) = view else { return false };
@@ -509,9 +512,7 @@ fn view_sig_ok(view: &C, bundle: &J) -> bool {
     let kept: Vec<(C, C)> = members.iter().filter(|(k, _)| !matches!(k, C::Text(t) if t == "signature" || t.ends_with("_sig"))).cloned().collect();
     let Some(body) = canonical_cbor(&C::Map(kept)) else { return false };
     let msg = [VIEW_DOMAIN, &body].concat();
-    let entries = bundle.get("entries").and_then(J::as_array).cloned().unwrap_or_default();
-    let kl = replay_key_log(&entries);
-    kl.ok && kl.keys.values().any(|k| ed25519_verify(k, &msg, &sig))
+    authorized_keys(bundle, false).values().any(|k| ed25519_verify(k, &msg, &sig))
 }
 
 fn withheld_fields(view: &C) -> J {
@@ -536,16 +537,20 @@ fn view_checks(view: &C, id: &str, bundle: &J, mark: &J, errors: &mut Vec<&'stat
 
 // ------------------------------------------------- scitt override (SPEC §6)
 
-/// The certificate's own key-log keys — the issuer set §6.2 verifies the
-/// Signed Statement under; empty if the log is unsound.
-fn scitt_issuer_keys(bundle: &J) -> BTreeMap<String, [u8; 32]> {
+/// Key-log keys with authority to sign OVER this certificate; empty if the log
+/// is unsound. Historical membership is not authority: the view signer must be
+/// a log issuer, the Signed Statement issuer must hold the `scitt-issuer` role
+/// hosted admission requires. Both commit to the certificate_id, which hashes
+/// this bundle, so they postdate every revocation it carries (mirror of
+/// verify/certificate.py::_bundle_keys).
+fn authorized_keys(bundle: &J, scitt: bool) -> BTreeMap<String, [u8; 32]> {
     let entries = bundle.get("entries").and_then(J::as_array).cloned().unwrap_or_default();
     let kl = replay_key_log(&entries);
-    if kl.ok {
-        kl.keys
-    } else {
-        BTreeMap::new()
+    if !kl.ok {
+        return BTreeMap::new();
     }
+    let held = |kid: &String| kl.state.get(kid).is_some_and(|st| st.revoked_at.is_none() && if scitt { st.scitt } else { !st.non_issuer });
+    kl.keys.iter().filter(|(kid, _)| held(kid)).map(|(kid, key)| (kid.clone(), *key)).collect()
 }
 
 /// SPEC §6: `scitt_receipt_valid` is VERIFIER-DERIVED — ALWAYS, not only when a
@@ -569,7 +574,7 @@ fn scitt_pack_valid(pack: &J, id: &str, bundle: &J, root: Option<[u8; 32]>) -> b
     let (Some(ss), Some(rc), Some(checkpoint)) = (ss, rc, pack.get("checkpoint")) else { return false };
     let roots = BTreeMap::from([(String::new(), root)]);
     let Some(ts_keys) = verified_scitt_pack_keys(pack, &roots, &ss) else { return false };
-    pack.get("certificate_id").and_then(J::as_str) == Some(id) && verify_scitt_receipt_with_checkpoint(&ss, &rc, &ts_keys, &scitt_issuer_keys(bundle), id, checkpoint)
+    pack.get("certificate_id").and_then(J::as_str) == Some(id) && verify_scitt_receipt_with_checkpoint(&ss, &rc, &ts_keys, &authorized_keys(bundle, true), id, checkpoint)
 }
 
 fn apply_scitt_override(vi: &mut J, id: &str, bundle: &J, trust: Option<&J>) {
@@ -611,11 +616,14 @@ fn core_caps_ok(j: &J) -> bool {
 /// against verify/certificate.py, so a code inserted anywhere but its pinned
 /// position breaks parity. Also carries out the bundle's completeness
 /// tri-state, which this layer used to compute and discard.
-fn cross_check_errors(j: &J, bundle: &J) -> (Vec<&'static str>, Option<bool>) {
-    let (bundle_ok, complete) = crate::verify_bundle_report(bundle);
-    let checks: [(bool, &'static str); 14] = [
+fn cross_check_errors(j: &J, bundle: &J, trust: Option<&J>) -> (Vec<&'static str>, Option<bool>, Option<bool>) {
+    // Trust-aware: without it a self-minted log naming a victim's origin
+    // verified in spite of the key the relying party pinned for that origin.
+    let (bundle_ok, complete, attested) = crate::verify_bundle_report(bundle, trust);
+    let checks: [(bool, &'static str); 15] = [
         (bundle_ok, "BUNDLE_INVALID"), // §4.3
         (subject_origin_matches_bundle(j, bundle), "SUBJECT_ORIGIN_MISMATCH"),
+        (attested != Some(false), "ORIGIN_NOT_ATTESTED"),
         (subject_action_id_matches_input(j, bundle), "SUBJECT_ACTION_ID_MISMATCH"),
         (subject_action_class_matches_input(j, bundle), "SUBJECT_ACTION_CLASS_MISMATCH"),
         (input_action_matches_signed_intent(j, bundle), "ACTION_CONTEXT_MISMATCH"),
@@ -629,7 +637,7 @@ fn cross_check_errors(j: &J, bundle: &J) -> (Vec<&'static str>, Option<bool>) {
         (coverage_doc_bound(j, bundle), "COVERAGE_DOC_MISMATCH"),
         (limitations_consistent(j, bundle), "LIMITATIONS_INCONSISTENT"),
     ];
-    (checks.iter().filter(|(ok, _)| !ok).map(|(_, code)| *code).collect(), complete)
+    (checks.iter().filter(|(ok, _)| !ok).map(|(_, code)| *code).collect(), complete, attested)
 }
 
 fn verify_core(id: &str, core: &C, view: Option<&C>, trust: Option<&J>) -> J {
@@ -646,7 +654,7 @@ fn verify_core(id: &str, core: &C, view: Option<&C>, trust: Option<&J>) -> J {
         return held(&["OVER_CAP"]);
     }
     let bundle = j["bundle"].clone();
-    let (mut errors, complete) = cross_check_errors(&j, &bundle);
+    let (mut errors, complete, attested) = cross_check_errors(&j, &bundle, trust);
     let mut vi = j["verdict_input"].clone();
     if let Some(vw) = view {
         // §4.5: withheld fields come from THIS view's manifest, nowhere else
@@ -669,7 +677,7 @@ fn verify_core(id: &str, core: &C, view: Option<&C>, trust: Option<&J>) -> J {
         view_checks(vw, id, &bundle, &baseline["mark"], &mut errors);
     }
     let cross = errors.is_empty();
-    Report { parse_ok: true, layers, certificate_id: Some(id), core_present: true, cross_checks_ok: cross, vector, mark, errors: &errors, export_complete: complete }.json()
+    Report { parse_ok: true, layers, certificate_id: Some(id), core_present: true, cross_checks_ok: cross, vector, mark, errors: &errors, export_complete: complete, origin_attested: attested }.json()
 }
 
 fn run_view(view: &C, trust: Option<&J>) -> J {
@@ -734,7 +742,7 @@ pub fn verify_certificate_cbor(bytes: &[u8]) -> String {
 pub fn verify_certificate_cbor_with_trust(bytes: &[u8], trust: Option<&J>) -> String {
     serde_json::to_string(&run(bytes, trust)).unwrap_or_else(|_| {
         // unreachable for this value shape; fail closed rather than panic
-        r#"{"parse_ok":false,"layers":[],"certificate_id":null,"core_present":false,"cross_checks_ok":false,"vector":null,"mark":null,"errors":["PARSE"],"export_complete":null}"#.into()
+        r#"{"parse_ok":false,"layers":[],"certificate_id":null,"core_present":false,"cross_checks_ok":false,"vector":null,"mark":null,"errors":["PARSE"],"export_complete":null,"origin_attested":null}"#.into()
     })
 }
 

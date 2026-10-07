@@ -1,0 +1,148 @@
+{
+  "checkpoint_chain": [
+    {
+      "checkpoint": {
+        "body": {
+          "alg": "ed25519",
+          "origin": "evd://tenant/t_golden",
+          "prev_hash": "",
+          "root_hash": "950caa02c3bdc32610ce253ac5be7a6ca5c68f8780ea9f8604b2903a2e6ad36e",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 2,
+          "ts": "2026-01-01T00:00:00.000000Z"
+        },
+        "kid": "Vkdap1RjR0wChd9d",
+        "sig": "qkU2BYFj0x+7TD1ulofyXMbPaMGdcQ/XmcHZPUQcAdXxhDg/FD8jb426bU7ICfXOJBY16IkerI952mumvPnkAQ=="
+      }
+    }
+  ],
+  "entries": [
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InRvb2wuY2FsbCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7InBheWxvYWQiOiJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIn0sImNvbnRleHQiOnsiaSI6MH0sImlkZW1wb3RlbmN5X2tleSI6ImlkZW0tMCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "uvD7ZjsppVGN90swlnaEXhlMt2m4ceDEoD+Qx3Jy9g3nf8V/631IK2As2ZlHDl36wFfPu2T/u8EQNEfPeaFtCw=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "fd5ae5c122d3ed5d51bdf20538262797c98e71aa9388392946e8fecf4b877785"
+      ],
+      "leaf_index": 1
+    },
+    {
+      "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJqd2siOnsiYWxnIjoiRWREU0EiLCJjcnYiOiJFZDI1NTE5Iiwia2lkIjoiVmtkYXAxUmpSMHdDaGQ5ZCIsImt0eSI6Ik9LUCIsInVzZSI6InNpZyIsIngiOiJBNkVIdl9QT0VMNGRjTjBZNTB2QW1XZmsxakNicFExZkhkeUdaQkpWTWJnIn19LCJpZGVtcG90ZW5jeV9rZXkiOiJldmQta2V5LWNyZWF0ZWQtVmtkYXAxUmpSMHdDaGQ5ZCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9nb2xkZW4iLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjAwLjAwMDAwMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Vkdap1RjR0wChd9d",
+            "sig": "VBqI3aephPAuAxzMrr8a+1ejPItV4MNOjPrzKaTZsm9k4mhbNSt/mzRxTcezK5y+L4/nL35tY4mQbLevL8P8Dg=="
+          }
+        ]
+      },
+      "inclusion_proof": [
+        "1398368dff8cab0a44c523451bed320505c5a2f5ab884025ee9214a8e09ad6c7"
+      ],
+      "leaf_index": 0
+    }
+  ],
+  "export_manifest": {
+    "body": {
+      "origin": "evd://tenant/t_golden",
+      "producer": {
+        "capabilities": {
+          "bundle.schema": "evd/bundle/v1",
+          "canonical.jcs_max_depth": 64,
+          "checkpoint.fields": [
+            "origin",
+            "prev_hash",
+            "root_hash",
+            "schema",
+            "tree_size",
+            "ts"
+          ],
+          "checkpoint.optional": [
+            "alg"
+          ],
+          "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+          "checkpoint.schema": "evd/checkpoint/v1",
+          "checkpoint.signed_fields": [
+            "body",
+            "kid",
+            "sig"
+          ],
+          "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+          "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+          "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+          "export_manifest.schema": "evd/export-manifest/v1",
+          "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "merkle.leaf_prefix": "00",
+          "merkle.node_prefix": "01",
+          "receipt.max_parents": 32,
+          "receipt.optional": [
+            "alg",
+            "session_id",
+            "session_inferred"
+          ],
+          "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+          "receipt.required": [
+            "action_type",
+            "agent_id",
+            "commitments",
+            "context",
+            "idempotency_key",
+            "parents",
+            "schema",
+            "seq",
+            "tenant_id",
+            "ts_client",
+            "ts_server"
+          ],
+          "receipt.schema": "evd/receipt/v1",
+          "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+      },
+      "receipt_hashes": [
+        "14b9699cce69e02daa266f983f0f281758d97cb5fa5cfe7272fdddbb4ded85be",
+        "58724dcbfaa106906423f6718dba7d4cc714c95e5d07996d64504a27b36c209d"
+      ],
+      "schema": "evd/export-manifest/v1",
+      "target_checkpoint_hash": "6f0d8009aa7412f7c8c1b7488a7c2a63ca532d012b5cd04f3c5171cce6f8c9c4",
+      "ts": "2026-01-01T00:00:00.000000Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "vsOryFMhlpYwrpgODGuOK8LSxxp1TtnNC/Bgr2vmeyCa8yk0wUFdic6v+3EpxUHAo94w4tM2Zmgt2lOUzhtHBA=="
+  },
+  "jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "Vkdap1RjR0wChd9d",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+      }
+    ]
+  },
+  "origin": "evd://tenant/t_golden",
+  "schema": "evd/bundle/v1",
+  "target_checkpoint": {
+    "body": {
+      "alg": "ed25519",
+      "origin": "evd://tenant/t_golden",
+      "prev_hash": "",
+      "root_hash": "950caa02c3bdc32610ce253ac5be7a6ca5c68f8780ea9f8604b2903a2e6ad36e",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 2,
+      "ts": "2026-01-01T00:00:00.000000Z"
+    },
+    "kid": "Vkdap1RjR0wChd9d",
+    "sig": "qkU2BYFj0x+7TD1ulofyXMbPaMGdcQ/XmcHZPUQcAdXxhDg/FD8jb426bU7ICfXOJBY16IkerI952mumvPnkAQ=="
+  }
+}

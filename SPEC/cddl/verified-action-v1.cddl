@@ -17,7 +17,10 @@ b64   = text
 identity-result       = "VERIFIED" / "NOT_VERIFIED" / "CONFLICT"
 authority-result      = "VERIFIED" / "NOT_VERIFIED" / "CONFLICT"
 intent-result         = "RECORDED" / "NOT_RECORDED" / "CONFLICT"
-outcome-result        = "CORROBORATED" / "CLAIM_ONLY" / "CONTRADICTED" / "ORPHAN"
+outcome-result        = "MATCHED" / "CLAIM_ONLY" / "CONTRADICTED" / "ORPHAN"
+; "MATCHED" was spelled "CORROBORATED" before 1.2 (renamed: a deterministic
+; match proves no independence). Engines emit "MATCHED" only; readers of
+; 1.1.x artifacts treat the old spelling as deprecated for the same value.
 linkage-result        = "DIRECT" / "DETERMINISTIC" / "AMBIGUOUS" / "NONE"
 coverage-result       = "CLOSED" / "GAPPED" / "UNKNOWN"
 integrity-result      = "VALID" / "INVALID"

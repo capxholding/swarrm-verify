@@ -23,6 +23,35 @@ that the recorded payload was truthful.
 - Signature algorithm: **Ed25519**. `keyid` = base64url(SHA-256(raw public
   key))[:16] — deterministic from key material; verifiers MUST reject a JWK
   whose `kid` does not match its key.
+- The algorithm MAY be named explicitly by the optional body member `alg`
+  (see §3). Its **absence means `EdDSA`**, so every receipt written before
+  this member existed keeps its exact bytes and its exact verdict.
+- **Signature members (normative).** A signature object carries exactly
+  `keyid`, `sig`, and OPTIONALLY `alg`; every value MUST be a string. A
+  verifier MUST reject a signature object carrying any other member, and MUST
+  NOT ignore one. This is stated because ignoring an unrecognised member is
+  precisely how a named algorithm becomes meaningless: a claim nobody reads is
+  not a claim.
+- **Signature-object `alg` (normative, optional).** Names the algorithm of that
+  one signature. The only value implemented is `"EdDSA"`. **Absence means
+  `"EdDSA"`**, so every receipt issued before this member existed keeps its
+  verdict unchanged, and this is a pure addition. A verifier encountering any
+  other value MUST return NOT_VERIFIED. It MUST NOT verify the signatures it
+  understands and report success — there is no "verified except for the parts
+  we did not understand". The identifier is the JOSE/COSE name `EdDSA`,
+  matching the `alg` this repository already writes into a JWK and already
+  enforces in its key log — **not** the prose name `Ed25519` used above for the
+  curve — and exactly one spelling is accepted in this member, so that a
+  verifier cannot accept a second one by accident. Unlike the body `alg` (§3),
+  this member sits outside the DSSE PAE and is covered neither by the
+  signature nor by `receipt_hash`; because its only accepted value is
+  equivalent to its absence, it can turn a signature into a refusal but can
+  never make one verify. The two members are independent but share one
+  accepted spelling, `"EdDSA"`, in the body and on a signature object; a
+  receipt carrying both MUST satisfy both.
+  *Out of scope: implementing any further algorithm. This ships the ability to
+  NAME the algorithm and to REFUSE an unknown one; a classical + PQ hybrid is a
+  later format change, and it does not change what an unknown name means here.*
 
 **Size cap (normative).** The RFC 8785 canonical body MUST NOT exceed
 **8192 bytes**. Producing an oversize receipt is a producer-side error:
@@ -55,7 +84,23 @@ comparison identical across verifier implementations.
 
 The member set is closed. The eleven fields above are required; the additive
 `session_id` (non-empty string) and `session_inferred` (boolean) fields may
-appear only as a pair. Identity strings are non-empty and `action_type` is a
+appear only as a pair, and the additive `alg` field may appear alone.
+
+**`alg` — explicit algorithm identifier (normative).** `alg` names the
+signature algorithm of the receipt. It is OPTIONAL, and its absence means
+exactly `"EdDSA"` — the JOSE/COSE name used on a signature object (§2), and
+the only value either verifier recognises today. If present it MUST be the
+string `"EdDSA"`; a receipt whose `alg` is any other value — including the
+curve name `"ed25519"` in any case — or is not a string, is
+**NOT_VERIFIED**. This is a fail-closed rule, not a warning: a verifier MUST
+NOT ignore an algorithm it does not understand, and MUST NOT report a
+receipt as verified except for the parts it could not interpret. Because
+`alg` lives in the signed body it is covered by the DSSE signature and by
+`receipt_hash`, so it cannot be added, removed, or edited in transit. v1
+ships the *ability to name* the algorithm and to refuse an unknown one;
+introducing a second recognised value is a future format change.
+
+Identity strings are non-empty and `action_type` is a
 lowercase namespaced string. `commitments` maps non-empty names to lowercase
 SHA-256 hex, `context` is an object, and `parents` contains at most 32 distinct
 lowercase receipt hashes. Every receipt's `tenant_id` MUST equal the final

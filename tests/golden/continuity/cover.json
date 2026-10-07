@@ -1,0 +1,105 @@
+{
+  "cases": [
+    {
+      "continuity": [
+        {
+          "body": {
+            "appended": 30,
+            "from_hash": "5ca1b676ca5d8c0d243de1b862c267922758ab0a97b72efa6bb0159478320c34",
+            "from_tree_size": 10,
+            "origin": "evd://tenant/t_fixture",
+            "schema": "evd/continuity/v1",
+            "to_hash": "75f5b283e070bd7a21ba19cd58663761fc374dc1086e24f3f220919cbb9aa455",
+            "to_tree_size": 40
+          },
+          "kid": "0_zWL8OrFh10JU0Z",
+          "sig": "1PvR+4ATSvlMAU9CbczxearwEBI3lM+5+KxB9As49cuTA8izaKW4Jrsat7V/G5+VmrMa4OfUG/Gh1c1Ity6cDA=="
+        },
+        {
+          "body": {
+            "appended": 35,
+            "from_hash": "75f5b283e070bd7a21ba19cd58663761fc374dc1086e24f3f220919cbb9aa455",
+            "from_tree_size": 40,
+            "origin": "evd://tenant/t_fixture",
+            "schema": "evd/continuity/v1",
+            "to_hash": "bcb285646bb5f7d693c0b2cbcf603d13aa1d149b98fb6a1dd4cc8a5e8beef455",
+            "to_tree_size": 75
+          },
+          "kid": "0_zWL8OrFh10JU0Z",
+          "sig": "9f+AeSc/OB+vUrMkcfDd7pHo74w6h/bjGJEzs9q3TSZzNutQN6CH9OqvpQqjl3/N1xd0GA5B5bv6mdUOeoiMAg=="
+        }
+      ],
+      "expected_gaps": 0,
+      "name": "cover-tiles-the-chain",
+      "why": "both elided intervals are asserted; no discontinuity is DETECTABLE (not: nothing was omitted)"
+    },
+    {
+      "continuity": [
+        {
+          "body": {
+            "appended": 30,
+            "from_hash": "5ca1b676ca5d8c0d243de1b862c267922758ab0a97b72efa6bb0159478320c34",
+            "from_tree_size": 10,
+            "origin": "evd://tenant/t_fixture",
+            "schema": "evd/continuity/v1",
+            "to_hash": "75f5b283e070bd7a21ba19cd58663761fc374dc1086e24f3f220919cbb9aa455",
+            "to_tree_size": 40
+          },
+          "kid": "0_zWL8OrFh10JU0Z",
+          "sig": "1PvR+4ATSvlMAU9CbczxearwEBI3lM+5+KxB9As49cuTA8izaKW4Jrsat7V/G5+VmrMa4OfUG/Gh1c1Ity6cDA=="
+        }
+      ],
+      "expected_gaps": 1,
+      "name": "removed-interval",
+      "why": "THE CHECK: one assertion removed, so two presented checkpoints no longer meet"
+    },
+    {
+      "continuity": [],
+      "expected_gaps": 2,
+      "name": "removed-both",
+      "why": "a sparse chain asserting nothing proves nothing about either interval"
+    }
+  ],
+  "chain": [
+    {
+      "body": {
+        "origin": "evd://tenant/t_fixture",
+        "prev_hash": "",
+        "root_hash": "000000000000000000000000000000000000000000000000000000000000000a",
+        "schema": "evd/checkpoint/v1",
+        "tree_size": 10,
+        "ts": "2026-09-01T00:00:00Z"
+      },
+      "kid": "0_zWL8OrFh10JU0Z",
+      "sig": "sB+EuemNyJfGlIczX8QEc2UYgfLDwMyM0rus/sJWXjdLm/W5Vdbwl2qAAoVt1u+vKCr686eJipOGYPoTE2JaCw=="
+    },
+    {
+      "body": {
+        "origin": "evd://tenant/t_fixture",
+        "prev_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "root_hash": "0000000000000000000000000000000000000000000000000000000000000028",
+        "schema": "evd/checkpoint/v1",
+        "tree_size": 40,
+        "ts": "2026-09-02T00:00:00Z"
+      },
+      "kid": "0_zWL8OrFh10JU0Z",
+      "sig": "6O7I75eBRUWR83JxXu/DHWoGaWENfnQl8dcNvaOcZNJzcjUZUtAc+NVp3ThfPvkkYNcVLxmRbelI1RHH5lNlBw=="
+    },
+    {
+      "body": {
+        "origin": "evd://tenant/t_fixture",
+        "prev_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "root_hash": "000000000000000000000000000000000000000000000000000000000000004b",
+        "schema": "evd/checkpoint/v1",
+        "tree_size": 75,
+        "ts": "2026-09-03T00:00:00Z"
+      },
+      "kid": "0_zWL8OrFh10JU0Z",
+      "sig": "LOWfg+8NUo9VfmGIcLPkv9SFptesTPQQPiR9ScKZ0uHoBrYak6qym68TGneoJRkM+f5cnvDgIe0jfB3pUhgUDg=="
+    }
+  ],
+  "kid": "0_zWL8OrFh10JU0Z",
+  "origin": "evd://tenant/t_fixture",
+  "public_key_b64": "0MaTIx5Ms4wGd6hJUM5FGArRzjYknaVnuhINanBqjDU=",
+  "why": "Continuity assertions over the intervals a sparse chain elides. The chain is IDENTICAL in every case and every signature is valid; only the set of assertions differs, so a detected discontinuity is attributable to the cover and to nothing else. The law: this never claims nothing was omitted, only whether the operator's own assertions meet."
+}

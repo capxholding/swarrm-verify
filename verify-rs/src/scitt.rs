@@ -33,6 +33,7 @@ const PACK_FIELDS: [&str; 7] = ["schema", "certificate_id", "signed_statement", 
 const PACK_OPTIONAL_FIELDS: [&str; 2] = ["anchor_record", "tst_record"];
 const POLICY_FIELDS: [&str; 7] = ["schema", "policy_version", "ts_origin", "accepted_profiles", "max_statement_bytes", "ts_keys", "signature"];
 const CHECKPOINT_FIELDS: [&str; 6] = ["schema", "origin", "tree_size", "root_hash", "ts", "prev_hash"];
+const CHECKPOINT_OPTIONAL_FIELDS: [&str; 1] = ["alg"];
 
 fn object_fields<'a>(value: &'a Json, required: &[&str], optional: &[&str]) -> Option<&'a serde_json::Map<String, Json>> {
     let object = value.as_object()?;
@@ -125,6 +126,14 @@ fn hex32(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
+fn checkpoint_algorithm(body: &Value) -> Option<Option<&str>> {
+    match tmap(body, "alg") {
+        None => Some(None),
+        Some(Value::Text(value)) if value == "EdDSA" => Some(Some(value)),
+        Some(_) => None,
+    }
+}
+
 fn statement_profile(stmt: &crate::cose::Sign1, cid: &[u8], certificate_id: &str) -> bool {
     if stmt.payload.as_deref() != Some(cid) || cid.len() != 32 || !hex32(certificate_id) {
         return false;
@@ -156,14 +165,16 @@ fn receipt_profile(receipt: &crate::cose::Sign1) -> bool {
 /// `Checkpoint.from_dict` was corrected to reject such a body — leaving this as
 /// the more permissive engine on the same bytes.
 fn checkpoint_body(body: &Value) -> Option<(Json, &str, u64)> {
-    // Exactly six members, all present and well-typed. Extracted from
+    // Exactly the six required members plus the one admitted optional member,
+    // all present and well-typed. Extracted from
     // `checkpoint` to keep that function inside the §0.2·3a complexity ceiling.
-    if btext(body, "schema")? != CHECKPOINT_SCHEMA || map_len(body) != Some(6) {
+    let algorithm = checkpoint_algorithm(body)?;
+    if (btext(body, "schema")?, map_len(body)) != (CHECKPOINT_SCHEMA, Some(6 + usize::from(algorithm.is_some()))) {
         return None; // a member the signature does not cover is not "signed"
     }
     let root_hex = btext(body, "root_hash")?;
     let tree_size = as_uint(tmap(body, "tree_size")?)?;
-    let obj = json!({
+    let mut obj = json!({
         "schema": CHECKPOINT_SCHEMA,
         "origin": btext(body, "origin")?,
         "tree_size": tree_size,
@@ -171,6 +182,9 @@ fn checkpoint_body(body: &Value) -> Option<(Json, &str, u64)> {
         "ts": btext(body, "ts")?,
         "prev_hash": btext(body, "prev_hash")?,
     });
+    if let Some(value) = algorithm {
+        obj.as_object_mut()?.insert("alg".to_owned(), Json::String(value.to_owned()));
+    }
     Some((obj, root_hex, tree_size))
 }
 
@@ -181,12 +195,19 @@ fn checkpoint(unprotected: &Value) -> Option<(Json, String, Vec<u8>, u64)> {
 }
 
 fn checkpoint_json_body(body: &Json) -> bool {
-    object_fields(body, &CHECKPOINT_FIELDS, &[]).is_some() && body.get("schema").and_then(Json::as_str) == Some(CHECKPOINT_SCHEMA) && body.get("origin").and_then(Json::as_str).is_some() && body.get("tree_size").and_then(Json::as_u64).is_some() && body.get("root_hash").and_then(Json::as_str).is_some() && body.get("ts").and_then(Json::as_str).is_some() && body.get("prev_hash").and_then(Json::as_str).is_some()
+    object_fields(body, &CHECKPOINT_FIELDS, &CHECKPOINT_OPTIONAL_FIELDS).is_some()
+        && body.get("alg").is_none_or(|value| value.as_str() == Some("EdDSA"))
+        && body.get("schema").and_then(Json::as_str) == Some(CHECKPOINT_SCHEMA)
+        && body.get("origin").and_then(Json::as_str).is_some()
+        && body.get("tree_size").and_then(Json::as_u64).is_some()
+        && body.get("root_hash").and_then(Json::as_str).is_some()
+        && body.get("ts").and_then(Json::as_str).is_some()
+        && body.get("prev_hash").and_then(Json::as_str).is_some()
 }
 
 /// Verify the exact three-field SignedCheckpoint under locally-authorized TS
 /// keys. The checkpoint body is closed before canonicalization, so no unsigned
-/// member can ride beside the six fields the other verifier reconstructs.
+/// member can ride beside the admitted fields the other verifier reconstructs.
 pub(crate) fn verify_signed_checkpoint(checkpoint: &Json, keys: &BTreeMap<String, [u8; 32]>, expected_origin: Option<&str>) -> bool {
     if object_fields(checkpoint, &["body", "kid", "sig"], &[]).is_none() {
         return false;

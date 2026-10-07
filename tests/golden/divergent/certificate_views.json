@@ -1,0 +1,150 @@
+{
+  "_comment": [
+    "Rule 5 corpus: two certificate views of one action_id.",
+    "A certificate asserts ONE action, so two of them describing that action",
+    "differently contradicts the issuer against itself. The true negatives are",
+    "as load-bearing as the positives, because a fork claim is an accusation:",
+    "re-issue, a different action, and a different origin must all stay quiet.",
+    "Subjects are compared as whole signed material, never by certificate_id or",
+    "issuance time, which is exactly what keeps legitimate re-issue silent."
+  ],
+  "cases": [
+    {
+      "name": "conflict_action_class",
+      "expect_finding": true,
+      "expect_fields": ["action_class"],
+      "why": "one action_id certified as two different classes cannot both be true",
+      "a": [
+        {
+          "certificate_id": "cert-a-1",
+          "subject": {
+            "action_id": "act-7f3a",
+            "action_class": "payment.initiate",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-100"]
+          }
+        }
+      ],
+      "b": [
+        {
+          "certificate_id": "cert-b-1",
+          "subject": {
+            "action_id": "act-7f3a",
+            "action_class": "payment.cancel",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-100"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "conflict_subject_ids",
+      "expect_finding": true,
+      "expect_fields": ["subject_ids"],
+      "why": "the same action certified over two different subject sets",
+      "a": [
+        {
+          "certificate_id": "cert-a-2",
+          "subject": {
+            "action_id": "act-91bd",
+            "action_class": "payment.initiate",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-200"]
+          }
+        }
+      ],
+      "b": [
+        {
+          "certificate_id": "cert-b-2",
+          "subject": {
+            "action_id": "act-91bd",
+            "action_class": "payment.initiate",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-200", "inv-201"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "true_negative_legitimate_reissue",
+      "expect_finding": false,
+      "why": "identical signed subject under a new certificate_id is ordinary re-issue",
+      "a": [
+        {
+          "certificate_id": "cert-a-3",
+          "subject": {
+            "action_id": "act-c40e",
+            "action_class": "payment.initiate",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-300"]
+          }
+        }
+      ],
+      "b": [
+        {
+          "certificate_id": "cert-b-3-REISSUED",
+          "subject": {
+            "action_id": "act-c40e",
+            "action_class": "payment.initiate",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-300"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "true_negative_distinct_actions",
+      "expect_finding": false,
+      "why": "two different actions are not two views of one action",
+      "a": [
+        {
+          "certificate_id": "cert-a-4",
+          "subject": {
+            "action_id": "act-aaaa",
+            "action_class": "payment.initiate",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-400"]
+          }
+        }
+      ],
+      "b": [
+        {
+          "certificate_id": "cert-b-4",
+          "subject": {
+            "action_id": "act-bbbb",
+            "action_class": "payment.cancel",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-401"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "true_negative_distinct_origins",
+      "expect_finding": false,
+      "why": "divergence is defined over two views of ONE claimed log; a colliding action_id under a different origin is not a contradiction",
+      "a": [
+        {
+          "certificate_id": "cert-a-5",
+          "subject": {
+            "action_id": "act-dddd",
+            "action_class": "payment.initiate",
+            "origin": "evd://tenant/acme",
+            "subject_ids": ["inv-500"]
+          }
+        }
+      ],
+      "b": [
+        {
+          "certificate_id": "cert-b-5",
+          "subject": {
+            "action_id": "act-dddd",
+            "action_class": "payment.refund",
+            "origin": "evd://tenant/other-bank",
+            "subject_ids": ["inv-500"]
+          }
+        }
+      ]
+    }
+  ]
+}

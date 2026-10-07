@@ -1,0 +1,65 @@
+{
+ "cases": [
+  {
+   "name": "certificate_class_fork",
+   "builder": "_certificate_class_fork",
+   "expected_refused": "",
+   "expected_comparable": true,
+   "expected_divergent": true,
+   "expected_rules": [
+    "certificate-view-conflict",
+    "duplicate-seq",
+    "leaf-conflict",
+    "same-size-different-root"
+   ],
+   "why": "one action certified as two classes, each bound to a signed row of its own fork"
+  },
+  {
+   "name": "certificate_conflict_one_log",
+   "builder": "_certificate_conflict_one_log",
+   "expected_refused": "",
+   "expected_comparable": true,
+   "expected_divergent": true,
+   "expected_rules": [
+    "certificate-view-conflict"
+   ],
+   "why": "one log names the action under two classes; the certificates conflict, the history does not"
+  },
+  {
+   "name": "certificate_true_negative_reissue",
+   "builder": "_certificate_reissue",
+   "expected_refused": "",
+   "expected_comparable": true,
+   "expected_divergent": false,
+   "expected_rules": [],
+   "why": "identical subject under a new certificate_id is ordinary re-issue"
+  },
+  {
+   "name": "certificate_true_negative_distinct_actions",
+   "builder": "_certificate_distinct_actions",
+   "expected_refused": "",
+   "expected_comparable": true,
+   "expected_divergent": false,
+   "expected_rules": [],
+   "why": "two different actions are not two views of one action"
+  },
+  {
+   "name": "certificate_true_negative_distinct_origins",
+   "builder": "_certificate_distinct_origins",
+   "expected_refused": "",
+   "expected_comparable": false,
+   "expected_divergent": false,
+   "expected_rules": [],
+   "why": "a colliding action_id under another origin is another log's action"
+  },
+  {
+   "name": "certificate_relabelled_refused",
+   "builder": "_certificate_relabelled",
+   "expected_refused": "certificate 1 of side B does not verify offline \u2014 ACTION_CONTEXT_MISMATCH",
+   "expected_comparable": true,
+   "expected_divergent": false,
+   "expected_rules": [],
+   "why": "the compiler signed a relabelled class; only verification catches it"
+  }
+ ]
+}

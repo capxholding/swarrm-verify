@@ -23,7 +23,7 @@ const POP: [&str; 8] = ["dense_seq_range", "tree_size", "checkpoint_ref", "consi
 const GATED: [&str; 11] = ["identity", "authority", "intent", "integrity", "linkage", "outcome", "coverage", "coverage_basis", "temporal_binding", "fork_findings", "scitt_receipt"];
 const INTENT_CTX: [&str; 6] = ["action_id", "action_class", "grant_id", "grant_version", "binding_id", "policy_version"];
 const EST_TYPES: [&str; 2] = ["lineage.born", "lineage.adopted"];
-const ELIGIBLE_EXACT: [(&str, &str); 6] = [("identity", "VERIFIED"), ("authority", "VERIFIED"), ("intent", "RECORDED"), ("integrity", "VALID"), ("outcome", "CORROBORATED"), ("coverage", "CLOSED")];
+const ELIGIBLE_EXACT: [(&str, &str); 6] = [("identity", "VERIFIED"), ("authority", "VERIFIED"), ("intent", "RECORDED"), ("integrity", "VALID"), ("outcome", "MATCHED"), ("coverage", "CLOSED")];
 const MAX_SOURCE_PROOFS: usize = 128;
 const MAX_VERDICT_INPUT_BYTES: usize = 16 * 1024 * 1024;
 const MAX_TRUST_CONTEXT_BYTES: usize = 1024 * 1024;
@@ -377,7 +377,7 @@ fn has_open_finding(vi: &Value) -> bool {
 /// list extends it and may never retract it: the lying-agent fixture
 /// (tests/golden/reconcile/lying_agent_value_flip.json, claim 999999.99 vs
 /// event 380.99) one added key — source_manifest.material_fields=["currency"] —
-/// REPLACED the trio and flipped both engines CONTRADICTED → CORROBORATED.
+/// REPLACED the trio and flipped both engines CONTRADICTED → MATCHED.
 /// Spelling and order are pinned to verify/action.py::MATERIAL_FLOOR.
 pub(crate) const MATERIAL_FLOOR: [&str; 3] = ["value", "currency", "counterparty"];
 
@@ -479,7 +479,7 @@ fn linkage_outcome(vi: &Value) -> Result<(&'static str, Value), Raise> {
     if linkage == "DIRECT" || linkage == "DETERMINISTIC" {
         match material_agreement(vi, &cands[0]) {
             "MISMATCH" => return Ok((linkage, json!("CONTRADICTED"))), // terminal
-            "AGREE" if flag(&cands[0], "final") => return Ok((linkage, json!("CORROBORATED"))),
+            "AGREE" if flag(&cands[0], "final") => return Ok((linkage, json!("MATCHED"))),
             _ => {}
         }
     }

@@ -30,6 +30,18 @@ A checkpoint is a signed statement of the log's state:
 - Canonicalized (RFC 8785), signed Ed25519 in DSSE
   (`application/vnd.evd.checkpoint.v1+json`).
 - `prev_hash` = SHA-256 of the previous checkpoint body (chain).
+- The algorithm MAY be named explicitly by the optional body member `alg`
+  (mirroring the receipt format's rule). Its **absence means `EdDSA`**, so
+  every checkpoint written before this member existed keeps its exact bytes
+  and its exact verdict. If present it MUST be the string `"EdDSA"`, the
+  JOSE/COSE name the receipt format uses; a checkpoint whose `alg` is any
+  other value — including the curve name `"ed25519"` — or not a string, does
+  not verify. This is fail-closed: a verifier MUST NOT ignore an algorithm it
+  does not understand. `alg` lives in the signed body, covered by the DSSE
+  signature and by `prev_hash` chaining.
+- The body member set is CLOSED in both engines, including for members the
+  signer signed: an extra member — even a correctly-signed one — does not
+  verify. Signature coverage alone does not admit new members.
 - Verifiers MUST check: signatures, linkage, `tree_size` monotonicity,
   same `origin` — and Merkle **consistency proofs** between consecutive
   checkpoints (RFC 6962 §2.1.2 / RFC 9162 §2.1.4.2). A log that rewrites

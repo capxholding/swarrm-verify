@@ -1,6 +1,22 @@
 {
   "certificate_id": "15db19a6324ef55963ceb75f1e30e8e5071b040d244704d86da9efa2e41193f8",
   "families": {
+    "checkpoint_curve_name_alg": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "checkpoint_explicit_alg": {
+      "full_certificate": null,
+      "scitt_receipt_valid": true
+    },
+    "checkpoint_nontext_alg": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
+    "checkpoint_unknown_alg": {
+      "full_certificate": null,
+      "scitt_receipt_valid": false
+    },
     "empty_statement_issuer": {
       "full_certificate": null,
       "scitt_receipt_valid": false
@@ -44,5 +60,15 @@
       "full_certificate": null,
       "scitt_receipt_valid": false
     }
+  },
+  "issuer_roles": {
+    "families": {
+      "delegate": false,
+      "genesis": false,
+      "recorder": false,
+      "revoked_scitt": false,
+      "scitt": true
+    },
+    "ts_root": "2543b92ff1095511476adc8369db6ddc933665a11978dda1404ee1066ca9559d"
   }
 }

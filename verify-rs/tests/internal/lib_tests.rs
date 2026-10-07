@@ -250,3 +250,75 @@ fn hostile_hex_fails_checkpoint_roots_proofs_nonce_and_trust_keys() {
     let mixed = serde_json::json!({"source_keys": {"k": "aB"}});
     assert_eq!(trust::key_for(Some(&mixed), "source_keys", Some("k")).as_deref(), Some(&[0xabu8][..]));
 }
+
+// --- 1.4/algorithm-agility: an unknown algorithm fails CLOSED ---------------
+// The same hostile fixture the Python engine reads. Every signature in it is a
+// cryptographically valid Ed25519 signature over the same payload by the same
+// key, so a NOT_VERIFIED verdict is attributable to the CLAIM and nothing else.
+// Driven through env_signed_by, the path production actually takes.
+
+const ALGORITHM_FIXTURE: &str = include_str!("../../../tests/golden/algorithm_agility/signature-algorithm.json");
+
+#[test]
+fn signature_algorithm_fixture_agrees_case_for_case() {
+    let document: Value = serde_json::from_str(ALGORITHM_FIXTURE).unwrap();
+    let raw = B64.decode(document["public_key_b64"].as_str().unwrap()).unwrap();
+    let pubkey: [u8; 32] = raw.try_into().unwrap();
+    let kid = document["keyid"].as_str().unwrap();
+    let mut verified = 0;
+    for case in document["cases"].as_array().unwrap() {
+        let expected = case["expected"].as_bool().unwrap();
+        let name = case["name"].as_str().unwrap();
+        assert_eq!(env_signed_by(&case["envelope"], kid, &pubkey), expected, "{name}");
+        verified += usize::from(expected);
+    }
+    assert_eq!(verified, 2, "exactly the two compatibility cases verify");
+}
+
+// --- continuity: an elided interval is stated, and a hole is detected -------
+// The same fixture the Python engine reads. The chain is identical in every
+// case and every signature is valid; only the assertion set differs, so a
+// detected discontinuity is attributable to the cover and nothing else.
+
+const CONTINUITY_FIXTURE: &str = include_str!("../../../tests/golden/continuity/cover.json");
+
+#[test]
+fn continuity_cover_agrees_case_for_case() {
+    let document: Value = serde_json::from_str(CONTINUITY_FIXTURE).unwrap();
+    let chain: Vec<Value> = document["chain"].as_array().unwrap().clone();
+    for case in document["cases"].as_array().unwrap() {
+        let assertions: Vec<Value> = case["continuity"].as_array().unwrap().clone();
+        let expected = case["expected_gaps"].as_u64().unwrap() as usize;
+        let name = case["name"].as_str().unwrap();
+        assert_eq!(continuity_gaps(&chain, &assertions), expected, "{name}");
+    }
+}
+
+#[test]
+fn a_self_contradicting_assertion_covers_nothing() {
+    let good = serde_json::json!({"body": {"schema": "evd/continuity/v1", "origin": "o",
+        "from_hash": "a", "to_hash": "b", "from_tree_size": 10, "to_tree_size": 40, "appended": 30}});
+    assert!(continuity_self_consistent(&good));
+    for hostile in [
+        serde_json::json!({"body": {"schema": "evd/continuity/v1", "origin": "o", "from_hash": "a", "to_hash": "b", "from_tree_size": 10, "to_tree_size": 40, "appended": 999}}),
+        serde_json::json!({"body": {"schema": "evd/continuity/v1", "origin": "o", "from_hash": "a", "to_hash": "a", "from_tree_size": 10, "to_tree_size": 40, "appended": 30}}),
+        serde_json::json!({"body": {"schema": "evd/continuity/v2", "origin": "o", "from_hash": "a", "to_hash": "b", "from_tree_size": 10, "to_tree_size": 40, "appended": 30}}),
+        serde_json::json!({"body": {"schema": "evd/continuity/v1", "origin": "o", "from_hash": "a", "to_hash": "b", "from_tree_size": 40, "to_tree_size": 10, "appended": -30}}),
+    ] {
+        assert!(!continuity_self_consistent(&hostile), "{hostile}");
+    }
+}
+
+#[test]
+fn continuity_gaps_reach_the_levels_output_and_not_just_a_test() {
+    // The CHECK is that a removed interval RENDERS in Rust, so the count has
+    // to leave the engine. Before this the function existed and nothing in the
+    // library called it -- the compiler said so, and a passing unit test hid it.
+    let document: Value = serde_json::from_str(CONTINUITY_FIXTURE).unwrap();
+    let bundle = serde_json::json!({
+        "checkpoint_chain": document["chain"],
+        "continuity": document["cases"][1]["continuity"],
+    });
+    let rendered = verify_bundle_levels(&bundle, None);
+    assert!(rendered.get("continuity_gaps").is_some(), "the count must leave the engine");
+}

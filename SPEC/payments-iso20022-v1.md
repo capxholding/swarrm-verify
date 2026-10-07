@@ -59,7 +59,7 @@ file binds no claims.
 instruction, not an assertion of booking time, so the manifest's material
 fields for this class are EXACTLY the reconcile-v1 §5 floor
 `{value, currency, counterparty}`. Naming `source_effect_time` would make
-`CORROBORATED` structurally unreachable for an initiation-bound claim (a one-sided
+`MATCHED` structurally unreachable for an initiation-bound claim (a one-sided
 material field can never corroborate). A claim MAY still carry
 `source_effect_time`; if it does, the manifest tolerance comparison applies
 in the adverse direction only.
@@ -132,7 +132,7 @@ unbooked return is not yet a rail fact.
 
 **Reading rule (reconcile-v1 §7):** history is never overwritten and the original
 certificate is never made retroactively false. A fact carrying
-`correction_of` whose prior fact is `CORROBORATED` reads "the rail reversed a
+`correction_of` whose prior fact is `MATCHED` reads "the rail reversed a
 genuinely executed payment" — the fresh comparison against the return entry
 will typically state the material divergence. `CONTRADICTED` WITHOUT
 `correction_of` remains what it always was: a material disagreement on the

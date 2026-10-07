@@ -1,0 +1,56 @@
+{
+ "cases": [
+  {
+   "name": "same_size_different_root",
+   "builder": "_symmetric_fork",
+   "expected_comparable": true,
+   "expected_divergent": true,
+   "expected_rules": [
+    "duplicate-seq",
+    "leaf-conflict",
+    "same-size-different-root"
+   ]
+  },
+  {
+   "name": "successor_only_fork",
+   "builder": "_successor_only_fork",
+   "expected_comparable": true,
+   "expected_divergent": true,
+   "expected_rules": [
+    "forked-successor"
+   ]
+  },
+  {
+   "name": "unrelated_logs_leaf_zero",
+   "builder": "_unrelated_logs",
+   "expected_comparable": true,
+   "expected_divergent": true,
+   "expected_rules": [
+    "duplicate-seq",
+    "leaf-conflict",
+    "same-size-different-root"
+   ]
+  },
+  {
+   "name": "true_negative_reissued_checkpoint",
+   "builder": "_reissued_checkpoint",
+   "expected_comparable": true,
+   "expected_divergent": false,
+   "expected_rules": []
+  },
+  {
+   "name": "true_negative_key_epoch_change",
+   "builder": "_key_epoch_change",
+   "expected_comparable": true,
+   "expected_divergent": false,
+   "expected_rules": []
+  },
+  {
+   "name": "true_negative_sparse_profile_overlap",
+   "builder": "_sparse_profile_overlap",
+   "expected_comparable": true,
+   "expected_divergent": false,
+   "expected_rules": []
+  }
+ ]
+}

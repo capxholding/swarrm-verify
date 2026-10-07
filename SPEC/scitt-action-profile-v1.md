@@ -163,8 +163,12 @@ root, the certificate issuer key log and the `certificate_id`, ALL must hold or
 the result is `scitt_receipt_valid = false` (fail-closed, hostile input never
 crashes):
 1. Parse both as COSE_Sign1 (caps before crypto: ≤ 64 KiB each, depth ≤ 16).
-2. Issuer signature on `signed_statement` verifies under a key in the
-   certificate's own bundle key-log; the protected profile is exact (`alg=-8`,
+2. Issuer signature on `signed_statement` verifies under a `scitt-issuer`
+   role key (log-v1 §5) of the certificate's own bundle key log that the log
+   never revokes — the key set managed admission (§8) accepts; any other
+   historical log key, including the genesis issuer, is not one. The
+   statement commits to the `certificate_id`, which hashes that bundle, so it
+   postdates every revocation the log carries. The protected profile is exact (`alg=-8`,
    the frozen content type, non-empty CWT `iss`, CWT `sub` equal to the
    lowercase-hex `certificate_id`, and an optional well-formed signed scope);
    its payload is exactly the same 32-byte `certificate_id`.

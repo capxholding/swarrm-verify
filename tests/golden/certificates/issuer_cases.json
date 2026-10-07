@@ -1,0 +1,99 @@
+{
+  "cases": [
+    {
+      "cross_checks_ok": false,
+      "errors": [
+        "ORIGIN_NOT_ATTESTED"
+      ],
+      "file": "impostor.core.cbor",
+      "origin_attested": false,
+      "pin": "victim"
+    },
+    {
+      "cross_checks_ok": false,
+      "errors": [
+        "ORIGIN_NOT_ATTESTED"
+      ],
+      "file": "impostor.view.cbor",
+      "origin_attested": false,
+      "pin": "victim"
+    },
+    {
+      "cross_checks_ok": true,
+      "errors": [],
+      "file": "impostor.core.cbor",
+      "origin_attested": null,
+      "pin": null
+    },
+    {
+      "cross_checks_ok": true,
+      "errors": [],
+      "file": "impostor.core.cbor",
+      "origin_attested": true,
+      "pin": "impostor"
+    },
+    {
+      "cross_checks_ok": true,
+      "errors": [],
+      "file": "claim_only.core.cbor",
+      "origin_attested": true,
+      "pin": "victim"
+    },
+    {
+      "cross_checks_ok": true,
+      "errors": [],
+      "file": "claim_only.view.cbor",
+      "origin_attested": true,
+      "pin": "victim"
+    },
+    {
+      "cross_checks_ok": true,
+      "errors": [],
+      "file": "issuer_roles.view.genesis.cbor",
+      "origin_attested": null,
+      "pin": null
+    },
+    {
+      "cross_checks_ok": true,
+      "errors": [],
+      "file": "issuer_roles.view.delegate.cbor",
+      "origin_attested": null,
+      "pin": null
+    },
+    {
+      "cross_checks_ok": false,
+      "errors": [
+        "VIEW_SIGNATURE_INVALID"
+      ],
+      "file": "issuer_roles.view.recorder.cbor",
+      "origin_attested": null,
+      "pin": null
+    },
+    {
+      "cross_checks_ok": false,
+      "errors": [
+        "VIEW_SIGNATURE_INVALID"
+      ],
+      "file": "issuer_roles.view.scitt.cbor",
+      "origin_attested": null,
+      "pin": null
+    },
+    {
+      "cross_checks_ok": false,
+      "errors": [
+        "VIEW_SIGNATURE_INVALID"
+      ],
+      "file": "issuer_roles.view.revoked.cbor",
+      "origin_attested": null,
+      "pin": null
+    }
+  ],
+  "pins": {
+    "impostor": {
+      "evd://tenant/t_cert": "29acbae141bccaf0b22e1a94d34d0bc7361e526d0bfe12c89794bc9322966dd7"
+    },
+    "victim": {
+      "evd://tenant/t_cert": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+    }
+  }
+}

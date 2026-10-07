@@ -18,6 +18,8 @@ mod cbor;
 mod cbor_wire;
 #[path = "../src/cose.rs"]
 mod cose;
+#[path = "internal/cose_build.rs"]
+mod cose_build;
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64URL, Engine};
 use ciborium::Value;
@@ -133,7 +135,7 @@ fn build_matches_golden_byte_identical() {
     let vectors = load_vectors();
     assert!(vectors.len() >= 20, "only {} COSE vectors", vectors.len());
     for v in &vectors {
-        let built = cose::build_sign1(&v.protected, &v.unprotected, v.payload.as_deref(), &v.seed).unwrap_or_else(|| panic!("build refused {}", v.name));
+        let built = cose_build::build_sign1(&v.protected, &v.unprotected, v.payload.as_deref(), &v.seed).unwrap_or_else(|| panic!("build refused {}", v.name));
         assert_eq!(built, v.cose, "byte mismatch on {}", v.name);
     }
 }
@@ -169,7 +171,7 @@ fn verify_accepts_and_roundtrips() {
         // Header faithfulness: the decoded headers re-encode to the exact
         // golden bytes (ciborium Map is a Vec, so compare canonically, not by
         // source insertion order).
-        let rebuilt = cose::build_sign1(&s.protected, &s.unprotected, s.payload.as_deref(), &v.seed).unwrap_or_else(|| panic!("rebuild refused {}", v.name));
+        let rebuilt = cose_build::build_sign1(&s.protected, &s.unprotected, s.payload.as_deref(), &v.seed).unwrap_or_else(|| panic!("rebuild refused {}", v.name));
         assert_eq!(rebuilt, v.cose, "header round-trip mismatch on {}", v.name);
     }
 }

@@ -1,0 +1,168 @@
+{
+ "checkpoint_chain": [
+  {
+   "checkpoint": {
+    "body": {
+     "origin": "evd://tenant/t_pair",
+     "prev_hash": "",
+     "root_hash": "27e18d6d89ff95e03a13e046c02d6d50341985692f33ca5620c74b37a0795343",
+     "schema": "evd/checkpoint/v1",
+     "tree_size": 3,
+     "ts": "2026-01-01T00:10:00Z"
+    },
+    "kid": "LABs8EZ868oIL3mv",
+    "sig": "bti3YXJ9c/1g4dwImtGZabO/u2SuwehfUHBxIMqlvt9SGuJR6N2Zpfyj9j/HuGpXSmLFxQE7xZceqmF5V53XAQ=="
+   }
+  },
+  {
+   "checkpoint": {
+    "body": {
+     "origin": "evd://tenant/t_pair",
+     "prev_hash": "5067e693f57787ca4401626f29e70df12fa2c04d120d1a63d222fb350123c31f",
+     "root_hash": "2fdc56ad6b335fb40b7c41be64ba639314cffc7856c93f33a3ceac034e70394c",
+     "schema": "evd/checkpoint/v1",
+     "tree_size": 5,
+     "ts": "2026-01-01T00:21:00Z"
+    },
+    "kid": "LABs8EZ868oIL3mv",
+    "sig": "3aw6IUSKRpaUMvSY57/IUbAFfTHimc+ReQWDiFgLsPuhUS0YVC8t+7Z1JxwFjXEfhcR7rulc+/noj8uC5MFpAA=="
+   },
+   "consistency_from_prev": [
+    "80288f46c69924001a93352b78cc1c263f9f2c99a1db0625cd346f20edc6f041",
+    "d6b0904e44fe29229e1e84d07369e08c613a0eacf8ae42978a7a57123cea2e58",
+    "b5dd4c48260123a9fc3ee3e12a4744570f0530867ca838d44415896655f30fa9",
+    "f30cdfad473e452a5a9b459953f4507df8d27ee1465199bd23489de78b468cd1"
+   ]
+  }
+ ],
+ "entries": [
+  {
+   "envelope": {
+    "payload": "eyJhY3Rpb25fdHlwZSI6ImRhdGEucmVhZCIsImFnZW50X2lkIjoiYWdlbnRfYiIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJub3RlIjoiZmIyIn0sImlkZW1wb3RlbmN5X2tleSI6ImZiMiIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9wYWlyIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowN1oiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA3WiJ9",
+    "payloadType": "application/vnd.evd.receipt.v1+json",
+    "signatures": [
+     {
+      "keyid": "LABs8EZ868oIL3mv",
+      "sig": "awhE7eqKWuPeVp1BA0YmLWdnZSCfE8hNZURjZrRCURtbW/6x7YOdxDnwR4J331Ma0z+ALRdQnut323Ac0N4uDQ=="
+     }
+    ]
+   },
+   "inclusion_proof": [
+    "4df852177ddf5e1a0051001fde41f12191184787a4a3aed44dee6ee43f006a8b"
+   ],
+   "leaf_index": 4
+  },
+  {
+   "envelope": {
+    "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhaXIiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+    "payloadType": "application/vnd.evd.receipt.v1+json",
+    "signatures": [
+     {
+      "keyid": "LABs8EZ868oIL3mv",
+      "sig": "Mxz+c3/mmNAHfhNM2luxXkQQAl8bO+HJ02xPlF9dzBbZhJqr0xT7R65fMX7r1gSWkXSfTk40o83P+SjV1jtPAQ=="
+     }
+    ]
+   },
+   "inclusion_proof": [
+    "ab89ff14d43972e5b4cc401a6c5a2f041c861108b5634b0858305120040fe4b8",
+    "801f9e432bfef1e25acb51781000b3299113af5b77588b724d2ad995c751dc0b",
+    "f30cdfad473e452a5a9b459953f4507df8d27ee1465199bd23489de78b468cd1"
+   ],
+   "leaf_index": 0
+  }
+ ],
+ "export_manifest": {
+  "body": {
+   "origin": "evd://tenant/t_pair",
+   "producer": {
+    "capabilities": {
+     "bundle.schema": "evd/bundle/v1",
+     "canonical.jcs_max_depth": 64,
+     "checkpoint.fields": [
+      "origin",
+      "prev_hash",
+      "root_hash",
+      "schema",
+      "tree_size",
+      "ts"
+     ],
+     "checkpoint.optional": [
+      "alg"
+     ],
+     "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+     "checkpoint.schema": "evd/checkpoint/v1",
+     "checkpoint.signed_fields": [
+      "body",
+      "kid",
+      "sig"
+     ],
+     "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+     "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+     "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+     "export_manifest.schema": "evd/export-manifest/v1",
+     "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "merkle.leaf_prefix": "00",
+     "merkle.node_prefix": "01",
+     "receipt.max_parents": 32,
+     "receipt.optional": [
+      "alg",
+      "session_id",
+      "session_inferred"
+     ],
+     "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+     "receipt.required": [
+      "action_type",
+      "agent_id",
+      "commitments",
+      "context",
+      "idempotency_key",
+      "parents",
+      "schema",
+      "seq",
+      "tenant_id",
+      "ts_client",
+      "ts_server"
+     ],
+     "receipt.schema": "evd/receipt/v1",
+     "schema": "evd/capability-digest/v1"
+    },
+    "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+   },
+   "receipt_hashes": [
+    "2b628718916f29f55e28dc444377540d758b7b320e26bdab99ca03574bf2f394",
+    "ee5706c67644af3b10cb28166b164e2c3f671685d39885c6b533ee754fc4e1f3"
+   ],
+   "schema": "evd/export-manifest/v1",
+   "target_checkpoint_hash": "42a4649b63030292d072db8ff2b49fe5603c3294868cadfb7f9141f15fd8280c",
+   "ts": "2026-01-01T00:21:00Z"
+  },
+  "kid": "LABs8EZ868oIL3mv",
+  "sig": "O/xqRFOMOOWJqRtaq4eQEpy8EEBr7J5uuyXFYxVcGnYy1BuzwVZ36dy9kswNec2cTvn1ZkKKYNhCSl5VUbAKAQ=="
+ },
+ "jwks": {
+  "keys": [
+   {
+    "alg": "EdDSA",
+    "crv": "Ed25519",
+    "kid": "LABs8EZ868oIL3mv",
+    "kty": "OKP",
+    "use": "sig",
+    "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+   }
+  ]
+ },
+ "origin": "evd://tenant/t_pair",
+ "schema": "evd/bundle/v1",
+ "target_checkpoint": {
+  "body": {
+   "origin": "evd://tenant/t_pair",
+   "prev_hash": "5067e693f57787ca4401626f29e70df12fa2c04d120d1a63d222fb350123c31f",
+   "root_hash": "2fdc56ad6b335fb40b7c41be64ba639314cffc7856c93f33a3ceac034e70394c",
+   "schema": "evd/checkpoint/v1",
+   "tree_size": 5,
+   "ts": "2026-01-01T00:21:00Z"
+  },
+  "kid": "LABs8EZ868oIL3mv",
+  "sig": "3aw6IUSKRpaUMvSY57/IUbAFfTHimc+ReQWDiFgLsPuhUS0YVC8t+7Z1JxwFjXEfhcR7rulc+/noj8uC5MFpAA=="
+ }
+}

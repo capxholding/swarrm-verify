@@ -92,6 +92,20 @@ fn the_fixture_carries_all_four_shown_view_members_naming_a_carried_checkpoint()
 }
 
 #[test]
+fn rewriting_the_payload_unchanged_still_verifies() {
+    // The control for the mutations below: re-encoding an unchanged body must
+    // reproduce the signed bytes, so a rejection there is caused by the member
+    // edit and not by the rewrite itself.
+    let mut bundle = load_bundle();
+    let index = cocommit_index(&bundle);
+    let original = bundle["entries"][index]["envelope"]["payload"].clone();
+    let body = decode_payload(&bundle["entries"][index]);
+    rewrite_payload(&mut bundle, &body);
+    assert_eq!(bundle["entries"][index]["envelope"]["payload"], original);
+    assert!(swarrm_verify::verify_bundle(&bundle), "an unchanged rewrite must still verify");
+}
+
+#[test]
 fn mutating_a_shown_view_member_cannot_stay_silent() {
     let honest = load_bundle();
     assert!(swarrm_verify::verify_bundle(&honest), "control fixture must verify");

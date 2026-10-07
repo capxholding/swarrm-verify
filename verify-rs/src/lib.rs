@@ -162,10 +162,7 @@ pub(crate) fn key_from_jwk(jwk: &Value) -> Option<([u8; 32], String)> {
 }
 
 pub(crate) fn ed25519_verify(pubkey: &[u8; 32], msg: &[u8], sig: &[u8]) -> bool {
-    let vk = match VerifyingKey::from_bytes(pubkey) {
-        Ok(v) => v,
-        Err(_) => return false,
-    };
+    let Ok(vk) = VerifyingKey::from_bytes(pubkey) else { return false };
     if sig.len() != 64 {
         return false;
     }
@@ -178,8 +175,10 @@ fn envelope_message(env: &Value) -> Option<Vec<u8>> {
     Some(pae(env.get("payloadType")?.as_str()?, &payload_of(env)?))
 }
 
+/// 1.4/algorithm-agility: the field set is CLOSED and an unknown `alg` fails closed. Before this, every member but `sig` was ignored, so any claim at all rode through unread -- "verified except for the parts we did not understand". Absence of `alg` means EdDSA, which is what every receipt ever issued means, so no existing verdict moves.
 fn signature_valid(sig: &Value, message: &[u8], pubkey: &[u8; 32]) -> bool {
-    sig.get("sig").and_then(Value::as_str).and_then(|raw| B64.decode(raw).ok()).is_some_and(|raw| ed25519_verify(pubkey, message, &raw))
+    let Some(o) = sig.as_object() else { return false };
+    o.contains_key("keyid") && o.iter().all(|(n, v)| matches!(n.as_str(), "keyid" | "sig" | "alg") && v.is_string()) && o.get("alg").is_none_or(|v| v.as_str() == Some("EdDSA")) && sig.get("sig").and_then(Value::as_str).and_then(|raw| B64.decode(raw).ok()).is_some_and(|raw| ed25519_verify(pubkey, message, &raw))
 }
 
 pub(crate) fn env_signed_by(env: &Value, kid: &str, pubkey: &[u8; 32]) -> bool {
@@ -227,7 +226,7 @@ fn disclosure_text(value: &str) -> bool {
 fn receipt_body_valid(body: &Value, expected_tenant: Option<&str>) -> bool {
     const REQUIRED: [&str; 11] = ["schema", "tenant_id", "agent_id", "seq", "action_type", "commitments", "context", "parents", "ts_client", "ts_server", "idempotency_key"];
     let Some(object) = body.as_object() else { return false };
-    let optional = ["session_id", "session_inferred"];
+    let optional = ["alg", "session_id", "session_inferred"];
     if REQUIRED.iter().any(|field| !object.contains_key(*field)) || object.keys().any(|field| !REQUIRED.contains(&field.as_str()) && !optional.contains(&field.as_str())) {
         return false;
     }
@@ -246,7 +245,7 @@ fn receipt_body_valid(body: &Value, expected_tenant: Option<&str>) -> bool {
         (Some(id), Some(inferred)) => id.as_str().is_some_and(safe_identity_text) && inferred.is_boolean(),
         _ => false,
     };
-    commitments && body.get("context").is_some_and(Value::is_object) && parents && body.get("ts_client").and_then(Value::as_str).is_some_and(canonical_utc) && body.get("ts_server").and_then(Value::as_str).is_some_and(canonical_utc) && session
+    commitments && body.get("context").is_some_and(Value::is_object) && parents && body.get("ts_client").and_then(Value::as_str).is_some_and(canonical_utc) && body.get("ts_server").and_then(Value::as_str).is_some_and(canonical_utc) && session && body.get("alg").is_none_or(|alg| alg.as_str() == Some("EdDSA"))
 }
 
 fn tenant_from_origin(origin: &str) -> Option<&str> {
@@ -306,6 +305,8 @@ struct KeyState {
     revoked_at: Option<(u64, String)>,
     non_issuer: bool,
     recorder: bool,
+    /// Created with the constrained SCITT-issuer role; rotation never transfers it.
+    scitt: bool,
 }
 
 /// The trust root of the key-log replay: all keys and their immutable state.
@@ -323,6 +324,12 @@ struct BundleFacts {
     recorder_attested: Vec<u64>,
     trusted_tst_checkpoints: Vec<String>,
     chain_sizes: BTreeMap<String, u64>,
+    /// Elided intervals no continuity assertion covers. Absence of assertions never gates; a hole in a cover that WAS asserted is a detected discontinuity, and the Rust engine must render it identically to the Python one.
+    continuity_gaps: usize,
+    continuity_present: bool,
+    continuity_ok: bool,
+    /// Mirror of `BundleReport.origin_attested`, settled only for a verified bundle.
+    origin_attested: Option<bool>,
 }
 
 fn collect_key_entries(entries: &[Value]) -> Vec<(u64, &Value, Value)> {
@@ -409,7 +416,7 @@ fn apply_key_created(kl: &mut KeyLog, pos: usize, leaf: u64, env: &Value, ctx: &
         return false;
     }
     kl.keys.insert(kid.clone(), material);
-    kl.state.insert(kid, KeyState { introduced: (leaf, effective), revoked_at: None, non_issuer: role.is_some() || !issuer_sponsored, recorder: role == Some("recorder") });
+    kl.state.insert(kid, KeyState { introduced: (leaf, effective), revoked_at: None, non_issuer: role.is_some() || !issuer_sponsored, recorder: role == Some("recorder"), scitt: role == Some("scitt-issuer") });
     true
 }
 
@@ -427,20 +434,15 @@ fn apply_key_rotated(kl: &mut KeyLog, leaf: u64, env: &Value, ctx: &Value, jwk: 
         return false;
     }
     // continuity: prev key signed canonical(jwk)
-    let jwk_canon = match jcs::canonical_checked(jwk) {
-        Some(c) => c,
-        None => return false, // over-deep / non-integer jwk cannot verify
-    };
-    let cont = match B64.decode(continuity.unwrap()) {
-        Ok(c) => c,
-        Err(_) => return false,
-    };
+    // over-deep / non-integer jwk cannot verify
+    let Some(jwk_canon) = jcs::canonical_checked(jwk) else { return false };
+    let Ok(cont) = B64.decode(continuity.unwrap()) else { return false };
     if !ed25519_verify(&kl.keys[prev_kid], &jwk_canon, &cont) {
         return false;
     }
     let non_issuer = kl.state.get(prev_kid).is_some_and(|state| state.non_issuer);
     kl.keys.insert(kid.clone(), material);
-    kl.state.insert(kid, KeyState { introduced: (leaf, effective), revoked_at: None, non_issuer, recorder: false });
+    kl.state.insert(kid, KeyState { introduced: (leaf, effective), revoked_at: None, non_issuer, recorder: false, scitt: false });
     true
 }
 
@@ -478,10 +480,7 @@ pub(crate) fn replay_key_log(entries: &[Value]) -> KeyLog {
         if !canonical_utc(ts) {
             return kl;
         }
-        let (material, kid) = match key_from_jwk(&jwk) {
-            Some(m) => m,
-            None => return kl,
-        };
+        let Some((material, kid)) = key_from_jwk(&jwk) else { return kl };
         let applied = match action {
             "evd.key.created" => apply_key_created(&mut kl, pos, *leaf, env, &ctx, ts, effective, kid, material),
             "evd.key.rotated" => apply_key_rotated(&mut kl, *leaf, env, &ctx, &jwk, ts, effective, kid, material),
@@ -499,6 +498,58 @@ pub(crate) fn replay_key_log(entries: &[Value]) -> KeyLog {
 pub(crate) fn checkpoint_body_hash(cp: &Value) -> Option<String> {
     let body = cp.get("body")?;
     Some(hex(&sha256(&jcs::canonical_checked(body)?)))
+}
+
+/// Continuity assertions: whether the operator's statements TILE the chain they presented.
+///
+/// A dense chain is already its own statement -- `prev_hash` meeting the predecessor's body hash leaves nothing elided. A SPARSE chain elides intervals, and an elided interval with no assertion over it is a hole in what was asserted. Returns the count of such holes. It is a verdict about the assertions and never about the world: absence is not provable and nothing here claims it is.
+pub(crate) fn continuity_gaps(chain: &[Value], assertions: &[Value]) -> usize {
+    let covered: Vec<(String, String)> = assertions
+        .iter()
+        .filter(|a| continuity_self_consistent(a))
+        .filter_map(|a| {
+            let b = a.get("body")?;
+            Some((b.get("from_hash")?.as_str()?.to_string(), b.get("to_hash")?.as_str()?.to_string()))
+        })
+        .collect();
+    chain
+        .windows(2)
+        .filter(|pair| {
+            let (Some(first), Some(second)) = (checkpoint_body_hash(&pair[0]), checkpoint_body_hash(&pair[1])) else { return true };
+            if pair[1].get("body").and_then(|b| b.get("prev_hash")).and_then(Value::as_str) == Some(first.as_str()) {
+                return false;
+            }
+            !covered.iter().any(|(f, t)| *f == first && *t == second)
+        })
+        .count()
+}
+
+/// Mirror of verify/verifier.py::_assess_continuity as (present, ok, gaps). One assertion that is not the declared shape, not signed by a log key or about another origin makes the cover unreadable: ok is false and no gap is counted, where Python stops. Counting around it instead would let an unsigned statement cover an interval and silence a detected discontinuity.
+fn assess_continuity(bundle: &Value, chain: &[Value], kl: &KeyLog) -> (bool, bool, usize) {
+    let Some(raw) = bundle.get("continuity").filter(|v| !v.is_null()) else { return (false, true, continuity_gaps(chain, &[])) };
+    let Some(items) = raw.as_array() else { return (false, false, 0) };
+    if !items.iter().all(|item| continuity_admissible(item, kl, bundle.get("origin"))) {
+        return (!items.is_empty(), false, 0);
+    }
+    let gaps = continuity_gaps(chain, items);
+    (!items.is_empty(), items.is_empty() || gaps == 0, gaps)
+}
+
+/// core/continuity.py's `SignedContinuity.from_dict` plus `verify_continuity`: exactly `body`/`kid`/`sig`, exactly the seven body members, non-empty text, non-negative integers, the bundle's origin, and an ed25519 signature over the canonical body by a log key.
+fn continuity_admissible(item: &Value, kl: &KeyLog, origin: Option<&Value>) -> bool {
+    const MEMBERS: [&str; 7] = ["schema", "origin", "from_hash", "to_hash", "from_tree_size", "to_tree_size", "appended"];
+    let (Some(outer), Some(body)) = (item.as_object(), item.get("body").and_then(Value::as_object)) else { return false };
+    let shaped = outer.len() == 3 && body.len() == 7 && MEMBERS.iter().all(|m| body.contains_key(*m)) && ["from_tree_size", "to_tree_size", "appended"].iter().all(|m| body[*m].is_u64()) && ["origin", "from_hash", "to_hash"].iter().all(|m| body[*m].as_str().is_some_and(|t| !t.is_empty()));
+    let (Some(key), Some(sig)) = (item.get("kid").and_then(Value::as_str).and_then(|kid| kl.keys.get(kid)), item.get("sig").and_then(Value::as_str).and_then(|s| B64.decode(s).ok())) else { return false };
+    shaped && body.get("origin") == origin && continuity_self_consistent(item) && jcs::canonical_checked(&item["body"]).is_some_and(|canon| ed25519_verify(key, &canon, &sig))
+}
+
+/// An assertion that disagrees with its own endpoints is two claims, not evidence about an interval; admitting it would let a quiet interval be asserted over a busy one.
+pub(crate) fn continuity_self_consistent(assertion: &Value) -> bool {
+    let Some(b) = assertion.get("body") else { return false };
+    let (Some(from), Some(to), Some(appended)) = (b.get("from_tree_size").and_then(Value::as_i64), b.get("to_tree_size").and_then(Value::as_i64), b.get("appended").and_then(Value::as_i64)) else { return false };
+    let (Some(fh), Some(th)) = (b.get("from_hash").and_then(Value::as_str), b.get("to_hash").and_then(Value::as_str)) else { return false };
+    b.get("schema").and_then(Value::as_str) == Some("evd/continuity/v1") && from >= 0 && to >= from && appended == to - from && fh != th
 }
 
 pub(crate) fn hex(b: &[u8]) -> String {
@@ -522,18 +573,23 @@ fn proof_hashes(v: Option<&Value>) -> Option<Vec<[u8; 32]>> {
 }
 
 fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool {
+    // The body member set is closed HERE, not only by signature coverage: an
+    // operator-SIGNED extra member canonicalises consistently and would verify,
+    // while Python's Checkpoint.from_dict refuses it — the divergence mirror of
+    // the unsigned-member story in that docstring. `alg` is the one optional
+    // member; absence means EdDSA and an unrecognised value never verifies.
+    const CHECKPOINT_MEMBERS: [&str; 7] = ["schema", "origin", "tree_size", "root_hash", "ts", "prev_hash", "alg"];
     let Some(kid) = cp.get("kid").and_then(|v| v.as_str()) else { return false };
     let Some(pubkey) = keys.get(kid) else { return false };
     let Some(body) = cp.get("body") else { return false };
+    let Some(object) = body.as_object() else { return false };
+    if object.keys().any(|k| !CHECKPOINT_MEMBERS.contains(&k.as_str())) || body.get("alg").is_some_and(|alg| alg.as_str() != Some("EdDSA")) {
+        return false;
+    }
     let Some(sig_b64) = cp.get("sig").and_then(|v| v.as_str()) else { return false };
-    let sig = match B64.decode(sig_b64) {
-        Ok(s) => s,
-        Err(_) => return false,
-    };
-    let canon = match jcs::canonical_checked(body) {
-        Some(c) => c,
-        None => return false, // over-deep / non-integer body cannot verify
-    };
+    let Ok(sig) = B64.decode(sig_b64) else { return false };
+    // over-deep / non-integer body cannot verify
+    let Some(canon) = jcs::canonical_checked(body) else { return false };
     let msg = pae(CHECKPOINT_TYPE, &canon);
     ed25519_verify(pubkey, &msg, &sig)
 }
@@ -684,8 +740,20 @@ fn check_entry_inclusion(e: &Value, payload: &[u8], size: u64, root: &[u8]) -> b
     merkle::verify_inclusion(&leaf_hash, leaf_index, size, &proof, root)
 }
 
+/// The envelope member set is CLOSED, exactly as `core/receipt_wire.py::Envelope.from_json`
+/// closes it. This engine used to look the three members up and ignore the rest, so an
+/// envelope Python refused as "unknown or missing members" verified here (golden
+/// `receipt_envelope_unknown_member`). Two verifiers that disagree on the same bytes are
+/// not two verifiers; and only a closed set lets a member defined later be admitted by name.
+fn envelope_members_closed(env: &Value) -> bool {
+    env.as_object().is_some_and(|members| members.len() == 3 && ["payload", "payloadType", "signatures"].iter().all(|k| members.contains_key(*k)))
+}
+
 fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8], covers: &[(u64, i64)], expected_tenant: &str) -> bool {
     let env = &e["envelope"];
+    if !envelope_members_closed(env) {
+        return false;
+    }
     let Some(payload) = payload_of(env) else { return false };
     let Some(body) = canonical_body(&payload) else { return false };
     // schema
@@ -1093,6 +1161,7 @@ fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog,
         return false;
     }
     facts.chain_sizes = checkpoints.into_iter().map(|(hash, (_ts, size))| (hash, size)).collect();
+    (facts.continuity_present, facts.continuity_ok, facts.continuity_gaps) = assess_continuity(bundle, &chain, kl);
     true
 }
 
@@ -1191,10 +1260,7 @@ fn disclosure_committed_value(raw: &[u8], field: &str) -> Option<String> {
 /// verify/disclosure.py — weak or malformed input is false, never a panic;
 /// this does not re-verify the bundle itself.
 fn verify_disclosure(pkg: &Value, bundle: &Value) -> bool {
-    let (rh, field, domain, nonce, payload) = match disclosure_fields(pkg) {
-        Some(t) => t,
-        None => return false,
-    };
+    let Some((rh, field, domain, nonce, payload)) = disclosure_fields(pkg) else { return false };
     let Some(entries) = bundle.get("entries").and_then(|v| v.as_array()) else { return false };
     for e in entries {
         let raw = match e.get("envelope").and_then(payload_of) {
@@ -1224,7 +1290,7 @@ pub fn verify_disclosure_json(package_json: &[u8], bundle_json: &[u8]) -> bool {
 
 /// Verify an evd/bundle/v1 document. Returns true iff VERIFIED.
 pub fn verify_bundle(bundle: &Value) -> bool {
-    verify_bundle_report(bundle).0
+    verify_bundle_report(bundle, None).0
 }
 
 /// E3 leg (temporal-authority replay) per SPEC/receipt-v1 §5 (amended) — mirror of
@@ -1255,7 +1321,7 @@ fn entry_recorder_attested(env: &Value, kl: &KeyLog, trust: Option<&Value>) -> b
 /// exposes on its report, pinned across engines by expected_evidence.json.
 pub fn verify_bundle_levels(bundle: &Value, trust: Option<&Value>) -> Value {
     let facts = verify_bundle_facts(bundle, trust);
-    serde_json::json!({"ok": facts.ok, "recorder_attested": facts.recorder_attested, "trusted_tst_checkpoints": facts.trusted_tst_checkpoints, "chain_sizes": facts.chain_sizes})
+    serde_json::json!({"ok": facts.ok, "recorder_attested": facts.recorder_attested, "trusted_tst_checkpoints": facts.trusted_tst_checkpoints, "chain_sizes": facts.chain_sizes, "continuity_gaps": facts.continuity_gaps, "continuity_present": facts.continuity_present, "continuity_ok": facts.continuity_ok})
 }
 
 /// (VERIFIED, export-completeness tri-state). The certificate layer computed
@@ -1264,9 +1330,18 @@ pub fn verify_bundle_levels(bundle: &Value, trust: Option<&Value>) -> Value {
 /// while a bundle consumer read "VERIFIED (completeness unproven)". `None` —
 /// no manifest carried, or the run never reached the manifest — is NOT
 /// failure, and nothing in either engine gates on it.
-pub(crate) fn verify_bundle_report(bundle: &Value) -> (bool, Option<bool>) {
-    let facts = verify_bundle_facts(bundle, None);
-    (facts.ok, facts.complete)
+pub(crate) fn verify_bundle_report(bundle: &Value, trust: Option<&Value>) -> (bool, Option<bool>, Option<bool>) {
+    let facts = verify_bundle_facts(bundle, trust);
+    (facts.ok, facts.complete, facts.origin_attested)
+}
+
+/// verify/verifier.py::_origin_attested: None when the relying party named no
+/// key for this origin, else whether THAT key signed the target checkpoint —
+/// possession, never mere membership, since a log may enrol anyone's public key.
+fn origin_attested(bundle: &Value, kl: &KeyLog, trust: Option<&Value>) -> Option<bool> {
+    let expected = trust::key_for(trust, "log_keys", bundle.get("origin").and_then(Value::as_str))?;
+    let kid = bundle["target_checkpoint"].get("kid").and_then(Value::as_str).unwrap_or("");
+    Some(kl.keys.get(kid).is_some_and(|key| key.as_slice() == expected.as_slice()))
 }
 
 fn verify_bundle_facts(bundle: &Value, trust: Option<&Value>) -> BundleFacts {
@@ -1301,7 +1376,9 @@ fn verify_bundle_facts(bundle: &Value, trust: Option<&Value>) -> BundleFacts {
     }
 
     facts.ok = check_checkpoints_and_entries(bundle, &entries, &kl, trust, &mut facts);
-    if !facts.ok {
+    if facts.ok {
+        facts.origin_attested = origin_attested(bundle, &kl, trust);
+    } else {
         facts.recorder_attested.clear();
         facts.trusted_tst_checkpoints.clear();
         facts.chain_sizes.clear();
