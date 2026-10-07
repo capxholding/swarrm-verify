@@ -134,6 +134,18 @@ fn signed_refusal_needs_the_pinned_trust_pack_as_in_python() {
 }
 
 #[test]
+fn invalid_pinned_pack_has_the_shared_fail_closed_reason() {
+    let expected = manifest();
+    let pack = fs::read(dir().join("invalid-trust-pack.cbor")).unwrap();
+    let pin = Sha256::digest(&pack);
+    for (exchange, local) in [("verify-input.cbor", "verify-context.cbor"), ("refusal-input.cbor", "refusal-context.cbor")] {
+        let input = fs::read(dir().join(exchange)).unwrap();
+        let got: J = serde_json::from_str(&verify_b28_cwt(&input, &context(local), &pack, &pin)).unwrap();
+        assert_eq!(got, expected["expected_unpinned"], "{exchange}");
+    }
+}
+
+#[test]
 fn hostile_signed_refusals_match_python() {
     let expected = manifest();
     for (name, item) in expected["refusal_hostile"].as_object().unwrap() {

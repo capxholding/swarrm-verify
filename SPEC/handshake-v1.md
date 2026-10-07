@@ -160,7 +160,8 @@ do not decode into the exact exchange map declared no generation and are
 mixed generation is `FAIL/MIXED_PROFILE_GENERATION`, and only then does the
 verifier load the relying party's pinned trust pack, answering
 `INDETERMINATE/NO_PINNED_TRUST_PACK` if it is absent or does not match its
-pin. A mixed generation is a property of the signed bytes, independent of the
+pin. A pack that fails re-validation also supplies no pinned trust and receives
+that same result. A mixed generation is a property of the signed bytes, independent of the
 relying party's configuration, so a missing or mismatched trust pack MUST NOT
 change the first error a mixed exchange receives.
 
