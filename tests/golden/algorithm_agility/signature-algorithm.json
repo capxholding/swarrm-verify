@@ -1,0 +1,118 @@
+{
+  "cases": [
+    {
+      "envelope": {
+        "payload": "eyJub3RlIjoiaG9zdGlsZSBmaXh0dXJlIiwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Tvgbx5MAQkGGP-p1",
+            "sig": "4nbw4QhDKSadmsnfxhHFtKr1jlD68q/+ughqGkSIbPk9KzPEAbERpwCY3GnoD0hLD/oChwcZAUdoBLj93fHKAw=="
+          }
+        ]
+      },
+      "expected": true,
+      "name": "absent-alg-means-eddsa",
+      "why": "the compatibility claim: every receipt ever issued omits this field"
+    },
+    {
+      "envelope": {
+        "payload": "eyJub3RlIjoiaG9zdGlsZSBmaXh0dXJlIiwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "alg": "EdDSA",
+            "keyid": "Tvgbx5MAQkGGP-p1",
+            "sig": "4nbw4QhDKSadmsnfxhHFtKr1jlD68q/+ughqGkSIbPk9KzPEAbERpwCY3GnoD0hLD/oChwcZAUdoBLj93fHKAw=="
+          }
+        ]
+      },
+      "expected": true,
+      "name": "named-eddsa",
+      "why": "naming the implemented algorithm is identical to omitting it"
+    },
+    {
+      "envelope": {
+        "payload": "eyJub3RlIjoiaG9zdGlsZSBmaXh0dXJlIiwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "alg": "ES256",
+            "keyid": "Tvgbx5MAQkGGP-p1",
+            "sig": "4nbw4QhDKSadmsnfxhHFtKr1jlD68q/+ughqGkSIbPk9KzPEAbERpwCY3GnoD0hLD/oChwcZAUdoBLj93fHKAw=="
+          }
+        ]
+      },
+      "expected": false,
+      "name": "unknown-alg-es256",
+      "why": "a real algorithm this build does not implement"
+    },
+    {
+      "envelope": {
+        "payload": "eyJub3RlIjoiaG9zdGlsZSBmaXh0dXJlIiwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "alg": "ML-DSA-65",
+            "keyid": "Tvgbx5MAQkGGP-p1",
+            "sig": "4nbw4QhDKSadmsnfxhHFtKr1jlD68q/+ughqGkSIbPk9KzPEAbERpwCY3GnoD0hLD/oChwcZAUdoBLj93fHKAw=="
+          }
+        ]
+      },
+      "expected": false,
+      "name": "v4-hybrid-half",
+      "why": "the PQ half of the v4 hybrid; v3 must refuse it"
+    },
+    {
+      "envelope": {
+        "payload": "eyJub3RlIjoiaG9zdGlsZSBmaXh0dXJlIiwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "alg": "Ed25519",
+            "keyid": "Tvgbx5MAQkGGP-p1",
+            "sig": "4nbw4QhDKSadmsnfxhHFtKr1jlD68q/+ughqGkSIbPk9KzPEAbERpwCY3GnoD0hLD/oChwcZAUdoBLj93fHKAw=="
+          }
+        ]
+      },
+      "expected": false,
+      "name": "prose-name-not-identifier",
+      "why": "the SPEC's prose curve name; one spelling, not two"
+    },
+    {
+      "envelope": {
+        "payload": "eyJub3RlIjoiaG9zdGlsZSBmaXh0dXJlIiwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "alg": "none",
+            "keyid": "Tvgbx5MAQkGGP-p1",
+            "sig": "4nbw4QhDKSadmsnfxhHFtKr1jlD68q/+ughqGkSIbPk9KzPEAbERpwCY3GnoD0hLD/oChwcZAUdoBLj93fHKAw=="
+          }
+        ]
+      },
+      "expected": false,
+      "name": "none-downgrade",
+      "why": "the classic JWT downgrade"
+    },
+    {
+      "envelope": {
+        "payload": "eyJub3RlIjoiaG9zdGlsZSBmaXh0dXJlIiwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+          {
+            "keyid": "Tvgbx5MAQkGGP-p1",
+            "sig": "4nbw4QhDKSadmsnfxhHFtKr1jlD68q/+ughqGkSIbPk9KzPEAbERpwCY3GnoD0hLD/oChwcZAUdoBLj93fHKAw==",
+            "unexpected": "x"
+          }
+        ]
+      },
+      "expected": false,
+      "name": "unknown-member-ignored-before",
+      "why": "the defect that made naming the algorithm meaningless: an unread member"
+    }
+  ],
+  "keyid": "Tvgbx5MAQkGGP-p1",
+  "public_key_b64": "GETP/Hxu6/EqfPrZgtGou8WDc7dDGqnBeCDFeGWGHRk=",
+  "why": "1.4/algorithm-agility. Every signature here is a CRYPTOGRAPHICALLY VALID Ed25519 signature over the same payload by the same key. The cases differ only in what the signature object CLAIMS, so a verdict of NOT_VERIFIED can only be attributable to the claim -- which is the whole point. A fixture whose signature was also broken would prove nothing about algorithm handling."
+}

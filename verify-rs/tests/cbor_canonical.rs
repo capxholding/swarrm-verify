@@ -12,11 +12,14 @@
 
 #[path = "../src/cbor.rs"]
 mod cbor;
+#[path = "internal/cbor_json.rs"]
+mod cbor_json;
 #[path = "../src/cbor_wire.rs"]
 #[allow(dead_code)]
 mod cbor_wire;
 
-use cbor::{canonical_cbor, canonical_from_json, decode_cbor, MAX_BYTES, MAX_DEPTH, MAX_ITEMS};
+use cbor::{canonical_cbor, decode_cbor, MAX_BYTES, MAX_DEPTH, MAX_ITEMS};
+use cbor_json::canonical_from_json;
 use ciborium::value::Integer;
 use ciborium::Value;
 use std::fs;

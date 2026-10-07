@@ -28,6 +28,12 @@ base E1 integrity. E2/E3 require the explicit external trust inputs defined in
     { "checkpoint": {...}, "consistency_from_prev": ["<hex>", ...] }
   ],
   "jwks": { "keys": [ ... ] },
+  "continuity": [
+    { "body": { "schema": "evd/continuity/v1", "origin": "...",
+                "from_hash": "<hex>", "to_hash": "<hex>",
+                "from_tree_size": 10, "to_tree_size": 40, "appended": 30 },
+      "kid": "...", "sig": "..." }
+  ],
   "export_manifest": {
     "body": {
       "schema": "evd/export-manifest/v1",
@@ -449,3 +455,29 @@ carried; sparse proof is never rendered as a complete checkpoint-history export.
   are separate from the Counterparty Assurance handshake; no evidence level
   supplies a Counterparty Assurance identity, authority, exact-action or
   replay verdict.
+
+## Continuity assertions (normative, optional)
+
+`continuity` states what happened across an interval a SPARSE checkpoint chain
+elides. A dense chain needs none: `prev_hash` meeting its predecessor's body
+hash is already the statement, and asserting it again proves nothing.
+
+Each member carries exactly `body`, `kid` and `sig`; the body carries exactly
+the seven members above and is signed as RFC 8785 canonical JSON by a log key.
+`appended` MUST equal `to_tree_size - from_tree_size` and `from_hash` MUST
+differ from `to_hash` — a statement that disagrees with its own endpoints is
+two claims, and admitting it would let an operator assert a quiet interval over
+a busy one.
+
+**What a verifier may say, and what it may not.** A verifier reports whether
+the assertions TILE the chain it was given. An elided interval with no
+assertion over it is a DETECTED DISCONTINUITY: the operator presented two
+checkpoints whose interval their own statements do not cover. A cover with no
+hole says exactly that — no discontinuity is detectable in what was presented.
+
+It MUST NOT be rendered as completeness. Absence cannot be proven: an operator
+who withholds a receipt never appends it, and no log can testify to what it was
+never given. Anything that reads as "nothing was omitted" is a claim above the
+mechanism. Absence of `continuity` never gates — a bundle carrying none
+verifies exactly as it did before this existed, and simply proves nothing about
+its elided intervals.

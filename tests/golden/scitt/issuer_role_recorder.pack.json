@@ -1,0 +1,53 @@
+{
+  "certificate_id": "f001bc2f956a23ce24c9a4a4a69d42a508507e61f9a74b391aa349f051001ac7",
+  "checkpoint": {
+    "body": {
+      "origin": "evd://scitt",
+      "prev_hash": "",
+      "root_hash": "570ca7b0f998bdb9cfec1087f231ad1e71c33a9827a533c31daa389e30ded652",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 1,
+      "ts": "2026-01-01T00:00:00.000000Z"
+    },
+    "kid": "AzliGSN_daZPEq63",
+    "sig": "5zS2gqxjTw1gER8D4t5MyAdu7H56VLI5asBXh489eYfvElkHB0PqXZagOrYtqLuNGirwj5YY3gxFq3rfk5g/AA=="
+  },
+  "receipt": "d2845819a301270450417a6c6947534e5f64615a504571363319018b01a219018ca1208301008021a6627473781b323032362d30312d30315430303a30303a30302e3030303030305a666f726967696e6b6576643a2f2f736369747466736368656d61716576642f636865636b706f696e742f763169707265765f686173686069726f6f745f6861736878403537306361376230663939386264623963666563313038376632333161643165373163333361393832376135333363333164616133383965333064656436353269747265655f73697a650158207ee745bb22ca3ea5724061191e8b9d9d94fa2a7e30be574cb45a1a1e4af09ff15840e33fdf216edd79ef38e4c622bd8123e10d458479f01d62a2a40d1df5410749e587f07b659272b420eca147868c9d13ae6ceeb69dd2f5b0fed0ac29ddd3ad0a06",
+  "registration_policy": {
+    "accepted_profiles": [
+      "scitt-action-profile-v1"
+    ],
+    "max_statement_bytes": 65536,
+    "policy_version": "registration-policy-v1",
+    "schema": "evd/registration-policy/v1",
+    "signature": "1Bvv8v5g4gVC7Y+jCztOrH4CHJcIiIgjqd0eOYtG3byhvVzW8Jk0q2zv7GY4RCtm8G2gkMHuchUwNPrPSQedAw==",
+    "ts_keys": [
+      {
+        "jwk": {
+          "alg": "EdDSA",
+          "crv": "Ed25519",
+          "kid": "AzliGSN_daZPEq63",
+          "kty": "OKP",
+          "use": "sig",
+          "x": "JUO5L_EJVRFHatyDadtt3JM2ZaEZeN2hQE7hBmypVZ0"
+        },
+        "kid": "AzliGSN_daZPEq63"
+      }
+    ],
+    "ts_origin": "evd://scitt"
+  },
+  "schema": "evd/scitt-pack/v1",
+  "signed_statement": "d284589ea4012703782e6170706c69636174696f6e2f766e642e73776172726d2e616374696f6e2d63657274696669636174652b63626f7204506e42466c3451484275754a582d636b610fa201716469643a73776172726d3a69737375657202784066303031626332663935366132336365323463396134613461363964343261353038353037653631663961373462333931616133343966303531303031616337a05820f001bc2f956a23ce24c9a4a4a69d42a508507e61f9a74b391aa349f051001ac75840094f7bb28a6e2a15cd647cdd483d7488ca4f94ebcd1625ab71db13ef306cf255b5126ce516e4357e464f8ac50d3d5aecdf52aba78433c3661f58fd25eb584204",
+  "ts_jwks": {
+    "keys": [
+      {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "AzliGSN_daZPEq63",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "JUO5L_EJVRFHatyDadtt3JM2ZaEZeN2hQE7hBmypVZ0"
+      }
+    ]
+  }
+}

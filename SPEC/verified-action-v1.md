@@ -32,7 +32,7 @@ proves who said it, never that it is so.
 | identity | VERIFIED · *NOT_VERIFIED* · CONFLICT |
 | authority | VERIFIED · *NOT_VERIFIED* · CONFLICT |
 | intent | RECORDED · *NOT_RECORDED* · CONFLICT |
-| outcome | CORROBORATED · *CLAIM_ONLY* · CONTRADICTED · ORPHAN (null when neither claim nor event) |
+| outcome | MATCHED (1.4; the ≤1.3.x spelling was CORROBORATED) · *CLAIM_ONLY* · CONTRADICTED · ORPHAN (null when neither claim nor event) |
 | linkage | DIRECT · DETERMINISTIC · AMBIGUOUS · *NONE* |
 | coverage | CLOSED · GAPPED · *UNKNOWN* |
 | integrity | VALID · *INVALID* |
@@ -145,9 +145,12 @@ winner); exactly 1 → `DIRECT` if matched by echoed `action_id`, else
 `CLAIM_ONLY`; claim and uniquely-linked event disagreeing on a MATERIAL field
 (named per action class in the SourceManifest, never chosen at comparison
 time) → `CONTRADICTED` (terminal; never softened, never suppressed); claim
-uniquely linked, final, no material disagreement → `CORROBORATED`; event with
+uniquely linked, final, no material disagreement → `MATCHED`; event with
 no agent claim → `ORPHAN`. `AMBIGUOUS`/`NONE` are outcomes of linkage, not
-errors; with them the outcome cannot reach `CORROBORATED`.
+errors; with them the outcome cannot reach `MATCHED`. (`MATCHED` was spelled
+`CORROBORATED` before 1.4 — renamed because the value proves a deterministic
+match, not independent confirmation; see SPEC/reconcile-v1.md §5 for the
+read-compat rule on ≤1.3.x artifacts.)
 
 ### 2.7 temporal_binding (the three times)
 `intent_interval` and `source_effect_time` are never reconciled into one
@@ -159,7 +162,7 @@ clock bounds from a party that is neither the operator nor Swarrm, and the
 intervals are disjoint in the correct order. Everything else — including a
 source merely declaring its clock synchronised, or only our record being
 timestamped — is `UNPROVEN`. `UNPROVEN` blocks the MARK only; a
-`CORROBORATED` outcome stands regardless.
+`MATCHED` outcome stands regardless.
 
 ### 2.8 surfaces
 Per declared surface, three orthogonal fields, never collapsed: `mechanism`
@@ -236,7 +239,7 @@ from this view (gated: identity, authority, intent, integrity, linkage,
 outcome, coverage, coverage_basis, temporal_binding, fork findings, SCITT
 receipt); `ELIGIBLE` iff identity VERIFIED ∧ authority VERIFIED across the
 ENTIRE intent_interval ∧ intent RECORDED ∧ integrity VALID ∧ linkage ∈
-{DIRECT, unique DETERMINISTIC} ∧ outcome CORROBORATED ∧ coverage CLOSED with
+{DIRECT, unique DETERMINISTIC} ∧ outcome MATCHED ∧ coverage CLOSED with
 basis ≠ INSUFFICIENT ∧ no open fork finding ∧ temporal_binding ≠ UNPROVEN ∧
 valid SCITT receipt; else `INELIGIBLE`.
 `registration_status` = `REGISTERED` iff a valid `ScopeRegistration` covers

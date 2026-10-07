@@ -25,6 +25,8 @@ use std::path::PathBuf;
 #[path = "../src/cbor.rs"]
 #[allow(dead_code)]
 mod cbor;
+#[path = "internal/cbor_json.rs"]
+mod cbor_json;
 #[path = "../src/cbor_wire.rs"]
 #[allow(dead_code)]
 mod cbor_wire;
@@ -44,7 +46,7 @@ fn trust(sub: &str) -> J {
 
 /// The restricted CBOR the certificate profile allows (§1: the core is
 /// JSON-compatible), so a fixture can be mutated as JSON and re-encoded with
-/// `cbor::canonical_from_json`.
+/// `cbor_json::canonical_from_json`.
 fn to_json(v: &C) -> J {
     match v {
         C::Null => J::Null,
@@ -63,7 +65,7 @@ fn core(name: &str) -> J {
 }
 
 fn verify(core: &J) -> J {
-    let bytes = cbor::canonical_from_json(core).expect("mutated core is canonicalizable");
+    let bytes = cbor_json::canonical_from_json(core).expect("mutated core is canonicalizable");
     serde_json::from_str(&swarrm_verify::certificate::verify_certificate_cbor_with_trust(&bytes, Some(&trust("certificates")))).unwrap()
 }
 
@@ -105,7 +107,7 @@ fn a_producer_named_field_list_cannot_retract_the_floor() {
     // The lying-agent fixture demonstrates this claim:
     // value 999999.99 against event value 380.99. At HEAD one added key —
     // `source_manifest.material_fields: ["currency"]` — REPLACED the default
-    // trio and both engines answered CORROBORATED.
+    // trio and both engines answered MATCHED.
     let mut vi = lying_agent();
     assert_eq!(outcome(&vi), "CONTRADICTED");
     for row in vi["event_matches"].as_array_mut().unwrap() {
@@ -125,7 +127,7 @@ fn the_producer_tail_still_widens_the_comparison() {
         row["material_mismatch"] = json!(false);
     }
     vi["claim"]["value"] = vi["events"][0]["value"].clone();
-    assert_eq!(outcome(&vi), "CORROBORATED");
+    assert_eq!(outcome(&vi), "MATCHED");
     vi["claim"]["reference"] = json!("ref-A");
     vi["events"][0]["reference"] = json!("ref-B");
     vi["source_manifest"] = json!({"material_fields": ["reference"]});
@@ -230,13 +232,13 @@ fn schema_disagreement_is_structural_and_must_not_weaken_anything() {
     // nine golden families — which is why it is in STRUCTURAL_FIELDS.
     let vi = pair(json!({"value": "100.00", "currency": "EUR"}), json!({"value": "100.00", "currency": "EUR"}), None);
     assert_ne!(vi["claim"]["schema"], vi["events"][0]["schema"]);
-    assert_eq!(outcome(&vi), "CORROBORATED");
+    assert_eq!(outcome(&vi), "MATCHED");
 }
 
 #[test]
 fn the_out_of_floor_lie_reaches_the_certificate_layer() {
     // End to end on a real core with every producer knob turned: the headline
-    // is WEAKER (CORROBORATED → CLAIM_ONLY), never a false accusation, and
+    // is WEAKER (MATCHED → CLAIM_ONLY), never a false accusation, and
     // cross_checks_ok stays true — a weaker claim is not an error.
     let mut c = core("contradicted");
     let honest = c["events"][0]["value"].clone();
@@ -426,7 +428,7 @@ fn no_convention_may_differ_from_the_signed_coverage_document() {
     // One digest equality binds all four. `finality_rule` is the one no floor
     // rule can reach — sources spell finality "settled"/"booked"/"POSTED", so
     // there is no safe normative default — and setting it to "pending" against
-    // a carried final=true upgraded CLAIM_ONLY → CORROBORATED at HEAD.
+    // a carried final=true upgraded CLAIM_ONLY → MATCHED at HEAD.
     for convention in ["finality_rule", "material_fields", "correlation_field", "unique_fields"] {
         let mut c = core("valid");
         with_coverage_receipt(&mut c);

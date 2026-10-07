@@ -17,6 +17,11 @@ use crate::cbor_wire::{canonical_bytes, structural_scan, Profile};
 use crate::merkle::{verify_consistency as merkle_consistency, verify_inclusion};
 
 const PROFILE: &str = "https://swarrm.ai/spec/eat/b28/cwt/v1";
+// Reader-only v2 acceptance: this engine verifies and never emits, and v1
+// acceptance is permanent (SPEC/handshake-v1.md section 3).
+const PROFILE_V2: &str = "https://swarrm.ai/spec/eat/action/cwt/v2";
+const V1_NS: &str = "swarrm-b28/";
+const V2_NS: &str = "swarrm/";
 const MEDIA: &str = "application/eat+cwt";
 const LOCAL_CONTEXT: &str = "swarrm-b28/local-verifier-context/v1";
 const LOCAL_REFUSAL_CONTEXT: &str = "swarrm-b28/local-refusal-context/v1";
@@ -89,11 +94,33 @@ fn map_doc(value: &C) -> Option<Doc> {
         out.insert(key.clone(), value.clone()).is_none().then_some(out)
     })
 }
+fn profile_matches(observed: Option<&str>) -> bool {
+    observed == Some(PROFILE) || observed == Some(PROFILE_V2)
+}
+// v2 renames the namespace prefix and nothing else, so folding a v2 name back
+// to its v1 spelling keeps every exact comparison exact instead of doubling it.
+// The hashed domain separators are NOT folded: they never travel, so both
+// generations hash byte-identically and no v1 fixture moves.
+fn accepted_name(observed: Option<&str>, expected: &str) -> bool {
+    observed.is_some_and(|value| value.replacen(V2_NS, V1_NS, 1) == expected)
+}
+// One exchange speaks one generation; both spellings present is ambiguity, and
+// ambiguity fails closed rather than letting a reader pick a winner.  Scanned
+// per signed envelope, and only once the exchange has parsed: a generation is
+// something a signer DECLARED, so reporting that one was mixed requires having
+// read the fields that declare it.  Bytes that never parsed declared nothing --
+// they are INDETERMINATE/VERIFIER_CONTEXT_INVALID, not a finding against the
+// counterparty.  Per envelope rather than over their concatenation because a
+// namespace lives inside one envelope and never straddles two.
+fn mixed_generation(envelopes: [&[u8]; 2]) -> bool {
+    let has = |needle: &[u8]| envelopes.iter().any(|envelope| envelope.windows(needle.len()).any(|window| window == needle));
+    has(V1_NS.as_bytes()) && has(V2_NS.as_bytes())
+}
 fn document(value: &C, schema: Option<&str>, fields: &str) -> Option<Doc> {
     let out = map_doc(value)?;
     let names = fields.split_whitespace().collect::<Vec<_>>();
     let expected = names.len() + usize::from(schema.is_some());
-    (out.len() == expected && names.iter().all(|field| out.contains_key(*field)) && schema.is_none_or(|schema| out.get("schema").and_then(text) == Some(schema))).then_some(out)
+    (out.len() == expected && names.iter().all(|field| out.contains_key(*field)) && schema.is_none_or(|schema| accepted_name(out.get("schema").and_then(text), schema))).then_some(out)
 }
 fn plain(value: &C) -> Option<Doc> {
     map_doc(value)
@@ -177,7 +204,7 @@ fn validate_challenge(value: &C) -> bool {
     let Some(names) = names else { return false };
     let ordered = names.windows(2).all(|pair| pair[0] < pair[1]);
     let action = action(&doc["action"]);
-    text(&doc["profile"]) == Some(PROFILE) && agent(&doc["challenger"]).is_some() && matches!(action.as_ref(), Some(action) if doc["challenger"] == action["recipient"] && matches!((positive(&doc["issued_at"]), positive(&action["expires_at"])), (Some(a), Some(b)) if a < b)) && matches!(encodings, [C::Text(value)] if value == MEDIA) && ordered && names.iter().all(|name| known_dimension(name)) && positive(&doc["max_checkpoint_age"]).is_some()
+    profile_matches(text(&doc["profile"])) && agent(&doc["challenger"]).is_some() && matches!(action.as_ref(), Some(action) if doc["challenger"] == action["recipient"] && matches!((positive(&doc["issued_at"]), positive(&action["expires_at"])), (Some(a), Some(b)) if a < b)) && matches!(encodings, [C::Text(value)] if value == MEDIA) && ordered && names.iter().all(|name| known_dimension(name)) && positive(&doc["max_checkpoint_age"]).is_some()
 }
 fn validate_asa(value: &C) -> bool {
     let Some(doc) = document(value, Some(ASA), "tenant organisation_root authority_delegation_id asa_id action_digest challenge_digest grant_id grant_version reservation_state issued_at expires_at") else { return false };
@@ -189,7 +216,7 @@ fn validate_presentation(value: &C) -> bool {
     let Some(proofs) = document(&doc["state_proofs"], None, "root_delegation registration_template mandate agent_config admin_binding admin_selection admin_challenge admin_consumption admin_counter agent_pop passport agent_head agent_successor predecessor_head limit_grant grant_head") else {
         return false;
     };
-    text(&doc["profile"]) == Some(PROFILE)
+    profile_matches(text(&doc["profile"]))
         && text(&doc["non_assertion"]) == Some(NON_ASSERTION)
         && ["challenge_envelope_hash", "challenge_digest", "action_digest", "transcript_digest"].iter().all(|name| fixed(&doc[*name], 32).is_some())
         && inline.iter().all(|name| matches!(bytes(&doc[*name]), Some(raw) if !raw.is_empty() && raw.len() <= MAX_CWT))
@@ -201,7 +228,7 @@ fn validate_presentation(value: &C) -> bool {
 }
 fn validate_refusal(value: &C) -> bool {
     let Some(doc) = document(value, Some(REFUSAL), "profile challenge_envelope_hash challenge_digest reason_code created_at") else { return false };
-    text(&doc["profile"]) == Some(PROFILE) && fixed(&doc["challenge_envelope_hash"], 32).is_some() && fixed(&doc["challenge_digest"], 32).is_some() && bounded(&doc["reason_code"], 128).is_some() && uint(&doc["created_at"]).is_some()
+    profile_matches(text(&doc["profile"])) && fixed(&doc["challenge_envelope_hash"], 32).is_some() && fixed(&doc["challenge_digest"], 32).is_some() && bounded(&doc["reason_code"], 128).is_some() && uint(&doc["created_at"]).is_some()
 }
 fn tenant_root(doc: &Doc) -> bool {
     bounded(&doc["tenant"], 128).is_some() && opaque(&doc["organisation_root"]).is_some()
@@ -318,7 +345,7 @@ fn inspect_cwt(raw: &[u8], schema: &str) -> Option<Cwt> {
         return None;
     }
     let C::Map(claims) = decode(payload, MAX_CWT)? else { return None };
-    if claims.len() != 2 || !claims.iter().all(|(key, _)| matches!(key, C::Integer(number) if matches!(i128::from(*number), 265 | -65_537))) || text(integer(&claims, CWT_PROFILE_CLAIM)?) != Some(PROFILE) {
+    if claims.len() != 2 || !claims.iter().all(|(key, _)| matches!(key, C::Integer(number) if matches!(i128::from(*number), 265 | -65_537))) || !profile_matches(text(integer(&claims, CWT_PROFILE_CLAIM)?)) {
         return None;
     }
     let core = integer(&claims, B28_CORE_CLAIM)?.clone();
@@ -457,10 +484,10 @@ fn parse_local_context(raw: &[u8]) -> Result<LocalContext, &'static str> {
     }
     Err("VERIFIER_CONTEXT_INVALID")
 }
-fn parse_input(exchange: &[u8], local: PresentationLocal, roots: &BTreeMap<String, RootAnchor>) -> Option<InputContext> {
+fn parse_input(exchange: &[u8], local: PresentationLocal) -> Option<InputContext> {
     let exchange = document(&decode(exchange, MAX_INPUT)?, None, "challenge presentation")?;
     let (challenger_keys, checkpoints, heads, origin, max_action_lifetime_s, now) = local;
-    Some(InputContext { challenge: bytes(&exchange["challenge"])?.to_vec(), presentation: bytes(&exchange["presentation"])?.to_vec(), roots: roots.clone(), challenger_keys, checkpoints, heads, origin, max_action_lifetime_s, now })
+    Some(InputContext { challenge: bytes(&exchange["challenge"])?.to_vec(), presentation: bytes(&exchange["presentation"])?.to_vec(), roots: BTreeMap::new(), challenger_keys, checkpoints, heads, origin, max_action_lifetime_s, now })
 }
 struct RefusalContext {
     challenge: Vec<u8>,
@@ -1113,13 +1140,10 @@ fn evaluate_refusal(input: &RefusalContext) -> ResultValue {
     ResultValue::new("FAIL", "SIGNED_REFUSAL", vector)
 }
 
-/// Verify a two-field exchange after locally validating context and root pin.
+/// Verify a two-field exchange: local context and exchange structure, then generation, then the root pin.
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 pub fn verify_b28_cwt(exchange: &[u8], local_context: &[u8], trust_pack: &[u8], expected_trust_pack_digest: &[u8]) -> String {
-    let Some(roots) = parse_pinned_trust_pack(trust_pack, expected_trust_pack_digest) else {
-        let result = ResultValue::new("INDETERMINATE", "NO_PINNED_TRUST_PACK", initial_vector());
-        return serde_json::to_string(&result.json()).expect("result is a fixed JSON-compatible value");
-    };
+    // A mixed generation is a property of the bytes, so the relying party's trust pack never masks it.
     let local = match parse_local_context(local_context) {
         Ok(local) => local,
         Err(reason) => {
@@ -1127,9 +1151,11 @@ pub fn verify_b28_cwt(exchange: &[u8], local_context: &[u8], trust_pack: &[u8], 
             return serde_json::to_string(&result.json()).expect("result is a fixed JSON-compatible value");
         }
     };
+    let single = |pair: [&[u8]; 2]| if mixed_generation(pair) { Err(ResultValue::new("FAIL", "MIXED_PROFILE_GENERATION", initial_vector())) } else { Ok(()) };
+    let pinned = || parse_pinned_trust_pack(trust_pack, expected_trust_pack_digest).ok_or_else(|| ResultValue::new("INDETERMINATE", "NO_PINNED_TRUST_PACK", initial_vector()));
     let result = match local {
-        LocalContext::Presentation(local) => parse_input(exchange, local, &roots).map(|input| evaluate(&input).0),
-        LocalContext::Refusal(local) => parse_refusal(exchange, local).map(|input| evaluate_refusal(&input)),
+        LocalContext::Presentation(local) => parse_input(exchange, local).map(|input| single([&input.challenge, &input.presentation]).and_then(|()| pinned()).map_or_else(|refused| refused, |roots| evaluate(&InputContext { roots, ..input }).0)),
+        LocalContext::Refusal(local) => parse_refusal(exchange, local).map(|input| single([&input.challenge, &input.refusal]).and_then(|()| pinned()).map_or_else(|refused| refused, |_| evaluate_refusal(&input))),
     }
     .unwrap_or_else(|| ResultValue::new("INDETERMINATE", "VERIFIER_CONTEXT_INVALID", initial_vector()));
     serde_json::to_string(&result.json()).expect("result is a fixed JSON-compatible value")

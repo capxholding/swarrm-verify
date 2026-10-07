@@ -72,3 +72,23 @@ dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_020.json:generic
 dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_019.json:generic-api-key:73
 dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_022.json:generic-api-key:208
 dc74a037e20962a7f543d511f80055962759bdc9:tests/golden/fuzz/case_007.json:generic-api-key:294
+
+# Swarrm 1.4 fixture review: exact commit and line only.
+# DSSE public signed payload; value SHA-256 b103efe22a2074f26e899166eea88c997a910e751240855506eee8e1c882f605
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/divergent/pairs/true_negative_key_epoch_change/b.json:generic-api-key:75
+# unchanged value in published golden fixtures; value SHA-256 0efa3d9aaceea81ccf63a3a75d23a5101cc9c2026a99a337091c8fd341651028
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/fuzz/case_020.json:generic-api-key:226
+# unchanged value in published golden fixtures; value SHA-256 ecc5bbb0f4de673b62fc5a511d9d562a650ebf6dc3e9900dc278ab1c11e1db17
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/fuzz/case_022.json:generic-api-key:55
+# unchanged value in published golden fixtures; value SHA-256 a42c9ecf901b9325be73cd3509d7da2c391c7a505a6ae4faa4a17ffe9acc868d
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/fuzz/case_027.json:generic-api-key:75
+# unchanged value in published golden fixtures; value SHA-256 969993d4f7640f017346341c5e4f94d53e4198a9aa14091482cfb2c821eaf69b
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/fuzz/case_027.json:generic-api-key:93
+# public event-set digest; value SHA-256 b5b5e6a036bc211561197ae634fbd7e479d41c24e5bfcae5ffe66fc27b60b933
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/reconcile/purview_bypassed_door_orphan.json:generic-api-key:20
+# public event-set digest; value SHA-256 b5b5e6a036bc211561197ae634fbd7e479d41c24e5bfcae5ffe66fc27b60b933
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/reconcile/purview_single_invocation_matched.json:generic-api-key:20
+# public event-set digest; value SHA-256 b5b5e6a036bc211561197ae634fbd7e479d41c24e5bfcae5ffe66fc27b60b933
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/reconcile/purview_time_contradicted.json:generic-api-key:20
+# public event-set digest; value SHA-256 b5b5e6a036bc211561197ae634fbd7e479d41c24e5bfcae5ffe66fc27b60b933
+d4dfbd7a4a74a483024fe4d95b5b78e83eab6d46:tests/golden/reconcile/purview_two_invocations_ambiguous.json:generic-api-key:20

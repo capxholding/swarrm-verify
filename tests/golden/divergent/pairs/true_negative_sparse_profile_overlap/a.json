@@ -1,0 +1,169 @@
+{
+ "checkpoint_chain": [
+  {
+   "checkpoint": {
+    "body": {
+     "origin": "evd://tenant/t_pair",
+     "prev_hash": "",
+     "root_hash": "17128859e2132095689a28bad1c2e6f6014ac76a8819d34e4038c8019786e94c",
+     "schema": "evd/checkpoint/v1",
+     "tree_size": 2,
+     "ts": "2026-01-01T00:10:00Z"
+    },
+    "kid": "LABs8EZ868oIL3mv",
+    "sig": "GLWn+TgOw1O//qqa2ullyJXAmVciseMylaDZNektk/wx65F0UWaOukuCRf2gD+yT2n5WdUu6VMO8fMt3j4aUBg=="
+   }
+  },
+  {
+   "checkpoint": {
+    "body": {
+     "origin": "evd://tenant/t_pair",
+     "prev_hash": "1de183134634043a2172c228feee41f8583b50b50f360b2b5fccb442799f8f56",
+     "root_hash": "ed11aa11eb89c59726df9b4daf413b2026769d2887af7892e65ae46a8b232681",
+     "schema": "evd/checkpoint/v1",
+     "tree_size": 5,
+     "ts": "2026-01-01T00:13:00Z"
+    },
+    "kid": "LABs8EZ868oIL3mv",
+    "sig": "rZsQF6ZkOkrR3+q4/2v9RPsaLPBYsFAwjvgCqdwzazedEnndYjv+mmbDwinBcBCAwb4kZ46ZoqkNE2TQas4XAw=="
+   },
+   "consistency_from_prev": [
+    "370d67d8b3b8266c5904f843bb0026c17dc0ecd0e44520cad50670efed12e9d4",
+    "b952143496aad32429f069e004cedf051b9260f6c88d75bd1953fbda2270434c"
+   ]
+  }
+ ],
+ "checkpoint_chain_profile": "evd/checkpoint-chain/sparse-proof-v1",
+ "entries": [
+  {
+   "envelope": {
+    "payload": "eyJhY3Rpb25fdHlwZSI6ImRhdGEucmVhZCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJpIjowfSwiaWRlbXBvdGVuY3lfa2V5IjoicjAiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjEsInRlbmFudF9pZCI6InRfcGFpciIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDNaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDowM1oifQ==",
+    "payloadType": "application/vnd.evd.receipt.v1+json",
+    "signatures": [
+     {
+      "keyid": "LABs8EZ868oIL3mv",
+      "sig": "TkX+OI+Jf+Mjxby2bRPZ3/oIop5VE1yDtnIzizDcGbU/RjUa3jr6eW0XUftRz7k5aHzibIMDcGmZuLbxXPxsCQ=="
+     }
+    ]
+   },
+   "inclusion_proof": [
+    "3c278c25ce2c02048d52c035cef90b98047f5d8f0d7b25f5eaf949629e3b512e",
+    "370d67d8b3b8266c5904f843bb0026c17dc0ecd0e44520cad50670efed12e9d4",
+    "b952143496aad32429f069e004cedf051b9260f6c88d75bd1953fbda2270434c"
+   ],
+   "leaf_index": 1
+  },
+  {
+   "envelope": {
+    "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhaXIiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+    "payloadType": "application/vnd.evd.receipt.v1+json",
+    "signatures": [
+     {
+      "keyid": "LABs8EZ868oIL3mv",
+      "sig": "Mxz+c3/mmNAHfhNM2luxXkQQAl8bO+HJ02xPlF9dzBbZhJqr0xT7R65fMX7r1gSWkXSfTk40o83P+SjV1jtPAQ=="
+     }
+    ]
+   },
+   "inclusion_proof": [
+    "7bf709226d8a8ba717ccd1addd77673df6c76876c62c2aa26bad3502dd8011f9",
+    "370d67d8b3b8266c5904f843bb0026c17dc0ecd0e44520cad50670efed12e9d4",
+    "b952143496aad32429f069e004cedf051b9260f6c88d75bd1953fbda2270434c"
+   ],
+   "leaf_index": 0
+  }
+ ],
+ "export_manifest": {
+  "body": {
+   "origin": "evd://tenant/t_pair",
+   "producer": {
+    "capabilities": {
+     "bundle.schema": "evd/bundle/v1",
+     "canonical.jcs_max_depth": 64,
+     "checkpoint.fields": [
+      "origin",
+      "prev_hash",
+      "root_hash",
+      "schema",
+      "tree_size",
+      "ts"
+     ],
+     "checkpoint.optional": [
+      "alg"
+     ],
+     "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+     "checkpoint.schema": "evd/checkpoint/v1",
+     "checkpoint.signed_fields": [
+      "body",
+      "kid",
+      "sig"
+     ],
+     "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+     "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+     "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+     "export_manifest.schema": "evd/export-manifest/v1",
+     "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "merkle.leaf_prefix": "00",
+     "merkle.node_prefix": "01",
+     "receipt.max_parents": 32,
+     "receipt.optional": [
+      "alg",
+      "session_id",
+      "session_inferred"
+     ],
+     "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+     "receipt.required": [
+      "action_type",
+      "agent_id",
+      "commitments",
+      "context",
+      "idempotency_key",
+      "parents",
+      "schema",
+      "seq",
+      "tenant_id",
+      "ts_client",
+      "ts_server"
+     ],
+     "receipt.schema": "evd/receipt/v1",
+     "schema": "evd/capability-digest/v1"
+    },
+    "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+   },
+   "receipt_hashes": [
+    "2930681a19a7c0bb9196e29f9f92fac39f388c6356ff3a629491467fa1054c57",
+    "2b628718916f29f55e28dc444377540d758b7b320e26bdab99ca03574bf2f394"
+   ],
+   "schema": "evd/export-manifest/v1",
+   "target_checkpoint_hash": "dfe433d8e72f439e7ceacd311e0ea9b7620621c25c7948238bd0e75f459e04d5",
+   "ts": "2026-01-01T00:13:00Z"
+  },
+  "kid": "LABs8EZ868oIL3mv",
+  "sig": "MQNMLKLSvPu8iCeEH/e6lVYD23S1mlbiAAvrJgFse+YTRqXkD2yYtElyZrAPlLQEGiwFW9FJCHcNfGYiKmTaAw=="
+ },
+ "jwks": {
+  "keys": [
+   {
+    "alg": "EdDSA",
+    "crv": "Ed25519",
+    "kid": "LABs8EZ868oIL3mv",
+    "kty": "OKP",
+    "use": "sig",
+    "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+   }
+  ]
+ },
+ "origin": "evd://tenant/t_pair",
+ "schema": "evd/bundle/v1",
+ "target_checkpoint": {
+  "body": {
+   "origin": "evd://tenant/t_pair",
+   "prev_hash": "1de183134634043a2172c228feee41f8583b50b50f360b2b5fccb442799f8f56",
+   "root_hash": "ed11aa11eb89c59726df9b4daf413b2026769d2887af7892e65ae46a8b232681",
+   "schema": "evd/checkpoint/v1",
+   "tree_size": 5,
+   "ts": "2026-01-01T00:13:00Z"
+  },
+  "kid": "LABs8EZ868oIL3mv",
+  "sig": "rZsQF6ZkOkrR3+q4/2v9RPsaLPBYsFAwjvgCqdwzazedEnndYjv+mmbDwinBcBCAwb4kZ46ZoqkNE2TQas4XAw=="
+ }
+}

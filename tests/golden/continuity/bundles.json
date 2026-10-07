@@ -1,0 +1,479 @@
+{
+ "bundle": {
+  "checkpoint_chain": [
+   {
+    "checkpoint": {
+     "body": {
+      "origin": "evd://tenant/t_continuity",
+      "prev_hash": "",
+      "root_hash": "3a7740c8f5a06d1651415ae95d6e5faa12425f9537d636afc82584d02f6b4522",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 2,
+      "ts": "2026-01-01T00:00:04Z"
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "KkN/NBzp1Oaqq/3/VpGIqNtbenckUdJqn72p0/fJkacaCvjQo2LV2bL1KCg84C6s+I2uJtnZVWxjSIw86cHLDQ=="
+    }
+   },
+   {
+    "checkpoint": {
+     "body": {
+      "origin": "evd://tenant/t_continuity",
+      "prev_hash": "7647f19a3f0835418895aba2de1677b655d9cd8e330143e9d0de63639ee1f6fb",
+      "root_hash": "56db7aa70513b17c8d6f1c3dc83ec9e6cb041f3c1ae0859c7fb137ae0811073d",
+      "schema": "evd/checkpoint/v1",
+      "tree_size": 7,
+      "ts": "2026-01-01T00:00:14Z"
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "ONU5iCVwe5z8vDM7oLUCcspjgK13wh3UdceKY05rHJXNEZRTYR1DM7wLQK6DjcBQlAUvZhsu5cixlJNOEd+xAg=="
+    },
+    "consistency_from_prev": [
+     "4b0f86937586eac5616728e5fd4eba0a47aad6b98a54f635d821875f505deb3f",
+     "46b978a69f2ff8b0c8500f3d67ea31d8c32dd915aec7d435b00a9c1ea8d8c04e"
+    ]
+   }
+  ],
+  "checkpoint_chain_profile": "evd/checkpoint-chain/sparse-proof-v1",
+  "entries": [
+   {
+    "envelope": {
+     "payload": "eyJhY3Rpb25fdHlwZSI6ImRhdGEucmVhZCIsImFnZW50X2lkIjoiYWdlbnRfYSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJpIjowfSwiaWRlbXBvdGVuY3lfa2V5IjoicjAiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjEsInRlbmFudF9pZCI6InRfY29udGludWl0eSIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDNaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDowM1oifQ==",
+     "payloadType": "application/vnd.evd.receipt.v1+json",
+     "signatures": [
+      {
+       "keyid": "GS1tS_djJSrddqGS",
+       "sig": "O7jD4Lzu2pZh7PKwgfIzUoG3hbA64pA/EYvZNSvE6SCUohuXWfh33NQ3xVjwQY30o40IGcVytuPEgsuYBQZMBA=="
+      }
+     ]
+    },
+    "inclusion_proof": [
+     "97c8654f27c8a46ce3ea81f38b74a0738cfd5f104180dc83565e71c78a79a953",
+     "4b0f86937586eac5616728e5fd4eba0a47aad6b98a54f635d821875f505deb3f",
+     "46b978a69f2ff8b0c8500f3d67ea31d8c32dd915aec7d435b00a9c1ea8d8c04e"
+    ],
+    "leaf_index": 1
+   },
+   {
+    "envelope": {
+     "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJHUzF0U19kakpTcmRkcUdTIiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImJ4SVRjbDhHUGg3eWNma2RSNGpRYThqcy1WU1lydnRvNnRDMUZRZFFndG8ifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1HUzF0U19kakpTcmRkcUdTIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X2NvbnRpbnVpdHkiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+     "payloadType": "application/vnd.evd.receipt.v1+json",
+     "signatures": [
+      {
+       "keyid": "GS1tS_djJSrddqGS",
+       "sig": "sgg++qtevT4SxQTB1bI3j8RuvTPto36mVpF0oyv9hXLZ+YNOYNmEUJAnea2A/ihpfWpWv3+yfem2dvdcQEf5BQ=="
+      }
+     ]
+    },
+    "inclusion_proof": [
+     "a49f96c75a563a0ae4ace2d0348f35ced032d3aec0f292282263330f02dd6e05",
+     "4b0f86937586eac5616728e5fd4eba0a47aad6b98a54f635d821875f505deb3f",
+     "46b978a69f2ff8b0c8500f3d67ea31d8c32dd915aec7d435b00a9c1ea8d8c04e"
+    ],
+    "leaf_index": 0
+   }
+  ],
+  "export_manifest": {
+   "body": {
+    "origin": "evd://tenant/t_continuity",
+    "producer": {
+     "capabilities": {
+      "bundle.schema": "evd/bundle/v1",
+      "canonical.jcs_max_depth": 64,
+      "checkpoint.fields": [
+       "origin",
+       "prev_hash",
+       "root_hash",
+       "schema",
+       "tree_size",
+       "ts"
+      ],
+      "checkpoint.optional": [
+       "alg"
+      ],
+      "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+      "checkpoint.schema": "evd/checkpoint/v1",
+      "checkpoint.signed_fields": [
+       "body",
+       "kid",
+       "sig"
+      ],
+      "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+      "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+      "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+      "export_manifest.schema": "evd/export-manifest/v1",
+      "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "merkle.leaf_prefix": "00",
+      "merkle.node_prefix": "01",
+      "receipt.max_parents": 32,
+      "receipt.optional": [
+       "alg",
+       "session_id",
+       "session_inferred"
+      ],
+      "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+      "receipt.required": [
+       "action_type",
+       "agent_id",
+       "commitments",
+       "context",
+       "idempotency_key",
+       "parents",
+       "schema",
+       "seq",
+       "tenant_id",
+       "ts_client",
+       "ts_server"
+      ],
+      "receipt.schema": "evd/receipt/v1",
+      "schema": "evd/capability-digest/v1"
+     },
+     "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+    },
+    "receipt_hashes": [
+     "884937058bf10e21fbbb298faa42fd9dddd2476698fc9afceb1bd6965d8bbf61",
+     "9f2e78f0a078f9372ecf5bccbec9a957c55a9e87bf09f2577bb829a76c3bc96a"
+    ],
+    "schema": "evd/export-manifest/v1",
+    "target_checkpoint_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+    "ts": "2026-01-01T00:00:14Z"
+   },
+   "kid": "GS1tS_djJSrddqGS",
+   "sig": "CIDOX3KKJNpk+4P5P9dHt4DtV9uZbpQ4NXfPbEUYACFLZEI1ULGLZs7VSz4z9b7ZS9WLLsYFMPyxb99//EbeDw=="
+  },
+  "jwks": {
+   "keys": [
+    {
+     "alg": "EdDSA",
+     "crv": "Ed25519",
+     "kid": "GS1tS_djJSrddqGS",
+     "kty": "OKP",
+     "use": "sig",
+     "x": "bxITcl8GPh7ycfkdR4jQa8js-VSYrvto6tC1FQdQgto"
+    }
+   ]
+  },
+  "origin": "evd://tenant/t_continuity",
+  "schema": "evd/bundle/v1",
+  "target_checkpoint": {
+   "body": {
+    "origin": "evd://tenant/t_continuity",
+    "prev_hash": "7647f19a3f0835418895aba2de1677b655d9cd8e330143e9d0de63639ee1f6fb",
+    "root_hash": "56db7aa70513b17c8d6f1c3dc83ec9e6cb041f3c1ae0859c7fb137ae0811073d",
+    "schema": "evd/checkpoint/v1",
+    "tree_size": 7,
+    "ts": "2026-01-01T00:00:14Z"
+   },
+   "kid": "GS1tS_djJSrddqGS",
+   "sig": "ONU5iCVwe5z8vDM7oLUCcspjgK13wh3UdceKY05rHJXNEZRTYR1DM7wLQK6DjcBQlAUvZhsu5cixlJNOEd+xAg=="
+  }
+ },
+ "cases": [
+  {
+   "expected": {
+    "continuity_gaps": 1,
+    "continuity_ok": true,
+    "continuity_present": false
+   },
+   "name": "absent",
+   "why": "no member: nothing asserted, nothing gated, the elided interval stays unexplained"
+  },
+  {
+   "continuity": null,
+   "expected": {
+    "continuity_gaps": 1,
+    "continuity_ok": true,
+    "continuity_present": false
+   },
+   "name": "null",
+   "why": "null reads as absent in both engines"
+  },
+  {
+   "continuity": [],
+   "expected": {
+    "continuity_gaps": 1,
+    "continuity_ok": true,
+    "continuity_present": false
+   },
+   "name": "empty",
+   "why": "an empty list asserts nothing"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 5,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "rpWr6n8RuZDgDsNxOvvmwdXRQMOWc9QpvfHo+28PL7qdX4Xj2oG/QWzt0O54d8dfAjpq9Rpy2MQt/UX+gVrZDQ=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": true,
+    "continuity_present": true
+   },
+   "name": "tiles",
+   "why": "the elided interval is asserted by a log key: no discontinuity is DETECTABLE (not: nothing was omitted)"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 2,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "to_tree_size": 4
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "kg4Qfo1qrWNaHlzyF8dLyKIW9fgct5OYgucUOmulObuOLMM7NzgEHp4YCJtE+GxNIRAl1+gpUpNL58LsihsTBw=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 1,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "misses-the-chain",
+   "why": "a signed assertion that ends at a checkpoint this bundle does not carry leaves the presented pair uncovered: a detected discontinuity"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 5,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "kFjst57GnFMu1D/rMlHqODgW/tyjAuyfIZ2TmoQeIvJI5hrUX9s47lF/zEGIImBFWm3nj9FT/mGDH39Tn9ZoAA=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "forged-signature",
+   "why": "the log's kid over a stranger's signature covers nothing and makes the cover unreadable"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 5,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "8mUbIx3XvnNvpHZP",
+     "sig": "kFjst57GnFMu1D/rMlHqODgW/tyjAuyfIZ2TmoQeIvJI5hrUX9s47lF/zEGIImBFWm3nj9FT/mGDH39Tn9ZoAA=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "unknown-key",
+   "why": "a key the log never introduced cannot speak for the log"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 5,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_other",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "eLNRios9P2hQrvojbzTsJX2gf8zipgN7kz4mQv+op7VWe2xKF0n3d52o50QvSgFaYIZYNxRK0KvknWrUdIOiBg=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "another-origin",
+   "why": "signed by the log key but about another log"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 1,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "4Nf73+ClVSMdmta9hVQOoP9L4C51FboPIAZ+GBIcsiLXY+ffoM69qMFzwBtgV2JruxONA3UN69ximYOZnJo8BA=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "self-contradicting",
+   "why": "appended disagrees with the endpoints: two claims, not one statement"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": "5",
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "E7gipdsPfp5Q3br0OiSFQpxRm5lRXbYTSLBaGLNBKHAsswXEB99Ttue9nsLTyn+lhIhEuHUMN89Cvu0xuHFaBA=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "text-size",
+   "why": "a size written as text is not the declared shape"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 5,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "note": "unread",
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "8uUJGOQAEYVqeVoIztShfUD7pgjtfHZiYjJih2nDE3z1umW8OfQcSx4+ME/BS7wtFZVMGYPFtFnRvxhHOWjpAQ=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "extra-body-member",
+   "why": "a signed but unread body member is refused, not ignored"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 5,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "note": "unread",
+     "sig": "rpWr6n8RuZDgDsNxOvvmwdXRQMOWc9QpvfHo+28PL7qdX4Xj2oG/QWzt0O54d8dfAjpq9Rpy2MQt/UX+gVrZDQ=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "extra-outer-member",
+   "why": "an unread member beside body/kid/sig is refused, not ignored"
+  },
+  {
+   "continuity": [
+    {
+     "body": {
+      "appended": 5,
+      "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+      "from_tree_size": 2,
+      "origin": "evd://tenant/t_continuity",
+      "schema": "evd/continuity/v1",
+      "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+      "to_tree_size": 7
+     },
+     "kid": "GS1tS_djJSrddqGS",
+     "sig": "rpWr6n8RuZDgDsNxOvvmwdXRQMOWc9QpvfHo+28PL7qdX4Xj2oG/QWzt0O54d8dfAjpq9Rpy2MQt/UX+gVrZDR=="
+    }
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "noncanonical-signature",
+   "why": "signature text a strict decoder refuses, over otherwise valid bytes"
+  },
+  {
+   "continuity": [
+    "tiles"
+   ],
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": true
+   },
+   "name": "not-an-object",
+   "why": "a member that is not an object"
+  },
+  {
+   "continuity": {
+    "body": {
+     "appended": 5,
+     "from_hash": "3d5f999fd4141566ea3bbcb745d29b4e59200d49200a1dfefecbe76a18d36fa1",
+     "from_tree_size": 2,
+     "origin": "evd://tenant/t_continuity",
+     "schema": "evd/continuity/v1",
+     "to_hash": "20d63a390dcb58d37af29a1c4dcd4fa2515dc68c231b2e645029c8c2fa7e9950",
+     "to_tree_size": 7
+    },
+    "kid": "GS1tS_djJSrddqGS",
+    "sig": "rpWr6n8RuZDgDsNxOvvmwdXRQMOWc9QpvfHo+28PL7qdX4Xj2oG/QWzt0O54d8dfAjpq9Rpy2MQt/UX+gVrZDQ=="
+   },
+   "expected": {
+    "continuity_gaps": 0,
+    "continuity_ok": false,
+    "continuity_present": false
+   },
+   "name": "not-a-list",
+   "why": "the member itself is not a list: unreadable, and never counted as present"
+  }
+ ],
+ "why": "One real sparse bundle and one `continuity` member per case (absent when the case has no such member). Both engines must report the same presence, cover verdict and gap count, and the bundle stays VERIFIED in every case: continuity never gates. A clean cover says only that no discontinuity is detectable in what was presented, never that nothing was omitted."
+}

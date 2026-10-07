@@ -973,6 +973,33 @@
     },
     "verdict": "INDETERMINATE"
   },
+  "expected_unpinned": {
+    "reasons": [
+      "NO_PINNED_TRUST_PACK"
+    ],
+    "should_execute": false,
+    "vector": {
+      "asa_reservation": "INDETERMINATE",
+      "binding": "INDETERMINATE",
+      "challenge": "INDETERMINATE",
+      "coverage_basis": "NOT_EVALUATED_V1",
+      "delegation": "INDETERMINATE",
+      "exact_action": "INDETERMINATE",
+      "fresh_status": "INDETERMINATE",
+      "grant": "INDETERMINATE",
+      "history": "NOT_EVALUATED_V1",
+      "live_key_control": "INDETERMINATE",
+      "node_basis": "NOT_EVALUATED_V1",
+      "passport_identity": "INDETERMINATE",
+      "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+      "replay": "INDETERMINATE",
+      "root_chain": "INDETERMINATE",
+      "source_basis": "NOT_EVALUATED_V1",
+      "template_admin_pop": "INDETERMINATE",
+      "transcript": "INDETERMINATE"
+    },
+    "verdict": "INDETERMINATE"
+  },
   "hostile": {
     "ambiguous_action_unit": {
       "expected": {
@@ -1754,6 +1781,36 @@
       },
       "sha256": "1c91b0e1c016b0e089075f70017e55cbad2bea6a6baa4d062a706e5d8954d14f"
     },
+    "mixed_profile_generation": {
+      "expected": {
+        "reasons": [
+          "MIXED_PROFILE_GENERATION"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "INDETERMINATE",
+          "challenge": "INDETERMINATE",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "INDETERMINATE",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "INDETERMINATE",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "INDETERMINATE",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "INDETERMINATE",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "INDETERMINATE",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "FAIL"
+      },
+      "sha256": "59983b9cf4e6436be16f185ef053afba1bf54b1b6ef2a91bc840dc0907cf8137"
+    },
     "network_jku": {
       "expected": {
         "reasons": [
@@ -2417,6 +2474,7 @@
   },
   "inputs": {
     "challenge.cwt": "a821c58f559809d692b1fd1c207608ccc381ba3a866a93d934b6030b52cfab84",
+    "invalid-trust-pack.cbor": "53b1c8a8ab6455536675a942826d28462e3a7496eb8f47ed5dddf2bba469f855",
     "presentation.cwt": "030e41a80fe4d559c3c4abb7d682aa2c4f2f09783c0824cb892669eefaa61cdc",
     "refusal-context.cbor": "005ea25c7de8d27874148a9f1402ef34d88acab969428c8e1a3d28d990401ac2",
     "refusal-input.cbor": "ecd64583b52d7868611b8ad98cbce433ea6455a5d42b5b5e4a4566cf81e82a50",

@@ -48,6 +48,17 @@ require_tool_version() {
   }
 }
 
+# This script is mirrored into the public verifier, which carries no core
+# operator helpers. Core callers classify their toolchain in the Makefile;
+# this shared entrypoint independently enforces the canonical host and pins.
+platform_os=$(uname -s) || exit 1
+platform_arch=$(uname -m) || exit 1
+if [[ $platform_os != Linux || $platform_arch != x86_64 ]]; then
+  printf 'canonical build requires Linux x86_64, observed %s %s\n' \
+    "$platform_os" "$platform_arch" >&2
+  exit 1
+fi
+
 require_tool_version rustc 'rustc 1.90.0 (1159e78c4 2025-09-14)' rustc --version
 require_tool_version wasm-pack 'wasm-pack 0.15.0' wasm-pack --version
 require_tool_version wasm-bindgen 'wasm-bindgen 0.2.126' wasm-bindgen --version

@@ -26,7 +26,7 @@ export function derive_vector_json(verdict_input_json, trust_json) {
 }
 
 /**
- * Verify a two-field exchange after locally validating context and root pin.
+ * Verify a two-field exchange: local context and exchange structure, then generation, then the root pin.
  * @param {Uint8Array} exchange
  * @param {Uint8Array} local_context
  * @param {Uint8Array} trust_pack

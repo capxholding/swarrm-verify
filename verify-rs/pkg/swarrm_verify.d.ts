@@ -9,7 +9,7 @@
 export function derive_vector_json(verdict_input_json: Uint8Array, trust_json: Uint8Array): string;
 
 /**
- * Verify a two-field exchange after locally validating context and root pin.
+ * Verify a two-field exchange: local context and exchange structure, then generation, then the root pin.
  */
 export function verify_b28_cwt(exchange: Uint8Array, local_context: Uint8Array, trust_pack: Uint8Array, expected_trust_pack_digest: Uint8Array): string;
 
@@ -38,10 +38,10 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly verify_b28_cwt: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
-    readonly verify_disclosure_json: (a: number, b: number, c: number, d: number) => number;
     readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly verify_certificate_cbor: (a: number, b: number) => [number, number];
     readonly verify_bundle_json: (a: number, b: number) => [number, number];
+    readonly verify_disclosure_json: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;

@@ -3,7 +3,7 @@
 use libfuzzer_sys::fuzz_target;
 
 const MAX_INPUT: usize = 1024 * 1024;
-const REQUIRED_KEYS: [&str; 9] = [
+const REQUIRED_KEYS: [&str; 10] = [
     "parse_ok",
     "layers",
     "certificate_id",
@@ -13,6 +13,7 @@ const REQUIRED_KEYS: [&str; 9] = [
     "mark",
     "errors",
     "export_complete",
+    "origin_attested",
 ];
 
 fuzz_target!(|data: &[u8]| {

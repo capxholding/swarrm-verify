@@ -124,13 +124,46 @@ prior root-signed consumption in their authority context, verify it against the
 complete map, and advance from its exact counter/version; stale concurrent
 branches cannot both become the next root head.
 
-## 3. One semantic and wire profile
+## 3. One issued profile, two accepted generations
 
 The semantic profile is `swarrm-b28/v1`; the EAT profile URI is
-`https://swarrm.ai/spec/eat/b28/cwt/v1`. Counterparty Assurance v1 supports
+`https://swarrm.ai/spec/eat/b28/cwt/v1`. That is the only profile a v1
+implementation issues. A verifier additionally accepts the successor spelling
+`https://swarrm.ai/spec/eat/action/cwt/v2`, whose identifiers differ from v1
+in the namespace prefix alone — `swarrm-b28/` becomes `swarrm/`, and every
+sub-name and every version is unchanged. The hashed domain separators are not
+renamed: they are local constants that never appear on the wire, so a v2 core
+digests byte-identically to its v1 twin and no issued certificate moves.
+Counterparty Assurance v1 supports
 exactly one encoding:
 deterministic CBOR in a tagged COSE_Sign1 with media type
 `application/eat+cwt`. JWT/JWS is not implemented, advertised or negotiable.
+
+**v1 acceptance is permanent.** `swarrm-b28/v1` and
+`https://swarrm.ai/spec/eat/b28/cwt/v1` name this profile for as long as either
+string exists. Neither is re-pointed, narrowed, re-scoped or withdrawn, and no
+successor generation reuses them: a later generation carries its own profile
+URI and its own namespace. A certificate already issued is immutable, so a
+verifier that stops accepting v1 does not retire a format — it invalidates
+evidence whose holder cannot reissue it. A conforming verifier MUST accept v1
+for as long as it accepts anything.
+
+**One generation per exchange.** A verifier accepts either generation, never
+both inside one exchange. An exchange carrying both the `swarrm-b28/` and
+`swarrm/` namespaces is refused rather than resolved in the reader's favour,
+because the signer did not say which it meant.
+
+**Generation is judged before the trust pack (normative order).** A verifier
+first validates its own local context and the exchange's structure; bytes that
+do not decode into the exact exchange map declared no generation and are
+`INDETERMINATE/VERIFIER_CONTEXT_INVALID`. Once both envelopes are read, a
+mixed generation is `FAIL/MIXED_PROFILE_GENERATION`, and only then does the
+verifier load the relying party's pinned trust pack, answering
+`INDETERMINATE/NO_PINNED_TRUST_PACK` if it is absent or does not match its
+pin. A pack that fails re-validation also supplies no pinned trust and receives
+that same result. A mixed generation is a property of the signed bytes, independent of the
+relying party's configuration, so a missing or mismatched trust pack MUST NOT
+change the first error a mixed exchange receives.
 
 Ed25519/EdDSA is fixed. The protected header, typed-core schema and EAT profile are exact;
 the protected map is exactly `{1:-8, 3:"application/eat+cwt", 4:kid}` and
@@ -274,6 +307,17 @@ Node/source/coverage/history and post-action evidence readiness are
 `NOT_EVALUATED_V1`. Any policy requiring one of them cannot receive `PASS`.
 Absence or silence is not a signed refusal; only a valid refusal envelope proves
 refusal.
+
+**A signed refusal is judged under the same pinned trust pack (normative).**
+Refusal verification follows the §3 order unchanged: local context and exchange
+structure, then generation, then the relying party's pinned trust pack, which
+is required and answers `INDETERMINATE/NO_PINNED_TRUST_PACK` when absent or not
+matching its pin, before either signature is checked. A refusal carries no key
+material and is never verified without that pack: the challenge signature
+verifies only under the relying party's local challenger keys, the refusal
+signature only under its local responder keys, and the signer must be the
+challenge's actor. A valid refusal is `FAIL/SIGNED_REFUSAL` with
+`should_execute=false`; it denies execution and never confers authority.
 
 ## 7. Carriage and bilateral binding
 

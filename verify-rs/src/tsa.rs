@@ -138,10 +138,7 @@ fn verify_rsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8], hash_
         return false;
     }
     let Some(key_bytes) = spki.subject_public_key.as_bytes() else { return false };
-    let key = match RsaPublicKey::from_pkcs1_der(key_bytes) {
-        Ok(k) => k,
-        Err(_) => return false,
-    };
+    let Ok(key) = RsaPublicKey::from_pkcs1_der(key_bytes) else { return false };
     let scheme = match *hash_oid {
         OID_SHA256 => Pkcs1v15Sign::new::<Sha256>(),
         OID_SHA384 => Pkcs1v15Sign::new::<Sha384>(),

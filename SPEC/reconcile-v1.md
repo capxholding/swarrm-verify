@@ -64,8 +64,18 @@ time outside the manifest's declared tolerance. Any material disagreement →
 outcome `CONTRADICTED`, regardless of finality. It is never softened to
 `CLAIM_ONLY`, never resolved by preferring either side, never suppressed by
 a practitioner. Unique link + final event + no material disagreement →
-`CORROBORATED`; unique link + non-final event → `CLAIM_ONLY` (pending
+`MATCHED`; unique link + non-final event → `CLAIM_ONLY` (pending
 finality); event with no claim → `ORPHAN`.
+
+**Renamed in 1.4 (was `CORROBORATED`).** The value states a deterministic
+field-level match between the claim and the linked event — nothing more. The
+former word imported independent-confirmation strength the mechanism does not
+prove; independence lives entirely in the control-domain evidence and §8
+depth. Engines emit only `MATCHED`. The derivation path never parses outcome
+words from carried artifacts (verifiers recompute the vector from
+`verdict-input`), so no engine accepts either spelling as input; a reader of
+persisted ≤1.3.x artifacts (facts, vectors, rendered reports) MUST treat
+`CORROBORATED` as the deprecated ≤1.3.x spelling of the same value.
 
 **The floor (NORMATIVE).** A manifest's per-class `material_fields` EXTEND
 the comparison; they can never retract it. The floor is
@@ -84,7 +94,7 @@ is exactly the softening this section forbids.
 **Undeclared fields (NORMATIVE).** A disagreement on a field carried by both
 the claim and the source event, which is neither declared in the
 verified-action-v1 types nor named by the manifest, makes the pair
-`UNCOMPARABLE` — never `CORROBORATED`, because such a field is material by
+`UNCOMPARABLE` — never `MATCHED`, because such a field is material by
 construction in a Node build, and never `CONTRADICTED`, because a bare name
 collision between two independently authored vocabularies is not proof of a
 lie and this outcome is terminal.

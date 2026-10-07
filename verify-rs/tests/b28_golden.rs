@@ -80,6 +80,26 @@ fn hostile_local_contexts_match_python() {
     }
 }
 
+// SPEC/handshake-v1.md §3 fixes the order: a mixed generation is a property of
+// the bytes, so it is refused before the relying party's trust pack is read. A
+// missing or mismatched pack must not change the first error; Python's twin
+// (tests/test_b28_cross_language_golden.py) holds the same manifest row with no
+// pack at all. A clean exchange under the same broken packs still answers
+// NO_PINNED_TRUST_PACK, which is what proves the order rather than the outcome.
+#[test]
+fn mixed_generation_is_refused_before_the_trust_pack_is_read_as_in_python() {
+    let expected = manifest();
+    let mixed = fs::read(dir().join("hostile").join("mixed_profile_generation.input.cbor")).unwrap();
+    let clean = fs::read(dir().join("verify-input.cbor")).unwrap();
+    let (pack, context) = (fs::read(dir().join("trust-pack.cbor")).unwrap(), context("verify-context.cbor"));
+    for (pack, pin) in [(&pack[..], &[0u8; 32][..]), (&[][..], &B28_TRUST_PACK_PIN[..]), (&b"not a trust pack"[..], &[][..])] {
+        let got: J = serde_json::from_str(&verify_b28_cwt(&mixed, &context, pack, pin)).unwrap();
+        assert_eq!(got, expected["hostile"]["mixed_profile_generation"]["expected"]);
+        let control: J = serde_json::from_str(&verify_b28_cwt(&clean, &context, pack, pin)).unwrap();
+        assert_eq!(control["reasons"], serde_json::json!(["NO_PINNED_TRUST_PACK"]));
+    }
+}
+
 #[test]
 fn signed_refusal_matches_python_without_authorizing_execution() {
     let expected = manifest();
@@ -88,6 +108,41 @@ fn signed_refusal_matches_python_without_authorizing_execution() {
     assert_eq!(got, expected["expected_refusal"]);
     assert_eq!(got["verdict"], "FAIL");
     assert_eq!(got["should_execute"], false);
+}
+
+// SPEC/handshake-v1.md §6: a signed refusal is judged under the same pinned
+// pack as a presentation. Python's twin (tests/test_b28_cross_language_golden.py)
+// feeds the same bytes with no pack. The valid refusal and the keyless one both
+// stop at NO_PINNED_TRUST_PACK, so the pack precedes every key and signature
+// check; the pinned control still yields SIGNED_REFUSAL.
+#[test]
+fn signed_refusal_needs_the_pinned_trust_pack_as_in_python() {
+    let expected = manifest();
+    let mut unpinned = expected["refusal_hostile"]["no_challenger_key"]["expected"].clone();
+    unpinned["reasons"] = serde_json::json!(["NO_PINNED_TRUST_PACK"]);
+    let pack = fs::read(dir().join("trust-pack.cbor")).unwrap();
+    let cases = [("refusal-input.cbor", "refusal-context.cbor"), ("refusal-hostile/no_challenger_key.exchange.cbor", "refusal-hostile/no_challenger_key.context.cbor")];
+    for (name, local) in cases {
+        let (exchange, local) = (fs::read(dir().join(name)).unwrap(), context(local));
+        for (pack, pin) in [(&pack[..], &[0u8; 32][..]), (&[][..], &B28_TRUST_PACK_PIN[..])] {
+            let got: J = serde_json::from_str(&verify_b28_cwt(&exchange, &local, pack, pin)).unwrap();
+            assert_eq!(got, unpinned, "{name}");
+        }
+    }
+    let got: J = serde_json::from_str(&verify_exchange(&fs::read(dir().join("refusal-input.cbor")).unwrap(), &context("refusal-context.cbor"))).unwrap();
+    assert_eq!(got, expected["expected_refusal"]);
+}
+
+#[test]
+fn invalid_pinned_pack_has_the_shared_fail_closed_reason() {
+    let expected = manifest();
+    let pack = fs::read(dir().join("invalid-trust-pack.cbor")).unwrap();
+    let pin = Sha256::digest(&pack);
+    for (exchange, local) in [("verify-input.cbor", "verify-context.cbor"), ("refusal-input.cbor", "refusal-context.cbor")] {
+        let input = fs::read(dir().join(exchange)).unwrap();
+        let got: J = serde_json::from_str(&verify_b28_cwt(&input, &context(local), &pack, &pin)).unwrap();
+        assert_eq!(got, expected["expected_unpinned"], "{exchange}");
+    }
 }
 
 #[test]

@@ -2,7 +2,7 @@
 //! SCITT goldens — the Rust engine runs the SAME SCITT golden bytes the Python engine
 //! compiled (scripts/gen_scitt_golden.py, tests/golden/scitt/) and must
 //! reproduce the hand-authored `scitt_receipt_valid` in expected.json for every
-//! family. Two independent implementations agreeing on the ten §6 outcomes —
+//! family. Two independent implementations agreeing on the shared §6 outcomes —
 //! and never panicking on hostile bytes (H5) — is the SCITT conformance contract.
 //!
 //! `scitt` (and its `cose` / `cbor` / `jcs` / `merkle` dependencies) are
@@ -19,6 +19,8 @@ mod cbor_wire;
 #[path = "../src/cose.rs"]
 #[allow(dead_code)]
 mod cose;
+#[path = "internal/cose_build.rs"]
+mod cose_build;
 #[path = "../src/jcs.rs"]
 #[allow(dead_code)]
 mod jcs;
@@ -117,7 +119,7 @@ fn mutate_inclusion_number(receipt: &[u8], ts_keys: &BTreeMap<String, [u8; 32]>,
     let Cbor::Array(items) = triple else { panic!("fixture inclusion is not an array") };
     items[position] = Cbor::Integer(value.into());
     let seed = <[u8; 32]>::try_from((64u8..96).collect::<Vec<_>>()).unwrap();
-    cose::build_sign1(&parsed.protected, &unprotected, parsed.payload.as_deref(), &seed).unwrap()
+    cose_build::build_sign1(&parsed.protected, &unprotected, parsed.payload.as_deref(), &seed).unwrap()
 }
 
 // ---- the gate ---------------------------------------------------------------
@@ -138,12 +140,12 @@ fn scitt_suite_agrees_with_expected() {
         let pack = read_json(dir.join(format!("{name}.pack.json")));
         let ts_keys = keys_from_jwks(&pack["ts_jwks"]);
 
-        let got = scitt::verify_scitt_receipt(&stmt, &rcpt, &ts_keys, &issuer_keys, cid);
+        let got = scitt::verify_scitt_receipt_with_checkpoint(&stmt, &rcpt, &ts_keys, &issuer_keys, cid, &pack["checkpoint"]);
         let want = exp["scitt_receipt_valid"].as_bool().unwrap();
         assert_eq!(got, want, "family {name}: scitt_receipt_valid");
         checked += 1;
     }
-    assert!(checked >= 10, "expected at least 10 SCITT families, ran {checked}");
+    assert!(checked >= 13, "expected at least 13 SCITT families, ran {checked}");
 }
 
 #[test]

@@ -33,6 +33,7 @@ fn fresh_mutations_match_python_exactly_and_never_authorize() {
     assert_eq!(digest(&trust_pack), hex(&TRUST_PACK_PIN));
 
     let mut surfaces = BTreeSet::new();
+    let mut diverged: Vec<String> = Vec::new();
     for case in cases {
         let name = case["name"].as_str().expect("case name");
         surfaces.insert((case["seed"].as_str().expect("case seed"), case["target"].as_str().expect("case target")));
@@ -42,10 +43,16 @@ fn fresh_mutations_match_python_exactly_and_never_authorize() {
         assert_eq!(digest(&context), case["context_sha256"], "{name}");
 
         let got: Value = serde_json::from_str(&verify_b28_cwt(&exchange, &context, &trust_pack, &TRUST_PACK_PIN)).expect("verifier must always return JSON");
-        assert_eq!(got, case["expected"], "{name}: Rust diverged from Python");
+        // Every divergence is collected, not raised: a parity break that stops
+        // at the first case reports one defect where there may be many, and the
+        // reader cannot tell a single stray mutation from a whole broken family.
+        if got != case["expected"] {
+            diverged.push(format!("{name} (seed {}, {} mutation): Rust {}/{} vs Python {}/{}", case["seed"].as_str().unwrap_or("?"), case["mutation"].as_str().unwrap_or("?"), got["verdict"], got["reasons"], case["expected"]["verdict"], case["expected"]["reasons"]));
+        }
         assert_ne!(got["verdict"], "PASS", "{name}: verifier returned PASS");
         assert_eq!(got["should_execute"], false, "{name}: read-only verifier authorized execution");
     }
+    assert!(diverged.is_empty(), "Rust diverged from Python on {} of {} cases:\n{}", diverged.len(), cases.len(), diverged.join("\n"));
     assert_eq!(manifest["mutation_surface_count"].as_u64(), Some(surfaces.len() as u64));
     println!("differential: Rust == Python on {} fresh mutations", cases.len());
 }
