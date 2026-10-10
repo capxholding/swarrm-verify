@@ -435,8 +435,12 @@ fn apply_key_rotated(kl: &mut KeyLog, leaf: u64, env: &Value, ctx: &Value, jwk: 
     }
     // continuity: prev key signed canonical(jwk)
     // over-deep / non-integer jwk cannot verify
-    let Some(jwk_canon) = jcs::canonical_checked(jwk) else { return false };
-    let Ok(cont) = B64.decode(continuity.unwrap()) else { return false };
+    let Some(jwk_canon) = jcs::canonical_checked(jwk) else {
+        return false;
+    };
+    let Ok(cont) = B64.decode(continuity.unwrap()) else {
+        return false;
+    };
     if !ed25519_verify(&kl.keys[prev_kid], &jwk_canon, &cont) {
         return false;
     }
@@ -587,9 +591,13 @@ fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool 
         return false;
     }
     let Some(sig_b64) = cp.get("sig").and_then(|v| v.as_str()) else { return false };
-    let Ok(sig) = B64.decode(sig_b64) else { return false };
+    let Ok(sig) = B64.decode(sig_b64) else {
+        return false;
+    };
     // over-deep / non-integer body cannot verify
-    let Some(canon) = jcs::canonical_checked(body) else { return false };
+    let Some(canon) = jcs::canonical_checked(body) else {
+        return false;
+    };
     let msg = pae(CHECKPOINT_TYPE, &canon);
     ed25519_verify(pubkey, &msg, &sig)
 }
