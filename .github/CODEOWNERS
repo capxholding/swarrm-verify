@@ -1,6 +1,7 @@
 # H22: security-sensitive surfaces always request the repository owner.
-# A distinct qualified reviewer must still approve changes before merge; author
-# ownership is not independent review.
+# Owner decision 2026-10-10: author approval is sufficient before merge.
+# Separate non-author permission is not required; required checks still apply.
+# Author approval must not be described as independent review.
 /.github/      @mcf-capx
 /SPEC/         @mcf-capx
 /verify-rs/    @mcf-capx
