@@ -28,7 +28,7 @@ const encoder = new TextEncoder();
 let currentText = decoder.decode(uploaded);
 let currentBytes = uploaded;
 const pagePath = pageFile instanceof URL ? fileURLToPath(pageFile) : pageFile;
-const rendererSource = fs.readFileSync(path.join(path.dirname(pagePath), "verification_presentation.js"));
+const rendererSource = fs.readFileSync(path.join(path.dirname(pagePath), "../pkg/verification_presentation.js"));
 const {createPresentation} = await import(`data:text/javascript;base64,${rendererSource.toString("base64")}`);
 const element = () => ({style: {}, textContent: "", hidden: false});
 const ui = Object.fromEntries(["controls", "flip", "verdict", "detail", "bundleDigest", "disputeFacts", "requireManifest"].map(key => [key, element()]));
