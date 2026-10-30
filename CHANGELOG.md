@@ -19,6 +19,9 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ### Security
 
+- Enforce timestamp token version and serial-number types, including the CMS
+  version required by embedded certificate and revocation choices.
+
 - Reject timestamp tokens with missing, duplicate, or multivalued mandatory
   signed attributes, even when the signature itself is authentic.
 
