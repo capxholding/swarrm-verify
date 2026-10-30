@@ -78,3 +78,23 @@ fn signed_attributes_bind_bundle_acceptance_and_rooted_time() {
     let required = ["content_missing", "content_wrong", "content_duplicate", "content_multiple", "content_empty", "digest_multiple", "digest_missing", "digest_wrong", "digest_empty", "digest_duplicate", "unknown"].into_iter().collect::<std::collections::BTreeSet<_>>();
     assert_eq!(checked, required, "review the complete signed-attribute mutation identities");
 }
+
+#[test]
+fn syntax_versions_bind_bundle_acceptance_and_rooted_time() {
+    let dir = golden_dir();
+    let read = |name: &str| -> Value { serde_json::from_slice(&fs::read(dir.join(name)).unwrap()).unwrap() };
+    let expected = read("expected.json");
+    let trust = read("trust_evidence.json");
+    let mut checked = std::collections::BTreeSet::new();
+    for (name, verdict) in expected.as_object().unwrap() {
+        let Some(suffix) = name.strip_prefix("evidence_tst_syntax_") else { continue };
+        let bundle = read(&format!("{name}.json"));
+        let report = swarrm_verify::verify_bundle(&bundle, Some(&trust));
+        let accepted = verdict.as_str() == Some("VERIFIED");
+        assert_eq!(report["ok"].as_bool(), Some(accepted), "bundle {name}");
+        assert_eq!(report["trusted_tst_checkpoints"].as_array().unwrap().len(), if accepted { 1 } else { 0 }, "time award {name}");
+        checked.insert(suffix);
+    }
+    let required = ["tst_0", "tst_2", "tst_negative_1", "tst_257", "signer_0", "signer_2", "signer_3", "signer_4", "signer_5", "signer_9", "signed_data_0", "signed_data_1", "signed_data_2", "signed_data_4", "signed_data_5", "signed_data_9", "other_revocation_valid", "other_revocation_wrong", "serial_wrong_type", "serial_negative"].into_iter().collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(checked, required, "review the complete version mutation identities");
+}

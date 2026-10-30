@@ -29,10 +29,10 @@
 //! trailing bytes); such tokens fail closed here.
 
 use cms::cert::CertificateChoices;
-use cms::content_info::ContentInfo;
-use cms::signed_data::{SignedData, SignerIdentifier, SignerInfo};
-use der::asn1::{Any, AnyRef, GeneralizedTime, ObjectIdentifier, OctetStringRef};
-use der::{Decode, Encode, SliceReader, Tag, Tagged};
+use cms::content_info::{CmsVersion, ContentInfo};
+use cms::signed_data::{CertificateSet, DigestAlgorithmIdentifiers, EncapsulatedContentInfo, SignerIdentifier, SignerInfo, SignerInfos};
+use der::asn1::{Any, AnyRef, GeneralizedTime, IntRef, ObjectIdentifier, OctetStringRef, SetOfVec};
+use der::{Decode, Encode, Reader, SliceReader, Tag, TagNumber, Tagged};
 use p256::ecdsa::signature::hazmat::PrehashVerifier; // shared trait; p384 keys implement it too
 use rsa::pkcs1::DecodeRsaPublicKey;
 use rsa::{Pkcs1v15Sign, RsaPublicKey};
@@ -72,6 +72,43 @@ struct TstImprint {
     alg: ObjectIdentifier,
     digest: Vec<u8>,
     gen_time: GeneralizedTime,
+}
+
+// CMS 0.2.3 models OtherRevocationInfoFormat's OID as an AlgorithmIdentifier.
+// Keep the SignedData layout, but decode that opaque optional field correctly.
+// Parsing it does not assess revocation or expand the relying party's trust.
+#[derive(der::Sequence)]
+struct TimestampSignedData {
+    version: CmsVersion,
+    digest_algorithms: DigestAlgorithmIdentifiers,
+    encap_content_info: EncapsulatedContentInfo,
+    #[asn1(context_specific = "0", tag_mode = "IMPLICIT", optional = "true")]
+    certificates: Option<CertificateSet>,
+    #[asn1(context_specific = "1", tag_mode = "IMPLICIT", optional = "true")]
+    crls: Option<SetOfVec<Any>>,
+    signer_infos: SignerInfos,
+}
+
+fn other_revocation_present(crls: Option<&SetOfVec<Any>>) -> Option<bool> {
+    let mut other = false;
+    for item in crls.into_iter().flat_map(|items| items.iter()) {
+        match item.tag() {
+            Tag::Sequence => {
+                x509_cert::crl::CertificateList::from_der(&item.to_der().ok()?).ok()?;
+            }
+            Tag::ContextSpecific { constructed: true, number: TagNumber::N1 } => {
+                let mut reader = SliceReader::new(item.value()).ok()?;
+                ObjectIdentifier::decode(&mut reader).ok()?;
+                Any::decode(&mut reader).ok()?;
+                if !reader.is_finished() {
+                    return None;
+                }
+                other = true;
+            }
+            _ => return None,
+        }
+    }
+    Some(other)
 }
 
 fn hash_bytes(oid: &ObjectIdentifier, data: &[u8]) -> Option<Vec<u8>> {
@@ -167,24 +204,30 @@ fn parse_tst_info(tst_der: &[u8]) -> Option<TstImprint> {
         return None;
     }
     let mut r = SliceReader::new(outer.value()).ok()?;
-    let version = AnyRef::decode(&mut r).ok()?;
-    if version.tag() != Tag::Integer {
+    if u8::decode(&mut r).ok()? != 1 {
         return None;
     }
     let _policy = ObjectIdentifier::decode(&mut r).ok()?;
     let (alg, digest) = parse_imprint(&mut r)?;
-    let _serial = AnyRef::decode(&mut r).ok()?;
+    let _serial = IntRef::decode(&mut r).ok()?;
     let gen_time = GeneralizedTime::decode(&mut r).ok()?;
     Some(TstImprint { alg, digest, gen_time })
 }
 
-fn parse_token(token_der: &[u8]) -> Option<(SignedData, Vec<u8>, TstImprint)> {
+fn parse_token(token_der: &[u8]) -> Option<(TimestampSignedData, Vec<u8>, TstImprint)> {
     let ci = ContentInfo::from_der(token_der).ok()?;
     if ci.content_type != OID_SIGNED_DATA {
         return None;
     }
-    let sd: SignedData = ci.content.decode_as().ok()?;
+    let sd: TimestampSignedData = ci.content.decode_as().ok()?;
     if sd.encap_content_info.econtent_type != OID_TST_INFO {
+        return None;
+    }
+    // RFC 5652 §5.1. Attribute certificates are unsupported by the CMS
+    // decoder; supported opaque other-format material requires version 5.
+    let other_cert = sd.certificates.as_ref().is_some_and(|cs| cs.0.iter().any(|c| matches!(c, CertificateChoices::Other(_))));
+    let other_revocation = other_revocation_present(sd.crls.as_ref())?;
+    if sd.version != if other_cert || other_revocation { CmsVersion::V5 } else { CmsVersion::V3 } {
         return None;
     }
     // eContent is [0] EXPLICIT — the Any holds the OCTET STRING around the
@@ -206,11 +249,14 @@ fn signed_attribute(attrs: &Attributes, oid: ObjectIdentifier) -> Option<&Any> {
 /// Returns the single SignerInfo after the RFC 3161 structural checks (mirror
 /// of `_check_signer_info`). The signature hash is resolved in verify_sig (from
 /// the sig alg, or the digest algorithm for the bare rsaEncryption OID).
-fn check_signer_info<'a>(sd: &'a SignedData, tst_der: &[u8]) -> Option<&'a SignerInfo> {
+fn check_signer_info<'a>(sd: &'a TimestampSignedData, tst_der: &[u8]) -> Option<&'a SignerInfo> {
     let mut infos = sd.signer_infos.0.iter();
     let (Some(si), None) = (infos.next(), infos.next()) else {
         return None;
     }; // exactly one
+    if si.version != CmsVersion::V1 || !matches!(si.sid, SignerIdentifier::IssuerAndSerialNumber(_)) {
+        return None;
+    }
     let signed_attrs = si.signed_attrs.as_ref()?;
     if signed_attrs.is_empty() {
         return None; // RFC 3161 requires signed attributes
@@ -222,7 +268,7 @@ fn check_signer_info<'a>(sd: &'a SignedData, tst_der: &[u8]) -> Option<&'a Signe
     Some(si)
 }
 
-fn find_signer_cert<'a>(sd: &'a SignedData, si: &SignerInfo) -> Option<&'a Certificate> {
+fn find_signer_cert<'a>(sd: &'a TimestampSignedData, si: &SignerInfo) -> Option<&'a Certificate> {
     let SignerIdentifier::IssuerAndSerialNumber(ias) = &si.sid else { return None };
     let want_issuer = ias.issuer.to_der().ok()?;
     for choice in sd.certificates.as_ref()?.0.iter() {

@@ -168,7 +168,9 @@ timestamped), mirroring `anchor_records`.
 
 For each record: (1) it must reference a checkpoint `body_hash` present in
 the bundle's chain; (2) the token must parse as CMS SignedData carrying a
-TSTInfo; (3) the messageImprint must be SHA-256 of exactly that digest;
+version-1 TSTInfo; CMS SignedData and SignerInfo versions must agree with their
+contents under RFC 5652 §§5.1 and 5.3 (the supported issuer-and-serial signer
+identifier requires version 1); (3) the messageImprint must be SHA-256 of exactly that digest;
 (4) CMS content-type and message-digest signed attributes must each occur exactly
 once with exactly one value, as required by RFC 5652 §§11.1–11.2; content-type
 must be id-ct-TSTInfo and message-digest must match the eContent; (5) the

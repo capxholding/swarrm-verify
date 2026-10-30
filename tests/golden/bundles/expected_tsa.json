@@ -84,6 +84,146 @@
     "rust": false,
     "token": "tsa_p256_outer_cert_algorithm.der"
   },
+  "tsa_p256_syntax_other_revocation_valid": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": true,
+    "rust": true,
+    "token": "tsa_p256_syntax_other_revocation_valid.der"
+  },
+  "tsa_p256_syntax_other_revocation_wrong": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_other_revocation_wrong.der"
+  },
+  "tsa_p256_syntax_serial_negative": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": true,
+    "rust": true,
+    "token": "tsa_p256_syntax_serial_negative.der"
+  },
+  "tsa_p256_syntax_serial_wrong_type": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_serial_wrong_type.der"
+  },
+  "tsa_p256_syntax_signed_data_0": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signed_data_0.der"
+  },
+  "tsa_p256_syntax_signed_data_1": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signed_data_1.der"
+  },
+  "tsa_p256_syntax_signed_data_2": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signed_data_2.der"
+  },
+  "tsa_p256_syntax_signed_data_4": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signed_data_4.der"
+  },
+  "tsa_p256_syntax_signed_data_5": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signed_data_5.der"
+  },
+  "tsa_p256_syntax_signed_data_9": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signed_data_9.der"
+  },
+  "tsa_p256_syntax_signer_0": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signer_0.der"
+  },
+  "tsa_p256_syntax_signer_2": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signer_2.der"
+  },
+  "tsa_p256_syntax_signer_3": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signer_3.der"
+  },
+  "tsa_p256_syntax_signer_4": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signer_4.der"
+  },
+  "tsa_p256_syntax_signer_5": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signer_5.der"
+  },
+  "tsa_p256_syntax_signer_9": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_signer_9.der"
+  },
+  "tsa_p256_syntax_tst_0": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_tst_0.der"
+  },
+  "tsa_p256_syntax_tst_2": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_tst_2.der"
+  },
+  "tsa_p256_syntax_tst_257": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_tst_257.der"
+  },
+  "tsa_p256_syntax_tst_negative_1": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_syntax_tst_negative_1.der"
+  },
   "tsa_p256_tampered": {
     "chain": "tsa_p256_chain.pem",
     "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
