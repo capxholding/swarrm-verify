@@ -21,6 +21,20 @@ position unattested; anchoring `body_hash` pins the whole statement.
 Anchoring attaches to checkpoints, not receipts. That is what makes anchoring
 cost O(checkpoints), independent of receipt volume.
 
+### Global snapshot scope
+
+The `evd://global` producer commits to the current tenant heads, ordered by
+tenant identity, with leaves `SHA-256(tenant_salt || tenant_root)`.
+Its `tree_size` is the number of included tenants, not a cumulative receipt
+count. Tenant updates can change the root at the same size; tenant removal
+can decrease the size. The checkpoint records remain an append-only,
+signed predecessor chain. Global readers must validate every retained
+signature, origin, predecessor and stored body hash without treating these
+snapshots as a tenant-log Merkle consistency proof. The global store does
+not retain historical salted leaves, so signature validation alone cannot
+establish historical tenant completeness or authorize tenant deletion.
+Tenant and SCITT append-only verification requirements remain unchanged.
+
 ## 2. The contract
 
 `anchor/contract/Anchor.sol` — one function `anchor(bytes32 digest)`, one
@@ -155,7 +169,9 @@ timestamped), mirroring `anchor_records`.
 For each record: (1) it must reference a checkpoint `body_hash` present in
 the bundle's chain; (2) the token must parse as CMS SignedData carrying a
 TSTInfo; (3) the messageImprint must be SHA-256 of exactly that digest;
-(4) the CMS message-digest attribute must match the eContent; (5) the
+(4) CMS content-type and message-digest signed attributes must each occur exactly
+once with exactly one value, as required by RFC 5652 §§11.1–11.2; content-type
+must be id-ct-TSTInfo and message-digest must match the eContent; (5) the
 signature over the signed attributes must verify with the signer certificate
 embedded in the token (RSA PKCS#1 v1.5 and ECDSA); (6) the signer certificate
 must chain to a SELF-SIGNED root inside the record's `cert_chain_pem`;

@@ -361,3 +361,53 @@ requires the actor Birthtag and revision to match an existing E1 lineage and
 derives the principal binding from the verified passport; callers cannot
 redirect the transcript to another lineage or binding. An adverse or merely
 prepared exchange returns no usable evidence handle.
+
+
+## Counterparty checkpoint acknowledgement (report evidence only)
+
+`swarrm-b28/acknowledgement-core/v1` uses the existing strict CWT envelope.
+Its exact core members are `schema`, `profile`, `counterparty`, `origin`,
+`from_hash`, `to_hash` and `issued_at`. The counterparty is the signing key's
+identifier; the origin and distinct checkpoint identifiers are nonempty text,
+and `issued_at` is an unsigned integer Unix time. Existing v1 checkpoint
+identifiers are not reinterpreted as tree-size/root tuples. The issuer derives
+the counterparty from its signing key and uses the v1 issued profile.
+
+A relying party supplies verification keys independently of the bundle and
+acknowledgement. A signature under another key, mismatched signer identity,
+future issuance time, malformed profile or empty interval MUST refuse. The
+report compares only verified acknowledgements with independently verified
+bundle checkpoint identities. Both endpoints must exist in an advancing
+integer-size range for COVERED. Missing endpoints yield CONFLICT; foreign
+origins and reversed/nonadvancing ranges yield no coverage conclusion. A
+conflict is between signed claims, not proof of withholding or concealment.
+No acknowledgement changes the bundle verdict, evidence level or disabled
+favorable Counterparty Assurance verdict.
+
+The report retains original CWT bytes and their SHA-256, the explicit public
+verification key and verification time. It refuses the whole report when any
+supplied acknowledgement cannot be verified; it never silently drops one.
+The report accepts at most 64 acknowledgements of at most 65,536 bytes each.
+The offline and live report entrypoints share this admission before rendering
+or live reads. `swarrm report` accepts repeatable `--acknowledgement FILE.cwt`
+only with an explicit `--acknowledgement-keys RELYING-PARTY.jwks`; that file
+must not be selected by the received evidence. Omission of this option means
+no acknowledgement comparison, not proof of completeness.
+
+The Rust/WASM `verify_acknowledgement_json(envelope, context, bundle_json)`
+entrypoint consumes bytes. Its relying-party context is canonical CBOR with
+exact members `schema` (`swarrm-b28/local-acknowledgement-context/v1`), `keys`
+and `now`. Keys use the existing bounded, sorted, unique local key table
+(`kid`, `public_key`); `now` is a nonnegative signed-64-bit-range integer.
+The context is limited to 65,536 bytes and 64 keys. Received evidence MUST NOT
+choose this context. Both inner and outer profiles must be recognized.
+
+Its closed JSON result has exactly `schema`, `verdict`, `acknowledgement`,
+`coverage`, `bundle_digest`, `context_digest` and `envelope_digest`.
+The schema is `evd/acknowledgement-assessment/v1`. `VERIFIED` means the bundle
+and acknowledgement independently verified, not that coverage is complete.
+The acknowledgement contains exactly `counterparty`, `origin`, `from_hash`,
+`to_hash`, `issued_at`; coverage is `covered`, `conflict`, `other-origin` or
+`malformed` under the comparison rules above. Digests bind canonical bundle
+JSON and original context/envelope bytes. On `NOT_VERIFIED`, all five data
+members are null. No result grants a favorable assurance verdict.

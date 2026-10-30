@@ -1,6 +1,11 @@
 Swarrm public verifier — build integrity
 =========================================
 
+CANDIDATE BUILD — NOT PUBLISHED OR RELEASE-QUALIFIED.
+Public source synchronization remains required. Any public revision below
+identifies the published predecessor, not the source of these candidate bytes.
+The release's exact-source comparison must pass before this notice is removed.
+
 The verifier that runs in your browser must be auditable: you should be able
 to confirm the WASM you are served is the one built from this repo's source
 (verify-rs/), and not a silently substituted one.
@@ -15,12 +20,12 @@ Reproduce and check:
 Expected sha256 of swarrm_verify.js (the canonical x86_64 Linux CI build
 from this source tree):
 
-    4ce489e429e22ae87626e0f4ba326970ca679867011b00aee3b198d9d0bd88cb
+    2000330331f9e91932a6b7a8070bbcaed53f6dc0ebef7cb2126305d496671d5d
 
 Expected sha256 of swarrm_verify_bg.wasm (the canonical x86_64 Linux CI build
 from this source tree):
 
-    1a2cbf80a55b37efca5107d659fbf721af537e676db6f81247768e34570e2604
+    ddba9c0aa1852e1a91bd9aa40cf07b46112785252fe2d2c29f15f7adc6c89ee1
 
 This artifact was rebuilt on x86_64 Linux with Rust 1.90.0 and checksummed
 wasm-pack 0.15.0, wasm-bindgen CLI 0.2.126 and Binaryen 117 release binaries.
@@ -32,3 +37,11 @@ context, not the browser's source of expected values. The verifier is
 client-side only and does not upload a bundle you choose. The pins do not by
 themselves audit the source, authenticate the page that displays them,
 establish external trust roots, or prove capture completeness.
+
+Expected sha256 of verification_presentation.js
+
+  f49c91ee93432f4a77979d1ed2b1395fc0bdecaf1d433b07c8a1c6ecce1cf6c1
+
+This presentation source is website/pkg/verification_presentation.js at the
+bound core/public source revision. It is copied unchanged into the web build
+output and checked before execution, separately from the WASM verifier.

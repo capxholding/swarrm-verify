@@ -1,0 +1,62 @@
+{
+  "action": {
+    "action_class": "",
+    "action_id": ""
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "1",
+    "cursor_start": "0",
+    "declared_count": 1,
+    "event_key_root": "7d450c7615dc06bd931c54d6bf4710f441272b279da00cbdbb04f8d55b97b79d",
+    "exclusions": [],
+    "filter_digest": "9b9229601d66f70b764a47b63d23623db89f61eb1b1954514632ac05cb78a082",
+    "finality_watermark": "",
+    "gaps": [],
+    "mapping_version": "emu-map-1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "emu-ledger/acct-23"
+  },
+  "client_attestation_present": false,
+  "event_matches": [],
+  "events": [
+    {
+      "counterparty": "acme-1369",
+      "currency": "EUR",
+      "event_key": "evt-000000",
+      "finality": "final",
+      "outcome": "succeeded",
+      "proof_digests": [
+        "b114ce6e88e223b4fecfb9bf2177620064f9a7f18b53753b42a403656eabb296"
+      ],
+      "reference": "act-23-0000",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T00:00:00Z",
+      "source_identity_ref": "emu-ledger/acct-23",
+      "value": "380.99"
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": true,
+    "batch_digest": "957bbf085a3a2ecf9993c18d79f1d22d06dc632e2e3293f595ca6268164b7931",
+    "complete": false,
+    "cursor_gap_free": true,
+    "node_id": "s3YkkeLhSDposbKe",
+    "node_signed": true,
+    "performed": true,
+    "signature": "niRY2SvDVjT/lZ7mDpOB+ARkv7J4K0BlWxPlu0PRqWTNMuzbforKqZoXr/RM6yAGErdYziD2p7f/d2z5uwKmDQ=="
+  },
+  "schema": "evd/verdict-input/v1"
+}

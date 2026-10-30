@@ -40,7 +40,7 @@ fn fuzz_corpus_rejected_without_panic() {
         // Unparseable input is rejected at the parse boundary, the same
         // outcome as Python, so that arm has nothing left to assert.
         if let Ok(v) = serde_json::from_slice::<Value>(&raw) {
-            assert!(!swarrm_verify::verify_bundle(&v), "{name} must NOT verify");
+            assert!(!swarrm_verify::verify_bundle(&v, None)["ok"].as_bool().expect("bundle report verdict"), "{name} must NOT verify");
         }
     }
 }
@@ -49,40 +49,40 @@ fn fuzz_corpus_rejected_without_panic() {
 fn over_cap_synthetics_rejected_at_the_boundary() {
     // caps IDENTICAL to verify/verifier.py: proof 64, sigs 9, depth 64
     let base = load_bundle("valid_e1.json");
-    assert!(swarrm_verify::verify_bundle(&base), "valid_e1 must verify");
+    assert!(swarrm_verify::verify_bundle(&base, None)["ok"].as_bool().expect("bundle report verdict"), "valid_e1 must verify");
 
     let mut proof = base.clone();
     proof["entries"][0]["inclusion_proof"] = json!(vec!["00"; 65]);
-    assert!(!swarrm_verify::verify_bundle(&proof), "proof len 65 over cap");
+    assert!(!swarrm_verify::verify_bundle(&proof, None)["ok"].as_bool().expect("bundle report verdict"), "proof len 65 over cap");
 
     let mut sigs = base.clone();
     let sig = sigs["entries"][0]["envelope"]["signatures"][0].clone();
     sigs["entries"][0]["envelope"]["signatures"] = Value::Array(vec![sig; 10]);
-    assert!(!swarrm_verify::verify_bundle(&sigs), "9+1 signatures over cap");
+    assert!(!swarrm_verify::verify_bundle(&sigs, None)["ok"].as_bool().expect("bundle report verdict"), "9+1 signatures over cap");
 
     let mut deep = base.clone();
     deep["__depth65__"] = nested(64); // bundle object + 64 = depth 65, one over
-    assert!(!swarrm_verify::verify_bundle(&deep), "depth 65 over cap");
+    assert!(!swarrm_verify::verify_bundle(&deep, None)["ok"].as_bool().expect("bundle report verdict"), "depth 65 over cap");
 
     let mut at_cap = base;
     at_cap["__depth64__"] = nested(63); // exactly at the cap — legit unaffected
-    assert!(swarrm_verify::verify_bundle(&at_cap), "depth 64 must still verify");
+    assert!(swarrm_verify::verify_bundle(&at_cap, None)["ok"].as_bool().expect("bundle report verdict"), "depth 64 must still verify");
 }
 
 #[test]
 fn front_truncated_or_relabeled_history_is_rejected() {
     let base = load_bundle("b21_authority_valid.json");
-    assert!(swarrm_verify::verify_bundle(&base), "control bundle must verify");
+    assert!(swarrm_verify::verify_bundle(&base, None)["ok"].as_bool().expect("bundle report verdict"), "control bundle must verify");
 
     let mut truncated = base.clone();
     let tail = truncated["checkpoint_chain"].as_array().unwrap()[1..].to_vec();
     assert_ne!(tail[0]["checkpoint"]["body"]["prev_hash"], Value::String(String::new()));
     truncated["checkpoint_chain"] = Value::Array(tail);
-    assert!(!swarrm_verify::verify_bundle(&truncated), "a signed suffix is not a complete history");
+    assert!(!swarrm_verify::verify_bundle(&truncated, None)["ok"].as_bool().expect("bundle report verdict"), "a signed suffix is not a complete history");
 
     let mut relabeled = base;
     relabeled["origin"] = Value::String("evd://tenant/t_attacker".into());
-    assert!(!swarrm_verify::verify_bundle(&relabeled), "outer origin must bind to signed checkpoints");
+    assert!(!swarrm_verify::verify_bundle(&relabeled, None)["ok"].as_bool().expect("bundle report verdict"), "outer origin must bind to signed checkpoints");
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn deep_nesting_cannot_overflow_the_stack() {
     // depth guard must bail (at depth 65) long before recursing that far.
     let mut bundle = load_bundle("valid_e1.json");
     bundle["__bomb__"] = nested(100_000);
-    assert!(!swarrm_verify::verify_bundle(&bundle));
+    assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
     // serde_json's own Drop recurses per level and would overflow the 2 MiB
     // test-thread stack — that hazard is the caller's, not the verifier's;
     // leak the bomb so the test measures only verify_bundle.
@@ -113,18 +113,18 @@ fn deep_nesting_cannot_overflow_the_stack() {
 #[test]
 fn carried_record_members_agree_with_the_python_engine() {
     let base = load_bundle("valid_e1.json");
-    assert!(swarrm_verify::verify_bundle(&base));
+    assert!(swarrm_verify::verify_bundle(&base, None)["ok"].as_bool().expect("bundle report verdict"));
 
     for field in ["anchor_records", "tst_records"] {
         for junk in [json!(false), json!(0), json!(""), json!({}), json!("not-a-list")] {
             let mut b = base.clone();
             b[field] = junk.clone();
-            assert!(!swarrm_verify::verify_bundle(&b), "{field} = {junk} is a carried member that is not a list");
+            assert!(!swarrm_verify::verify_bundle(&b, None)["ok"].as_bool().expect("bundle report verdict"), "{field} = {junk} is a carried member that is not a list");
         }
         for absent in [json!(null), json!([])] {
             let mut b = base.clone();
             b[field] = absent.clone();
-            assert!(swarrm_verify::verify_bundle(&b), "{field} = {absent} means no records — absence never gates");
+            assert!(swarrm_verify::verify_bundle(&b, None)["ok"].as_bool().expect("bundle report verdict"), "{field} = {absent} means no records — absence never gates");
         }
     }
 }
@@ -140,7 +140,7 @@ fn unverified_timestamp_token_cannot_supply_temporal_authority() {
         "cert_chain_pem": "not a certificate chain",
         "qualified": false
     }]);
-    assert!(!swarrm_verify::verify_bundle(&bundle), "a structurally bound but cryptographically invalid TST is not independent time");
+    assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "a structurally bound but cryptographically invalid TST is not independent time");
 }
 
 #[test]
@@ -149,18 +149,18 @@ fn timestamp_encoding_caps_and_duplicates_match_python() {
     let encoded = tst["tst_records"][0]["token_der_b64"].as_str().unwrap().to_string();
     assert!(encoded.ends_with("E="));
     tst["tst_records"][0]["token_der_b64"] = Value::String(format!("{}F=", &encoded[..encoded.len() - 2]));
-    assert!(!swarrm_verify::verify_bundle(&tst), "nonzero base64 pad bits must refuse");
+    assert!(!swarrm_verify::verify_bundle(&tst, None)["ok"].as_bool().expect("bundle report verdict"), "nonzero base64 pad bits must refuse");
 
     for field in ["anchor_records", "tst_records"] {
         let mut over = load_bundle("valid_e1.json");
         over[field] = Value::Array(vec![json!({}); 257]);
-        assert!(!swarrm_verify::verify_bundle(&over), "{field} must be capped at 256");
+        assert!(!swarrm_verify::verify_bundle(&over, None)["ok"].as_bool().expect("bundle report verdict"), "{field} must be capped at 256");
     }
     for (fixture, field) in [("b21_authority_valid.json", "anchor_records"), ("evidence_tst_trusted.json", "tst_records")] {
         let mut duplicate = load_bundle(fixture);
         let record = duplicate[field][0].clone();
         duplicate[field].as_array_mut().unwrap().push(record);
-        assert!(!swarrm_verify::verify_bundle(&duplicate), "{field} duplicate checkpoint digest");
+        assert!(!swarrm_verify::verify_bundle(&duplicate, None)["ok"].as_bool().expect("bundle report verdict"), "{field} duplicate checkpoint digest");
     }
 }
 
@@ -174,11 +174,11 @@ fn noncanonical_base64_in_signed_fields_is_rejected() {
         let mut b = base.clone();
         let p = b["entries"][0]["envelope"]["payload"].as_str().unwrap().to_string();
         b["entries"][0]["envelope"]["payload"] = Value::String(format!("{}{}{}", &p[..8], junk, &p[8..]));
-        assert!(!swarrm_verify::verify_bundle(&b), "noncanonical base64 in a DSSE payload");
+        assert!(!swarrm_verify::verify_bundle(&b, None)["ok"].as_bool().expect("bundle report verdict"), "noncanonical base64 in a DSSE payload");
     }
 
     let mut checkpoint = base;
     let sig = checkpoint["target_checkpoint"]["sig"].as_str().unwrap().to_string();
     checkpoint["target_checkpoint"]["sig"] = Value::String(format!("!{sig}"));
-    assert!(!swarrm_verify::verify_bundle(&checkpoint), "a noncanonical checkpoint signature must not be decoded permissively");
+    assert!(!swarrm_verify::verify_bundle(&checkpoint, None)["ok"].as_bool().expect("bundle report verdict"), "a noncanonical checkpoint signature must not be decoded permissively");
 }

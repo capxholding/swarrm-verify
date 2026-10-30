@@ -139,6 +139,25 @@
       "temporal_binding": "PROVEN_SOURCE_ECHO"
     }
   },
+  "signed_scan": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "GAPPED",
+      "identity": "NOT_VERIFIED",
+      "integrity": "VALID",
+      "intent": "NOT_RECORDED",
+      "linkage": "DETERMINISTIC",
+      "outcome": "MATCHED",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
   "stale": {
     "cross_checks_ok": true,
     "mark": "UNMARKED_UNREGISTERED",
@@ -152,6 +171,25 @@
       "intent": "NOT_RECORDED",
       "linkage": "DETERMINISTIC",
       "outcome": "MATCHED",
+      "registration_status": "UNREGISTERED",
+      "source_signature": "NONE",
+      "technical_eligibility": "INELIGIBLE",
+      "temporal_binding": "UNPROVEN"
+    }
+  },
+  "unscanned": {
+    "cross_checks_ok": true,
+    "mark": "UNMARKED_UNREGISTERED",
+    "partial": null,
+    "vector": {
+      "authority": "NOT_VERIFIED",
+      "control_domain": "UNKNOWN",
+      "coverage": "UNKNOWN",
+      "identity": "NOT_VERIFIED",
+      "integrity": "VALID",
+      "intent": "NOT_RECORDED",
+      "linkage": "NONE",
+      "outcome": "CLAIM_ONLY",
       "registration_status": "UNREGISTERED",
       "source_signature": "NONE",
       "technical_eligibility": "INELIGIBLE",

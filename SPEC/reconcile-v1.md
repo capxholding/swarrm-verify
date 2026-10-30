@@ -35,6 +35,12 @@ Scans against a source with no effective root-approved binding, or with a
 `mapping_substituted` finding and degrade the period's coverage — never
 silently proceed.
 
+Production log-stream manifests carry `enumeration_property: UNKNOWN` and
+the configured enumeration declaration. A local landing does not prove origin
+or population. The coverage document retains both under its receipt digest.
+`swarrm node doctor` exposes the generated manifest as a draft; the existing
+root approval requirement applies before it can bind a coverage period.
+
 ## 3. Claims
 
 An `AgentActionClaim` is assembled per `action_id` from the agent's own log:
@@ -54,6 +60,40 @@ are deduplicated by immutable `event_key` BEFORE matching (a replayed
 delivery is one event). Candidates are counted FLAT across methods:
 0 → linkage `NONE`; ≥2 → `AMBIGUOUS` (an outcome, not an error);
 exactly 1 → `DIRECT` iff matched by echo, else `DETERMINISTIC`.
+
+### 4.1 Unique-field surplus
+
+Flat counting has a consequence that must be stated rather than discovered:
+where a claim is AMBIGUOUS over N events, all N are consumed, so none of them
+is an orphan. An action the agent did NOT record, against a unique-field
+value it DID use in the same period, therefore produces no orphan and no
+contradiction — only a fact saying which event it was could not be told.
+
+For each unique field the SourceManifest declares, a period therefore also
+states, per value: how many events the source stated, how many claims the
+agent made, and the SURPLUS `events − claims` where that is positive. The
+surplus is a COUNT and carries no event key: it says how many actions the
+source states beyond what was claimed, never which of them was unclaimed.
+Naming one would require an echo channel; where the manifest declares no
+`correlation_field`, no such naming is derivable and none is offered.
+
+A value absent from both populations produces no row: absence on both sides
+is silence, and a zero-surplus row would read as a cleared period. A value
+whose claims equal or exceed its events produces no row either — a count that
+fired when the agent had claimed everything would be an accusation, which §5
+forbids for exactly this reason.
+
+Surplus rows must name a declared unique field and a nonempty value, with
+nonnegative integer claim counts, strictly larger integer event counts and
+an exact positive difference. Boolean/string coercion, duplicate field/value
+rows and unknown fields are refused. Rows are ordered by field then value.
+The committed total sums these **field-level** differences; it is not a count
+of distinct unclaimed actions across multiple fields and must not be labeled
+as one. A valid row shape does not independently authenticate either population.
+An older caller that supplies no reconciliation result omits both surplus
+fields; this means uncomputed, not a measured zero. Callers that perform
+reconciliation must pass its complete surplus result, including an explicit
+empty list when there are no positive differences.
 
 ## 5. `CONTRADICTED` (terminal, never softened)
 
@@ -103,8 +143,13 @@ lie and this outcome is terminal.
 
 The `evd/coverage-manifest/v1` document commits, per source and period:
 cursor start/end, filter digest, declared count, ordered event-key root,
-finality watermark, gaps, exclusions, the agent population (claim set) and
-the orphan set. It is receipted under `_node` (context: period bounds,
+finality watermark, gaps, exclusions, the agent population (claim set), the
+orphan set, and the §4.1 unique-field surplus with its total. The surplus is
+committed here rather than left to a renderer because it is the ONLY trace of
+an action the source states and no claim covers when the matching was
+AMBIGUOUS: in that case the candidate events are consumed and the orphan set
+is empty, so a period that dropped the surplus would read as fully
+reconciled. It is receipted under `_node` (context: period bounds,
 counts, roots, `coverage_doc_digest`; commitment: the canonical document).
 
 **Binding the comparison conventions (NORMATIVE, verifier side).** When a
@@ -183,3 +228,38 @@ comparison. It does not prove hidden reasoning, activity outside the bound
 source scope, or the truth of a colluding/compromised accepted source —
 collusion must span every named source at depth ≥2, and that residual is
 stated in every report.
+
+## 10. Two-party dispute package
+
+`evd/dispute-artifact/v1` carries exactly `schema`, `case_ref`,
+`party_labels`, `contested_claims`, `bundles`, and `reconciliation`.
+`case_ref` is nonempty text. `party_labels` is an ordered pair of distinct,
+nonempty strings; `bundles` is an object with exactly these two keys and
+object values. `contested_claims` is a sorted, unique list of nonempty
+strings. The producer may canonicalize a list or tuple of requested claims;
+a consumer MUST refuse a noncanonical carried list. A string is not a claim
+list. `reconciliation` is an object. Missing/extra fields and incorrect types
+refuse before either bundle is verified.
+
+After shape admission, the consumer independently verifies both bundles,
+requires distinct origins and genesis trust roots, and recomputes the entire
+`evd/two-party-reconciliation/v1` document. It MUST compare the complete
+carried document with the recomputation, including scope, party facts,
+receipt hashes, statements and summary. Verifying only the embedded bundles
+is insufficient. Labels and case references identify the presented case;
+they are not independently authenticated legal identities. No reconciliation
+adjudicates fault or establishes that an unsupported event did not occur.
+
+The Rust/WASM `verify_dispute_json(package_json)` byte entrypoint accepts at
+most 128 MiB, rejects duplicate JSON members, and returns exactly `schema`,
+`verdict`, `reconciliation` and `package_digest`. Its result schema is
+`evd/dispute-verification-result/v1`. `VERIFIED` carries the recomputed
+reconciliation and SHA-256 of the canonical complete package. On
+`NOT_VERIFIED`, both data members are null. This verdict verifies the
+package's stated provability; it does not resolve the underlying dispute.
+
+For compatibility, v1 distinct material values retain the producer's
+`json.dumps(value, sort_keys=True)` ordering, with ASCII escapes and Python
+floating-point exponent spelling. This comparison representation is separate
+from the package digest's RFC 8785 canonicalization. Boolean and numeric
+values remain distinct, including in carried summary counts.

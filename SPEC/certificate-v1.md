@@ -110,7 +110,7 @@ paragraph above requires, stated as its verification consequence.
 
 ## 4. Verification (both implementations, byte-identical results)
 
-1. **Caps before crypto** (H5 pattern; hostile input never crashes):
+1. **Caps before crypto** (reject hostile input before cryptographic processing):
    core ≤ 1 MiB; envelope+core+disclosures (ordinary complete pack) ≤ 16 MiB;
    CBOR nesting ≤ 64; events ≤ 10 000; event_matches ≤ 10 000;
    open_findings ≤ 10 000; limitations ≤ 10 000; attachments ≤ 1 000;
@@ -181,13 +181,32 @@ paragraph above requires, stated as its verification consequence.
    offline covers a source event's amount. The event side of the material
    comparison is carried, not verified.
 
-   NOTE (spec inconsistency, 2026-08-05): certificate-v1.cddl declares `scan`
+   **Scan declaration corrected in 1.5:** both CDDLs now declare the same five
+   required booleans and three optional binding fields (`batch_digest`,
+   `node_id`, `signature`). This documents the existing producer/verifier
+   behavior; it adds no runtime acceptance or nested-map closure. Older
+   five-field scans remain representable and receive only the evidence
+   strength their actual bindings establish.
+
+   **Batch declaration corrected in 1.5:** certificate and verdict inputs name
+   `BatchEvidence`, which distinguishes a complete `SourceBatch` delivery from
+   the Node's `UnscannedBatchEvidence` and historical `LegacyPopulationBatch`.
+   SourceBatch still requires its real filter digest and complete delivery frame.
+   Unscanned evidence carries empty cursor/filter/finality strings and zero events;
+   it does not describe a completed scan. Legacy population statements retain
+   their original signed bytes and trust interpretation, without inventing a
+   delivery frame or establishing Node observation. PopulationProof declares the
+   existing optional source identity and signature fields; the carried verified
+   flag is not authority. This declaration repair changes no verifier behavior
+   and does not introduce nested-map closure.
+
+   Historical NOTE (spec inconsistency, 2026-08-05; declaration parts superseded above): certificate-v1.cddl declares `scan`
    with 5 members while verified-action-v1.cddl declares `VerdictInput.scan`
    with 8 (`batch_digest`, `node_id`, `signature`), and the echo check
    REQUIRES the two to be equal — every production scan carries all 8. The
    golden `batch` member likewise omits members `SourceBatch` marks
-   mandatory. The two CDDLs need reconciling; until then key-set closure must
-   NOT be extended to the nested maps.
+   mandatory. That discrepancy required reconciliation before considering
+   nested key-set closure; no such runtime closure is introduced by this repair.
 5. The verdict vector derives ONLY via the verified-action verdict engine
    (`derive_vector`) from
    a carried full core. A full view has an empty `withheld_field_set`; its

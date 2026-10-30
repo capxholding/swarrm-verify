@@ -53,9 +53,13 @@ Leaf data is the RFC 8785 canonical JSON of one **client action record**:
 | `request_sha256` | hex SHA-256 of the exact request bytes the client sent; absent if none |
 | `response_sha256` | hex SHA-256 of the exact response bytes the client received; absent if none |
 
-Absent members are OMITTED, never null. The record carries **digests only**
-— no payload bytes, no PII, ever. Losing the client's raw traffic loses the
-ability to open a digest, never confidentiality.
+Absent members are OMITTED, never null. Request and response bodies are
+represented only by their SHA-256 digests;
+their raw bytes are not stored in this record. The caller-supplied `kind` and
+`action_id` are stored as plaintext metadata. Use non-sensitive classifications
+and opaque correlation IDs: this mechanism does not detect or remove personal
+data placed in those fields. Losing the original traffic prevents opening its
+digest; a digest is not encryption and can reveal a predictable input by guessing.
 
 ## 3. The signed head
 

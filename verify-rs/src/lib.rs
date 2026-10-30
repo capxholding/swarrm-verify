@@ -13,6 +13,7 @@ mod cbor_wire;
 pub mod certificate; // `verify_certificate_cbor` also serves the WASM export.
 #[allow(dead_code)] // COSE adapter used by SCITT and golden tests.
 mod cose;
+mod dispute;
 pub(crate) mod jcs;
 mod merkle;
 mod scitt;
@@ -532,20 +533,42 @@ pub(crate) fn continuity_gaps(chain: &[Value], assertions: &[Value]) -> usize {
 fn assess_continuity(bundle: &Value, chain: &[Value], kl: &KeyLog) -> (bool, bool, usize) {
     let Some(raw) = bundle.get("continuity").filter(|v| !v.is_null()) else { return (false, true, continuity_gaps(chain, &[])) };
     let Some(items) = raw.as_array() else { return (false, false, 0) };
-    if !items.iter().all(|item| continuity_admissible(item, kl, bundle.get("origin"))) {
+    if !items.iter().all(|item| continuity_admissible(item, kl, bundle.get("origin")) && continuity_authority(item, bundle, chain, kl)) {
         return (!items.is_empty(), false, 0);
     }
     let gaps = continuity_gaps(chain, items);
     (!items.is_empty(), items.is_empty() || gaps == 0, gaps)
 }
 
-/// core/continuity.py's `SignedContinuity.from_dict` plus `verify_continuity`: exactly `body`/`kid`/`sig`, exactly the seven body members, non-empty text, non-negative integers, the bundle's origin, and an ed25519 signature over the canonical body by a log key.
+/// Mirror the strict Python wire and signature checks. V2 adds the authority
+/// checkpoint hash; continuity_authority separately verifies its issuer binding.
 fn continuity_admissible(item: &Value, kl: &KeyLog, origin: Option<&Value>) -> bool {
     const MEMBERS: [&str; 7] = ["schema", "origin", "from_hash", "to_hash", "from_tree_size", "to_tree_size", "appended"];
     let (Some(outer), Some(body)) = (item.as_object(), item.get("body").and_then(Value::as_object)) else { return false };
-    let shaped = outer.len() == 3 && body.len() == 7 && MEMBERS.iter().all(|m| body.contains_key(*m)) && ["from_tree_size", "to_tree_size", "appended"].iter().all(|m| body[*m].is_u64()) && ["origin", "from_hash", "to_hash"].iter().all(|m| body[*m].as_str().is_some_and(|t| !t.is_empty()));
+    let issuer_bound = body.get("schema").and_then(Value::as_str) == Some("evd/continuity/v2");
+    let authority_shape = !issuer_bound || continuity_authority_hash(body.get("authority_checkpoint_hash"));
+    let shaped = authority_shape && outer.len() == 3 && body.len() == (if issuer_bound { 8 } else { 7 }) && MEMBERS.iter().all(|m| body.contains_key(*m)) && ["from_tree_size", "to_tree_size", "appended"].iter().all(|m| body[*m].is_u64()) && ["origin", "from_hash", "to_hash"].iter().all(|m| body[*m].as_str().is_some_and(|t| !t.is_empty()));
     let (Some(key), Some(sig)) = (item.get("kid").and_then(Value::as_str).and_then(|kid| kl.keys.get(kid)), item.get("sig").and_then(Value::as_str).and_then(|s| B64.decode(s).ok())) else { return false };
     shaped && body.get("origin") == origin && continuity_self_consistent(item) && jcs::canonical_checked(&item["body"]).is_some_and(|canon| ed25519_verify(key, &canon, &sig))
+}
+
+fn continuity_authority_hash(value: Option<&Value>) -> bool {
+    value.and_then(Value::as_str).is_some_and(|s| s.len() == 64 && s.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c)))
+}
+
+/// V2 binds an exact retained interval to the target checkpoint's issuer.
+/// V1 keeps its historical known-log-key interpretation.
+fn continuity_authority(item: &Value, bundle: &Value, chain: &[Value], kl: &KeyLog) -> bool {
+    let b = &item["body"];
+    if b["schema"] == "evd/continuity/v1" {
+        return true;
+    }
+    let (Some(hash), Some(kid), Some(first), Some(last)) = (b["authority_checkpoint_hash"].as_str(), item["kid"].as_str(), b["from_hash"].as_str(), b["to_hash"].as_str()) else { return false };
+    let find = |hash: &str| chain.iter().position(|cp| checkpoint_body_hash(cp).as_deref() == Some(hash));
+    let (Some(authority), Some(start), Some(end)) = (find(hash), find(first), find(last)) else { return false };
+    let cp = &chain[authority];
+    let (Some(ts), Some(size)) = (cp["body"]["ts"].as_str(), cp["body"]["tree_size"].as_u64()) else { return false };
+    cp == &bundle["target_checkpoint"] && cp["kid"].as_str() == Some(kid) && !kl.state.get(kid).is_some_and(|s| s.non_issuer) && key_active(kl, kid, ts, size) && start < end && chain[start]["body"]["tree_size"] == b["from_tree_size"] && chain[end]["body"]["tree_size"] == b["to_tree_size"]
 }
 
 /// An assertion that disagrees with its own endpoints is two claims, not evidence about an interval; admitting it would let a quiet interval be asserted over a busy one.
@@ -553,7 +576,7 @@ pub(crate) fn continuity_self_consistent(assertion: &Value) -> bool {
     let Some(b) = assertion.get("body") else { return false };
     let (Some(from), Some(to), Some(appended)) = (b.get("from_tree_size").and_then(Value::as_i64), b.get("to_tree_size").and_then(Value::as_i64), b.get("appended").and_then(Value::as_i64)) else { return false };
     let (Some(fh), Some(th)) = (b.get("from_hash").and_then(Value::as_str), b.get("to_hash").and_then(Value::as_str)) else { return false };
-    b.get("schema").and_then(Value::as_str) == Some("evd/continuity/v1") && from >= 0 && to >= from && appended == to - from && fh != th
+    (b["schema"] == "evd/continuity/v1" || b["schema"] == "evd/continuity/v2" && continuity_authority_hash(b.get("authority_checkpoint_hash"))) && from >= 0 && to >= from && appended == to - from && fh != th
 }
 
 pub(crate) fn hex(b: &[u8]) -> String {
@@ -1296,11 +1319,6 @@ pub fn verify_disclosure_json(package_json: &[u8], bundle_json: &[u8]) -> bool {
     verify_disclosure(&pkg, &bundle)
 }
 
-/// Verify an evd/bundle/v1 document. Returns true iff VERIFIED.
-pub fn verify_bundle(bundle: &Value) -> bool {
-    verify_bundle_report(bundle, None).0
-}
-
 /// E3 leg (temporal-authority replay) per SPEC/receipt-v1 §5 (amended) — mirror of
 /// `verify/verifier.py::_recorder_attested`: the co-signature bytes must
 /// verify under a relying-party-named recorder key (a NON-ISSUER log kid,
@@ -1324,12 +1342,73 @@ fn entry_recorder_attested(env: &Value, kl: &KeyLog, trust: Option<&Value>) -> b
     })
 }
 
-/// Relying-party-rooted evidence-level facts (SPEC/log-v1 §4 award law). VERDICT-NEUTRAL: a
-/// NOT VERIFIED bundle earns nothing. Returns the facts verify/verifier.py
-/// exposes on its report, pinned across engines by expected_evidence.json.
-pub fn verify_bundle_levels(bundle: &Value, trust: Option<&Value>) -> Value {
+/// Verify a bundle once and return its verdict and evidence-level facts.
+/// `ok` is the bundle verdict. Caller-supplied trust can award evidence levels
+/// but cannot turn an invalid bundle into a valid one. A rejected bundle earns
+/// no recorder or timestamp evidence. See SPEC/log-v1 §4 and expected_evidence.json.
+///
+/// ```
+/// let report = swarrm_verify::verify_bundle(&serde_json::json!({}), None);
+/// assert_eq!(report["ok"], false);
+/// ```
+pub fn verify_bundle(bundle: &Value, trust: Option<&Value>) -> Value {
     let facts = verify_bundle_facts(bundle, trust);
     serde_json::json!({"ok": facts.ok, "recorder_attested": facts.recorder_attested, "trusted_tst_checkpoints": facts.trusted_tst_checkpoints, "chain_sizes": facts.chain_sizes, "continuity_gaps": facts.continuity_gaps, "continuity_present": facts.continuity_present, "continuity_ok": facts.continuity_ok})
+}
+
+/// Verify the complete dispute package and its recomputed statements offline.
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+pub fn verify_dispute_json(package_json: &[u8]) -> String {
+    let result = dispute::verify_json(package_json);
+    let (verdict, reconciliation, package_digest) = match result {
+        Some((facts, digest)) => ("VERIFIED", facts, Some(digest)),
+        None => ("NOT_VERIFIED", Value::Null, None),
+    };
+    serde_json::json!({"schema": "evd/dispute-verification-result/v1", "verdict": verdict,
+        "reconciliation": reconciliation, "package_digest": package_digest})
+    .to_string()
+}
+
+fn acknowledgement_coverage(ack: &Value, bundle: &Value, facts: &BundleFacts) -> Option<&'static str> {
+    if ack["origin"] != bundle["origin"] {
+        return Some("other-origin");
+    }
+    Some(match (facts.chain_sizes.get(ack["from_hash"].as_str()?), facts.chain_sizes.get(ack["to_hash"].as_str()?)) {
+        (Some(start), Some(end)) if start < end => "covered",
+        (Some(_), Some(_)) => "malformed",
+        _ => "conflict",
+    })
+}
+
+/// Compare a verified counterparty CWT with a separately verified bundle.
+/// Context is local canonical CBOR (keys and time), never selected by evidence.
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+pub fn verify_acknowledgement_json(envelope: &[u8], context: &[u8], bundle_json: &[u8]) -> String {
+    let accepted = (|| {
+        if bundle_json.len() > MAX_BUNDLE_BYTES {
+            return None;
+        }
+        let bundle = trust::strict_json(bundle_json)?;
+        let facts = verify_bundle_facts(&bundle, None);
+        if !facts.ok {
+            return None;
+        }
+        let ack = b28::verified_acknowledgement(envelope, context)?;
+        let coverage = acknowledgement_coverage(&ack, &bundle, &facts)?;
+        Some((ack, coverage, hex(&sha256(&jcs::canonical_checked(&bundle)?))))
+    })();
+    let (verdict, acknowledgement, coverage, bundle_digest) = match accepted {
+        Some((ack, cover, digest)) => ("VERIFIED", ack, Some(cover), Some(digest)),
+        None => ("NOT_VERIFIED", Value::Null, None, None),
+    };
+    serde_json::json!({
+        "schema": "evd/acknowledgement-assessment/v1", "verdict": verdict,
+        "acknowledgement": acknowledgement, "coverage": coverage,
+        "bundle_digest": bundle_digest,
+        "context_digest": (verdict == "VERIFIED").then(|| hex(&sha256(context))),
+        "envelope_digest": (verdict == "VERIFIED").then(|| hex(&sha256(envelope))),
+    })
+    .to_string()
 }
 
 /// (VERIFIED, export-completeness tri-state). The certificate layer computed
@@ -1395,15 +1474,18 @@ fn verify_bundle_facts(bundle: &Value, trust: Option<&Value>) -> BundleFacts {
 }
 
 #[cfg(any(test, feature = "wasm"))]
-const BROWSER_BUNDLE_RESULT_SCHEMA: &str = "evd/browser-bundle-verification-result/v2";
+const BROWSER_BUNDLE_RESULT_SCHEMA: &str = "evd/browser-bundle-verification-result/v3";
 
 #[cfg(any(test, feature = "wasm"))]
-fn browser_bundle_result(verdict: &str, bundle_digest: Option<String>, error: Option<&str>) -> String {
+fn browser_bundle_result(verdict: &str, bundle_digest: Option<String>, error: Option<&str>, facts: Option<&BundleFacts>) -> String {
     serde_json::json!({
         "schema": BROWSER_BUNDLE_RESULT_SCHEMA,
         "verdict": verdict,
         "bundle_digest": bundle_digest,
         "error": error,
+        "continuity": facts.map(|f| serde_json::json!({
+            "present": f.continuity_present, "ok": f.continuity_ok, "gaps": f.continuity_gaps,
+        })),
     })
     .to_string()
 }
@@ -1413,19 +1495,20 @@ fn browser_bundle_verification_result(json: &[u8]) -> String {
     // Preserve the verifier's established over-limit verdict without parsing
     // or allocating another copy of attacker-controlled input.
     if json.len() > MAX_BUNDLE_BYTES {
-        return browser_bundle_result("NOT_VERIFIED", None, None);
+        return browser_bundle_result("NOT_VERIFIED", None, None, None);
     }
     let Some(bundle) = trust::strict_json(json) else {
-        return browser_bundle_result("ERROR", None, Some("INVALID_JSON"));
+        return browser_bundle_result("ERROR", None, Some("INVALID_JSON"), None);
     };
-    if !verify_bundle(&bundle) {
-        return browser_bundle_result("NOT_VERIFIED", None, None);
+    let facts = verify_bundle_facts(&bundle, None);
+    if !facts.ok {
+        return browser_bundle_result("NOT_VERIFIED", None, None, None);
     }
     // Cite the exact verified bundle semantics, independent of JSON whitespace.
     // Never surface a digest for bytes that did not pass the full verifier.
     match jcs::canonical_checked(&bundle) {
-        Some(bytes) => browser_bundle_result("VERIFIED", Some(hex(&sha256(&bytes))), None),
-        None => browser_bundle_result("NOT_VERIFIED", None, None),
+        Some(bytes) => browser_bundle_result("VERIFIED", Some(hex(&sha256(&bytes))), None, Some(&facts)),
+        None => browser_bundle_result("NOT_VERIFIED", None, None, None),
     }
 }
 

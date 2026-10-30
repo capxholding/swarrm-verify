@@ -117,6 +117,27 @@ per-event and batch proofs), `normalise(raw) -> SourceEvent`,
 `verify_source_proof(raw) -> SourceProof | None`, `health() ->
 ConnectorHealth`. Vendor auth/pagination/mapping stay in the connector;
 reconciliation and verification contain no vendor branch.
+**Feed and webhook normalization (NORMATIVE).**
+
+For declarative HTTPS feeds, signed webhook bodies and the feed-shaped emulator,
+`node/connectors.py::_item_to_event` is the common projection. Decoded JSON
+strings are preserved exactly: no trimming, case folding, Unicode normalization,
+decimal reformatting or currency rewriting. Escapes are decoded by JSON; the raw
+source bytes and their proof digest remain separate evidence. The configured
+event-key field and the fixed outcome/finality/time fields use the existing
+`str` projection (missing values become empty text); configured recognized
+material fields are included only when present, also using that projection.
+This includes the existing non-string compatibility behavior, not a claim of
+semantic equivalence between JSON types. A missing material field remains
+absent rather than becoming an invented value.
+
+Reconciliation compares stated non-time material fields exactly after this
+projection. Whitespace, decimal scale, case and composed/decomposed Unicode
+therefore remain distinguishable. Only source-effect time uses the existing
+manifest-declared tolerance; missing or unparseable times establish no temporal
+disagreement. Normalization itself authenticates nothing and proves neither
+source population nor coverage completeness.
+
 - **DeclarativeHttpsConnector** — config-driven paginated full-feed read
   (GET base_url + cursor/page params; `authenticated_read_transcript`
   SourceProof over the response, digest-addressed). It accepts only identity or
@@ -180,6 +201,23 @@ reconciliation and verification contain no vendor branch.
   landing directory of statement files the customer's existing process
   already delivers (SFTP, an S3 sync, a bank portal export), mapped by a
   declarative field map (shipped: ISO 20022 `camt.053` as `camt053-v1`).
+  **camt053-v1 normalization (NORMATIVE):** read mapped XML text/attribute
+  values after XML decoding and remove leading/trailing whitespace. Preserve
+  internal whitespace, letter case and Unicode code-point sequences; do not
+  apply Unicode normalization or case folding. The trimmed `Amt` must match
+  `[0-9]+(\.[0-9]+)?`; preserve its digits, leading zeros and decimal scale.
+  `CRDT` retains that text and `DBIT` prefixes `-`; neither numeric rounding
+  nor decimal reformatting occurs. Missing/unknown credit-debit indicators or
+  invalid amounts leave the entry unmapped, with a gap. Convert supported ISO
+  dates/date-times to UTC and emit whole seconds as `YYYY-MM-DDTHH:MM:SSZ`:
+  a date alone means midnight, a zone-less time means UTC, and fractional
+  seconds are omitted, not rounded. An absent/unparseable effect time is the
+  empty string, not an invented instant. Other mapped text fields remain
+  exact after the outer trim. Reconciliation compares those emitted text
+  values exactly; it does not make `10.0` equal to `10.00`, fold names or
+  collapse whitespace. Event-time comparison retains the manifest's declared
+  tolerance. This normalization confers neither origin authentication nor
+  population completeness.
   Ordering is by DECLARED statement period, never arrival; the durable
   cursor is over periods (`<period_end>#<sequence>`), not rows. Per-file
   idempotency: an identical file redelivered inside one scan is excluded by

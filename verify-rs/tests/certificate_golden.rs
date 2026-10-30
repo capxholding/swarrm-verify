@@ -168,3 +168,44 @@ fn certificate_subject_ids_must_be_recomputed_from_authority() {
     assert_eq!(got["cross_checks_ok"], Value::Bool(false), "{:?}", got["errors"]);
     assert!(got["errors"].as_array().unwrap().iter().any(|e| e.as_str() == Some("SUBJECT_IDS_MISMATCH")), "{:?}", got["errors"]);
 }
+
+#[test]
+fn signed_scan_fields_are_carried_without_granting_node_trust() {
+    let bytes = fs::read(certs_dir().join("signed_scan.core.cbor")).unwrap();
+    let mut core = cbor::decode_cbor(&bytes, cbor::MAX_DEPTH as usize, cbor::MAX_BYTES).unwrap();
+    let scan = member_mut(&mut core, "scan").clone();
+    let CborValue::Map(fields) = &scan else { panic!("scan must be a map") };
+    let mut names: Vec<&str> = fields.iter().map(|(name, _)| name.as_text().unwrap()).collect();
+    names.sort_unstable();
+    assert_eq!(names, vec!["authenticated_read", "batch_digest", "complete", "cursor_gap_free", "node_id", "node_signed", "performed", "signature"]);
+    assert_eq!(&scan, member_mut(member_mut(&mut core, "verdict_input"), "scan"));
+    let result = verify(&bytes);
+    assert_eq!(result["cross_checks_ok"], true);
+    assert_eq!(result["errors"], serde_json::json!([]));
+    assert_eq!(result["vector"]["node_observation"], "NOT_OBSERVED");
+    assert_eq!(result["vector"]["coverage"], "GAPPED");
+}
+
+#[test]
+fn unscanned_batch_does_not_invent_delivery_or_observation() {
+    let bytes = fs::read(certs_dir().join("unscanned.core.cbor")).unwrap();
+    let mut core = cbor::decode_cbor(&bytes, cbor::MAX_DEPTH as usize, cbor::MAX_BYTES).unwrap();
+    let batch = member_mut(&mut core, "batch").clone();
+    assert_eq!(&batch, member_mut(member_mut(&mut core, "verdict_input"), "batch"));
+    let mut batch = batch;
+    for name in ["cursor_start", "cursor_end", "filter_digest", "finality_watermark"] {
+        assert_eq!(member_mut(&mut batch, name), &CborValue::Text(String::new()));
+    }
+    assert_eq!(member_mut(&mut batch, "declared_count"), &CborValue::Integer(0.into()));
+    let scan = member_mut(&mut core, "scan");
+    assert_eq!(member_mut(scan, "performed"), &CborValue::Bool(false));
+    assert_eq!(member_mut(scan, "complete"), &CborValue::Bool(false));
+    let CborValue::Map(fields) = scan else { panic!("scan must be a map") };
+    assert!(!fields.iter().any(|(key, _)| key.as_text() == Some("batch_digest")));
+    let result = verify(&bytes);
+    assert_eq!(result["cross_checks_ok"], true);
+    assert_eq!(result["errors"], serde_json::json!([]));
+    for (key, expected) in [("node_observation", "NOT_OBSERVED"), ("coverage", "UNKNOWN"), ("coverage_basis", "INSUFFICIENT"), ("outcome", "CLAIM_ONLY"), ("linkage", "NONE")] {
+        assert_eq!(result["vector"][key], expected);
+    }
+}

@@ -3,7 +3,8 @@
 //! corpus through the Rust engine and demand Value-equality with the Python
 //! engine's vectors for EVERY input. The corpus dir arrives via
 //! SWARRM_DIFF_DIR (see the `differential` make target); when unset the
-//! harness is not being driven, so the test passes with a skip note.
+//! ordinary Cargo runs report an ignored test. The mandatory parity callers
+//! explicitly include it and refuse missing or invalid corpus inputs.
 
 use serde_json::Value;
 use std::path::PathBuf;
@@ -26,17 +27,16 @@ fn compact_diff(got: &Value, want: &Value) -> String {
 }
 
 #[test]
+#[ignore = "requires generated cross-runtime corpus; run make differential"]
 fn differential_corpus_parity() {
-    let Ok(dir) = env::var("SWARRM_DIFF_DIR") else {
-        println!("SWARRM_DIFF_DIR unset — no differential corpus supplied; skipping");
-        return;
-    };
+    let dir = env::var("SWARRM_DIFF_DIR").expect("SWARRM_DIFF_DIR is required for differential parity");
+    assert!(!dir.is_empty(), "SWARRM_DIFF_DIR must not be empty");
     let dir = PathBuf::from(dir);
     // The corpus now carries a trust context, because the gate whose job is
     // proving the engines agree was exercising only the UNANCHORED half of
     // derive_vector. Every trust-anchored dimension must participate in the
     // parity corpus; verify-rs/tests/verdicts.rs loads the same context.
-    let trust: Option<Value> = fs::read_to_string(dir.join("trust_context.json")).ok().map(|s| serde_json::from_str(&s).expect("parse trust_context.json"));
+    let trust: Option<Value> = Some(serde_json::from_str(&fs::read_to_string(dir.join("trust_context.json")).expect("read trust_context.json")).expect("parse trust_context.json"));
     let vectors: Value = serde_json::from_str(&fs::read_to_string(dir.join("python_vectors.json")).expect("read python_vectors.json")).expect("parse python_vectors.json");
     let vectors = vectors.as_object().expect("python_vectors.json is an object");
     let mut names: Vec<String> = fs::read_dir(&dir).expect("read corpus dir").filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned())).filter(|n| n.starts_with("input_") && n.ends_with(".json")).collect();

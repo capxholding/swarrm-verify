@@ -6,7 +6,7 @@
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use ciborium::Value as C;
-use ed25519_dalek::{Signature as EdSignature, VerifyingKey as EdKey};
+use ed25519_dalek::{Signature as EdSignature, Verifier as _, VerifyingKey as EdKey};
 use p256::ecdsa::{signature::Verifier, Signature as P256Signature, VerifyingKey as P256Key};
 use serde_json::{Map as JsonMap, Value as J};
 use sha2::{Digest, Sha256};
@@ -33,6 +33,7 @@ const PARTY_REF: &str = "swarrm-b28/party-ref/v1";
 const CHALLENGE: &str = "swarrm-b28/challenge-core/v1";
 const ASA: &str = "swarrm-b28/asa-core/v1";
 const PRESENTATION: &str = "swarrm-b28/presentation-core/v1";
+const ACKNOWLEDGEMENT: &str = "swarrm-b28/acknowledgement-core/v1";
 const REFUSAL: &str = "swarrm-b28/refusal-core/v1";
 const ROOT_DELEGATION: &str = "swarrm-b28/root-delegation/v1";
 const TEMPLATE: &str = "swarrm-b28/registration-template/v1";
@@ -307,6 +308,9 @@ fn validate_core(value: &C, schema: &str) -> bool {
     #[rustfmt::skip]
     let valid = match schema {
         ACTION => action(value).is_some(), CHALLENGE => validate_challenge(value), ASA => validate_asa(value), PRESENTATION => validate_presentation(value),
+        ACKNOWLEDGEMENT => document(value, Some(ACKNOWLEDGEMENT), "profile counterparty origin from_hash to_hash issued_at").is_some_and(|doc|
+            text(&doc["schema"]) == Some(ACKNOWLEDGEMENT) && profile_matches(text(&doc["profile"])) &&
+            ["counterparty", "origin", "from_hash", "to_hash"].iter().all(|name| bounded(&doc[*name], 1024).is_some()) && uint(&doc["issued_at"]).is_some()),
         REFUSAL => validate_refusal(value), ROOT_DELEGATION => validate_delegation(value), TEMPLATE => validate_template(value), ADMIN_BINDING => validate_admin_binding(value),
         ADMIN_SELECTION => validate_selection(value), ADMIN_CHALLENGE => validate_admin_challenge(value), ADMIN_CONSUMPTION => validate_admin_consumption(value), AGENT_POP => validate_pop(value),
         CREDENTIAL => validate_credential(value), AGENT_SUCCESSOR => validate_successor(value), GRANT => validate_grant(value), CHECKPOINT => validate_checkpoint(value), SNAPSHOT => validate_snapshot(value), _ => false,
@@ -369,6 +373,23 @@ fn signed_cwt(raw: &[u8], schema: &str, keys: &BTreeMap<String, Vec<u8>>) -> Opt
     let cwt = inspect_cwt(raw, schema)?;
     let key = keys.get(&cwt.kid)?;
     cwt_signature_valid(&cwt, key).then_some(cwt)
+}
+/// Signed facts only; bundle coverage is assessed by the evidence consumer.
+pub(crate) fn verified_acknowledgement(raw: &[u8], context: &[u8]) -> Option<J> {
+    let local = document(&decode(context, MAX_LOCAL_CONTEXT)?, Some("swarrm-b28/local-acknowledgement-context/v1"), "keys now")?;
+    let keys = local_keys(&local["keys"])?;
+    let signed = signed_cwt(raw, ACKNOWLEDGEMENT, &keys)?;
+    let doc = plain(&signed.core)?;
+    if text(&local["schema"]) != Some("swarrm-b28/local-acknowledgement-context/v1") || text(&doc["counterparty"]) != Some(signed.kid.as_str()) || uint(&doc["issued_at"])? > uint(&local["now"])? || doc["from_hash"] == doc["to_hash"] {
+        return None;
+    }
+    Some(serde_json::json!({
+        "counterparty": signed.kid,
+        "origin": text(&doc["origin"]),
+        "from_hash": text(&doc["from_hash"]),
+        "to_hash": text(&doc["to_hash"]),
+        "issued_at": uint(&doc["issued_at"]),
+    }))
 }
 #[derive(Clone)]
 struct RootAnchor {
@@ -638,7 +659,7 @@ fn verify_admin(admin: &Doc, selection: &C, origin: &str, previous: u64, now: u6
     }
     let (backup_eligible, backup_state, counter) = admin_flags(auth, previous)?;
     let signature = P256Signature::from_der(signature).ok()?;
-    if signature.normalize_s().is_some() {
+    if signature.normalize_s() != signature {
         return None;
     }
     let mut signed = auth.to_vec();

@@ -96,10 +96,22 @@ that nothing else happened in the period.
 - `exclusions`/`gaps` — explicit, never silent; any entry in `gaps` forces
   coverage `GAPPED`.
 - `population_proof` — qualifies for `SOURCE_PROVEN_POPULATION` only when
-  `source_scope_defined` and `verified` are both true: the SOURCE must define
-  the scope; a source-signed count over an operator-supplied filter does not
-  qualify.
+  `source_scope_defined` is true and the `population-proof` domain-separated
+  signature verifies under the relying party's `population_keys` anchor named
+  by `source_id`. The carried `verified` boolean grants no authority and is not
+  the verification result. The SOURCE must define the scope; a source-signed
+  count over an operator-supplied filter does not qualify. A valid population
+  proof does not override an open gap or finding.
 Matrix: `coverage`, `coverage_basis`.
+
+The complete delivery shape remains `SourceBatch`. A verdict or certificate's
+`batch` instead names `BatchEvidence`: it can also retain the Node's explicit
+unscanned observation (empty cursor/filter/finality frame, zero events) or a
+legacy population statement without a delivery frame. Neither alternative
+invents a source delivery. Unscanned observations have no performed scan;
+legacy statements cannot establish Node observation without its required
+period/digest/signature bindings. Coverage still derives from the actual proof
+and open gaps/findings, not the selected shape name.
 
 ## 7. SourceProof (`evd/source-proof/v1`)
 

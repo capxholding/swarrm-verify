@@ -6,7 +6,7 @@
 //! Same checks, same order as `verify/tsa.py::verify_tst`:
 //!   1. token parses; eContent is a TSTInfo
 //!   2. messageImprint: SHA-256 and hashed_message == expected digest
-//!   3. CMS message-digest attribute == hash(eContent) (signer's digest algo)
+//!   3. unique single-valued CMS content-type == TSTInfo and message-digest == hash(eContent)
 //!   4. signature over the signed attributes verifies with the signer cert
 //!   5. signer cert chains to a SELF-SIGNED root inside the pinned chain
 //!   6. genTime lies within the signer cert's validity window
@@ -31,7 +31,7 @@
 use cms::cert::CertificateChoices;
 use cms::content_info::ContentInfo;
 use cms::signed_data::{SignedData, SignerIdentifier, SignerInfo};
-use der::asn1::{AnyRef, GeneralizedTime, ObjectIdentifier, OctetStringRef};
+use der::asn1::{Any, AnyRef, GeneralizedTime, ObjectIdentifier, OctetStringRef};
 use der::{Decode, Encode, SliceReader, Tag, Tagged};
 use p256::ecdsa::signature::hazmat::PrehashVerifier; // shared trait; p384 keys implement it too
 use rsa::pkcs1::DecodeRsaPublicKey;
@@ -44,6 +44,7 @@ use x509_cert::Certificate;
 
 const OID_SIGNED_DATA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.7.2");
 const OID_TST_INFO: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.16.1.4");
+const OID_CONTENT_TYPE: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.3");
 const OID_MESSAGE_DIGEST: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.4");
 const OID_SHA256: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.1");
 const OID_SHA384: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.2");
@@ -193,16 +194,13 @@ fn parse_token(token_der: &[u8]) -> Option<(SignedData, Vec<u8>, TstImprint)> {
     Some((sd, tst_der, info))
 }
 
-fn message_digest_matches(signed_attrs: &Attributes, want: &[u8]) -> bool {
-    let md: Vec<_> = signed_attrs.iter().filter(|a| a.oid == OID_MESSAGE_DIGEST).collect();
-    if md.len() != 1 {
-        return false;
+fn signed_attribute(attrs: &Attributes, oid: ObjectIdentifier) -> Option<&Any> {
+    let mut matches = attrs.iter().filter(|a| a.oid == oid);
+    let (Some(attr), None) = (matches.next(), matches.next()) else { return None };
+    if attr.values.len() != 1 {
+        return None;
     }
-    let Some(value) = md[0].values.iter().next() else { return false };
-    match value.decode_as::<OctetStringRef>() {
-        Ok(o) => o.as_bytes() == want,
-        Err(_) => false,
-    }
+    attr.values.iter().next()
 }
 
 /// Returns the single SignerInfo after the RFC 3161 structural checks (mirror
@@ -218,7 +216,7 @@ fn check_signer_info<'a>(sd: &'a SignedData, tst_der: &[u8]) -> Option<&'a Signe
         return None; // RFC 3161 requires signed attributes
     }
     let want = hash_bytes(&si.digest_alg.oid, tst_der)?;
-    if !message_digest_matches(signed_attrs, &want) {
+    if signed_attribute(signed_attrs, OID_CONTENT_TYPE)?.decode_as::<ObjectIdentifier>().ok()? != OID_TST_INFO || signed_attribute(signed_attrs, OID_MESSAGE_DIGEST)?.decode_as::<OctetStringRef>().ok()?.as_bytes() != want {
         return None;
     }
     Some(si)
