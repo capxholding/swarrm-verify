@@ -1,0 +1,72 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "currency": "EUR",
+    "value": "380.99"
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "2",
+    "cursor_start": "0",
+    "declared_count": 2,
+    "event_key_root": "df5ebda209fb97e4f871ea8e334b5bc8532f91c73e3379087814a2725e1281ea",
+    "exclusions": [],
+    "filter_digest": "9b9229601d66f70b764a47b63d23623db89f61eb1b1954514632ac05cb78a082",
+    "finality_watermark": "",
+    "gaps": [],
+    "mapping_version": "emu-map-1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "emu-ledger/acct-23"
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "counterparty": "acme-1369",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "380.99"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-000000",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": false
+    },
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-000001",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": false,
+      "unique_field_match": false
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": true,
+    "batch_digest": "5d1b5cb2c520d25b5d09d9fabf110c0b55a285c9947708e431dd3ef6c5243ad1",
+    "complete": false,
+    "cursor_gap_free": true,
+    "node_id": "s3YkkeLhSDposbKe",
+    "node_signed": true,
+    "performed": true,
+    "signature": "cSqUpJ2WXoop1ZW9h0oSl2nXVYu2VHmqGfpuJmUEMJvqcIL8c8n1E8KkKUAPUeGHGZ5k1G4k7O6CJY9pNIDoCw=="
+  },
+  "schema": "evd/verdict-input/v1"
+}

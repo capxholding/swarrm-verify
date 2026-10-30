@@ -26,6 +26,33 @@ export function derive_vector_json(verdict_input_json, trust_json) {
 }
 
 /**
+ * Compare a verified counterparty CWT with a separately verified bundle.
+ * Context is local canonical CBOR (keys and time), never selected by evidence.
+ * @param {Uint8Array} envelope
+ * @param {Uint8Array} context
+ * @param {Uint8Array} bundle_json
+ * @returns {string}
+ */
+export function verify_acknowledgement_json(envelope, context, bundle_json) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const ptr0 = passArray8ToWasm0(envelope, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(context, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passArray8ToWasm0(bundle_json, wasm.__wbindgen_malloc);
+        const len2 = WASM_VECTOR_LEN;
+        const ret = wasm.verify_acknowledgement_json(ptr0, len0, ptr1, len1, ptr2, len2);
+        deferred4_0 = ret[0];
+        deferred4_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
  * Verify a two-field exchange: local context and exchange structure, then generation, then the root pin.
  * @param {Uint8Array} exchange
  * @param {Uint8Array} local_context
@@ -112,6 +139,26 @@ export function verify_disclosure_json(package_json, bundle_json) {
     const len1 = WASM_VECTOR_LEN;
     const ret = wasm.verify_disclosure_json(ptr0, len0, ptr1, len1);
     return ret !== 0;
+}
+
+/**
+ * Verify the complete dispute package and its recomputed statements offline.
+ * @param {Uint8Array} package_json
+ * @returns {string}
+ */
+export function verify_dispute_json(package_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passArray8ToWasm0(package_json, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.verify_dispute_json(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
 }
 function __wbg_get_imports() {
     const import0 = {

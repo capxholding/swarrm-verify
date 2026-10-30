@@ -19,7 +19,7 @@
     "declared_count": 4,
     "event_key_root": "d45708420391e2135025649aeae062d498cd1e5a52a0c38b3be9bb64d6c362e6",
     "exclusions": [],
-    "filter_digest": "2ef1f672e69bdef20c0b4b2da469bbb7373d6d0580e9bd15e5d35d645c855942",
+    "filter_digest": "379f1d137771f325547bde33a83913ebeb466bdd6957f5a0b0acad1fe919eae7",
     "finality_watermark": "",
     "gaps": [
       "unauthenticated_read:purview/00000017-0000-4000-8000-000000000023/CopilotInteraction/2026/01/01/0100Z_e5cba8e3.json.gz",
@@ -69,13 +69,13 @@
   "fork_findings_open": false,
   "scan": {
     "authenticated_read": false,
-    "batch_digest": "0224fca7ef17aeb2a16035bffaab998999283e3fb833251f3e223f42c482d9d0",
+    "batch_digest": "4dd97fb135e739d28e532e884803dc4a669bc1c1ea58a8bf69ad082f02ac599e",
     "complete": true,
     "cursor_gap_free": true,
     "node_id": "s3YkkeLhSDposbKe",
     "node_signed": true,
     "performed": true,
-    "signature": "UAfYpVATHTNXLkJbs0dfVDWCHrjRHHK9R9BV/MAMEAqPsWpwNu9v7kce6QOeaQjoKkRArp+lFBBiax7tRE4WBw=="
+    "signature": "hr7kkBi1sZ3d8fkSKTE5GJ+D44YtAZ89FJpr0n/I03F7N+xdIig1GJukJUiewvNxu4flZf3STHzwjxgcTxcpDw=="
   },
   "schema": "evd/verdict-input/v1"
 }

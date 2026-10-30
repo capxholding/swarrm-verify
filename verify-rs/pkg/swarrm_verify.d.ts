@@ -9,6 +9,12 @@
 export function derive_vector_json(verdict_input_json: Uint8Array, trust_json: Uint8Array): string;
 
 /**
+ * Compare a verified counterparty CWT with a separately verified bundle.
+ * Context is local canonical CBOR (keys and time), never selected by evidence.
+ */
+export function verify_acknowledgement_json(envelope: Uint8Array, context: Uint8Array, bundle_json: Uint8Array): string;
+
+/**
  * Verify a two-field exchange: local context and exchange structure, then generation, then the root pin.
  */
 export function verify_b28_cwt(exchange: Uint8Array, local_context: Uint8Array, trust_pack: Uint8Array, expected_trust_pack_digest: Uint8Array): string;
@@ -33,15 +39,22 @@ export function verify_certificate_cbor(bytes: Uint8Array): string;
  */
 export function verify_disclosure_json(package_json: Uint8Array, bundle_json: Uint8Array): boolean;
 
+/**
+ * Verify the complete dispute package and its recomputed statements offline.
+ */
+export function verify_dispute_json(package_json: Uint8Array): string;
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly verify_b28_cwt: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number];
-    readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly verify_certificate_cbor: (a: number, b: number) => [number, number];
     readonly verify_bundle_json: (a: number, b: number) => [number, number];
     readonly verify_disclosure_json: (a: number, b: number, c: number, d: number) => number;
+    readonly verify_dispute_json: (a: number, b: number) => [number, number];
+    readonly verify_acknowledgement_json: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number];
+    readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;

@@ -1,0 +1,4697 @@
+{
+ "cases": [
+  {
+   "accepted": true,
+   "base": "agreement",
+   "changes": [],
+   "name": "agreement"
+  },
+  {
+   "accepted": true,
+   "base": "dropped",
+   "changes": [],
+   "name": "dropped"
+  },
+  {
+   "accepted": true,
+   "base": "conflict",
+   "changes": [],
+   "name": "conflict"
+  },
+  {
+   "accepted": true,
+   "base": "one-sided",
+   "changes": [],
+   "name": "one-sided"
+  },
+  {
+   "accepted": true,
+   "base": "values",
+   "changes": [],
+   "name": "values"
+  },
+  {
+   "accepted": true,
+   "base": "empty",
+   "changes": [],
+   "name": "empty"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/schema",
+     "evd/dispute-artifact/v2"
+    ]
+   ],
+   "name": "schema"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/party_labels",
+     [
+      "alpha",
+      "alpha"
+     ]
+    ]
+   ],
+   "name": "labels"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/party_labels",
+     [
+      [
+       "alpha"
+      ],
+      "beta"
+     ]
+    ]
+   ],
+   "name": "label-type"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/case_ref",
+     null
+    ]
+   ],
+   "name": "case-type"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/contested_claims",
+     "unseen"
+    ]
+   ],
+   "name": "claims-string"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/contested_claims",
+     [
+      "z",
+      "a"
+     ]
+    ]
+   ],
+   "name": "claims-unsorted"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/contested_claims",
+     [
+      "unseen",
+      "unseen"
+     ]
+    ]
+   ],
+   "name": "claims-duplicate"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/extra",
+     true
+    ]
+   ],
+   "name": "extra"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/reconciliation/claims/0/statement",
+     "Both parties agree."
+    ]
+   ],
+   "name": "statement"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/reconciliation/claims/0/outcome",
+     "UNSUPPORTED"
+    ]
+   ],
+   "name": "outcome"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/reconciliation/scope",
+     "The supplier is liable."
+    ]
+   ],
+   "name": "scope"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/reconciliation/summary/AGREEMENT",
+     true
+    ]
+   ],
+   "name": "summary"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/reconciliation/parties/alpha/trust_root",
+     "0000000000000000000000000000000000000000000000000000000000000000"
+    ]
+   ],
+   "name": "party-root"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/reconciliation/claims/0/receipt_hashes/alpha/0",
+     "0000000000000000000000000000000000000000000000000000000000000000"
+    ]
+   ],
+   "name": "receipt-hash"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/bundles/alpha/target_checkpoint/body/tree_size",
+     999
+    ]
+   ],
+   "name": "invalid-bundle"
+  },
+  {
+   "accepted": false,
+   "base": "agreement",
+   "changes": [
+    [
+     "/bundles/beta",
+     {
+      "checkpoint_chain": [
+       {
+        "checkpoint": {
+         "body": {
+          "origin": "evd://tenant/t_party_a",
+          "prev_hash": "",
+          "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+          "schema": "evd/checkpoint/v1",
+          "tree_size": 5,
+          "ts": "2026-01-01T00:00:29Z"
+         },
+         "kid": "LABs8EZ868oIL3mv",
+         "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+        }
+       }
+      ],
+      "entries": [
+       {
+        "envelope": {
+         "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9hX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA5WiJ9",
+         "payloadType": "application/vnd.evd.receipt.v1+json",
+         "signatures": [
+          {
+           "keyid": "LABs8EZ868oIL3mv",
+           "sig": "p+VyvKvusO7evYwYduW/kfntyyUxyXEM1noLsWNW69zib7n7fApZFB9m1CMbg0LASpnGdrfc/yqN0rKJLh2tBA=="
+          }
+         ]
+        },
+        "inclusion_proof": [
+         "c25c91eea1ded4248d60ad7557bfa8387c08df286f3864533d911d2c740c9a50",
+         "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+         "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+        ],
+        "leaf_index": 1
+       },
+       {
+        "envelope": {
+         "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiIwYjc3OTBiOGNkMWRmOWRjZDFjY2U2YTRhMzAzMDkwOTNhYTc5ZWY0YjQxMGVhNjBiY2JjODMzODQ5Zjg0YmZlIiwiY291bnRlcnBhcnR5X2lkIjoiMjRkMmQ3NzYzMzIxMjJhZWZmNjc1NzBlOWMxOTU5NDMyM2UyZTA5MzIxZTM3OTUyYmM5YjkwOTJhYWRmY2E5NyJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0xIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMSIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MDVaLTkwMzczODJmYjQ1ZTI2YzgiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowNloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA2WiJ9",
+         "payloadType": "application/vnd.evd.receipt.v1+json",
+         "signatures": [
+          {
+           "keyid": "LABs8EZ868oIL3mv",
+           "sig": "9tptBvI3a+KKy0oWtr/KV2JKMX2reK6fHgt8O9Whc9da/I2MuWShhp+pIXp35p2i5Gb840Q9y+JCxk4ghkOKAQ=="
+          }
+         ]
+        },
+        "inclusion_proof": [
+         "e898a7f5f97c0876fd1bdd5675a6e567209b0b9d9a6d1f480377df34c0e4b425",
+         "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+         "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+        ],
+        "leaf_index": 2
+       },
+       {
+        "envelope": {
+         "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJhZWQ2ZTY4ZDE5OTU0ZGE1ZWFkMmJhZDQ1MWM4MjIxZWM3MDJmYmJhZjc3NDg4NjQ0M2VjOTMzOTNlMWQ2NjQ0IiwiY291bnRlcnBhcnR5X2lkIjoiOWMzYzdhNzVhMGU3MzBmNWY2YjU3MmFlNDY3YjkxNGNmMmVmMDU1MTFiZTEyMDVkYTEwM2FlMmZmZThlZGFkNiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0yIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMiIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTFaLWJjNWEwODc3M2E0Mzg5NjYiLCJwYXJlbnRzIjpbIjMzMDlhMjEzNzM0ZDNmYzhkNTEwNTY0YWNjMTQ1NjgyY2EzNDcwNGIyNjAyMmJkMjZjNThkN2Y2ZDgyZmMxZWEiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxMloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjEyWiJ9",
+         "payloadType": "application/vnd.evd.receipt.v1+json",
+         "signatures": [
+          {
+           "keyid": "LABs8EZ868oIL3mv",
+           "sig": "W3a8Xx2fT7DjWHaMnWGyj8t/22T/ccI1ZNjOsIqnWV5vhKXh2EBfdiDHjyJxWcteFdDQ6dGrfT/7yvzBEVR8CA=="
+          }
+         ]
+        },
+        "inclusion_proof": [
+         "2ff621ebcdccb15cc59879458e6733d21d49fa33d472f4015bb2bb797c58eb9b",
+         "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+         "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+        ],
+        "leaf_index": 3
+       },
+       {
+        "envelope": {
+         "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJiMmVhNjE2YjE3NTNiMTkwNmViYWNhYzQ0NDlkM2EyNGM4MmQ0YzI2Yjk1NzNjNzNlYWIwZjNlZmRhM2U4NDMzIiwiY291bnRlcnBhcnR5X2lkIjoiZjNiMzNkZTI0MzM1MmU0YmFlNGVjZWEwOTU0MmZjOWQwN2M2MzYyNGE3ODk1YjI4Y2E3NjE0N2FhNTBhODU0ZSJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0zIiwiYW1vdW50X2JhbmQiOiIxMF4xIEVVUiIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJFVVIiLCJleHRlcm5hbF9yZWYiOiJyZWYtMyIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTRaLTRlNmM3OTI5ODM1OGYxODkiLCJwYXJlbnRzIjpbIjExZjYzN2EzMWI5NzMzOGJjNDRlOGIzZDVlMDhkZWVmMjM3ZjlhODE1YjI0ZDdmOGUzMzIyN2NmMDg5ZDUyYjkiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjQsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxNVoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE1WiJ9",
+         "payloadType": "application/vnd.evd.receipt.v1+json",
+         "signatures": [
+          {
+           "keyid": "LABs8EZ868oIL3mv",
+           "sig": "p+dfHlcgqaMV+8wfkCSh1SY20zTlRvsp29ljsBPSNp07ElQgcT5Wtw08jwQEQqJZKM/4MAfvoitFiZ4gfHa+DQ=="
+          }
+         ]
+        },
+        "inclusion_proof": [
+         "42a88959b5eecdb3d631f9ee40ddeb8691b8610caf26c028244fe6244f5b1a5c"
+        ],
+        "leaf_index": 4
+       },
+       {
+        "envelope": {
+         "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+         "payloadType": "application/vnd.evd.receipt.v1+json",
+         "signatures": [
+          {
+           "keyid": "LABs8EZ868oIL3mv",
+           "sig": "oOYiUGr26I+KCztFlLhMCoI/Q7VS0Eyu+DjOST36VrrWlaXOQn8bdEFKoqUWpUbSQI2ANtwBHDUPZRhpLPJSBg=="
+          }
+         ]
+        },
+        "inclusion_proof": [
+         "113c09d1b196c1d05262f1745c2c0e85514bc922bc10559c6a007be99f0dfa92",
+         "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+         "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+        ],
+        "leaf_index": 0
+       }
+      ],
+      "export_manifest": {
+       "body": {
+        "origin": "evd://tenant/t_party_a",
+        "producer": {
+         "capabilities": {
+          "bundle.schema": "evd/bundle/v1",
+          "canonical.jcs_max_depth": 64,
+          "checkpoint.fields": [
+           "origin",
+           "prev_hash",
+           "root_hash",
+           "schema",
+           "tree_size",
+           "ts"
+          ],
+          "checkpoint.optional": [
+           "alg"
+          ],
+          "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+          "checkpoint.schema": "evd/checkpoint/v1",
+          "checkpoint.signed_fields": [
+           "body",
+           "kid",
+           "sig"
+          ],
+          "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+          "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+          "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+          "export_manifest.schema": "evd/export-manifest/v1",
+          "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "merkle.leaf_prefix": "00",
+          "merkle.node_prefix": "01",
+          "receipt.max_parents": 32,
+          "receipt.optional": [
+           "alg",
+           "session_id",
+           "session_inferred"
+          ],
+          "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+          "receipt.required": [
+           "action_type",
+           "agent_id",
+           "commitments",
+           "context",
+           "idempotency_key",
+           "parents",
+           "schema",
+           "seq",
+           "tenant_id",
+           "ts_client",
+           "ts_server"
+          ],
+          "receipt.schema": "evd/receipt/v1",
+          "schema": "evd/capability-digest/v1"
+         },
+         "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+        },
+        "receipt_hashes": [
+         "11f637a31b97338bc44e8b3d5e08deef237f9a815b24d7f8e33227cf089d52b9",
+         "3309a213734d3fc8d510564acc145682ca34704b26022bd26c58d7f6d82fc1ea",
+         "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+         "45d02921c156f25953d37e8579ed8c8afe40171e7e5dfe99a15529a53dbdbe2b",
+         "a7eac5d018e95ccce9685f4e696dbedd83cb8f3ce4593ae837c8cb4f5e751ce6"
+        ],
+        "schema": "evd/export-manifest/v1",
+        "target_checkpoint_hash": "6cc9904d2eeb8868e58c8388ed01c7a8c6c67d1cc40652e4a55aa4fbf736ffa6",
+        "ts": "2026-01-01T00:00:29Z"
+       },
+       "kid": "LABs8EZ868oIL3mv",
+       "sig": "8EpgJLt2cA8mmtypDFsD9BgKLrobM/cWv4N+Ut1AxdPEM2VGTFeF5lmRTlOsvCHgvGXEShKepoxoU71x2eI1Cw=="
+      },
+      "jwks": {
+       "keys": [
+        {
+         "alg": "EdDSA",
+         "crv": "Ed25519",
+         "kid": "LABs8EZ868oIL3mv",
+         "kty": "OKP",
+         "use": "sig",
+         "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+        }
+       ]
+      },
+      "origin": "evd://tenant/t_party_a",
+      "schema": "evd/bundle/v1",
+      "target_checkpoint": {
+       "body": {
+        "origin": "evd://tenant/t_party_a",
+        "prev_hash": "",
+        "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+        "schema": "evd/checkpoint/v1",
+        "tree_size": 5,
+        "ts": "2026-01-01T00:00:29Z"
+       },
+       "kid": "LABs8EZ868oIL3mv",
+       "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+      }
+     }
+    ]
+   ],
+   "name": "same-log"
+  }
+ ],
+ "packages": {
+  "agreement": {
+   "bundles": {
+    "alpha": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_a",
+         "prev_hash": "",
+         "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 5,
+         "ts": "2026-01-01T00:00:29Z"
+        },
+        "kid": "LABs8EZ868oIL3mv",
+        "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9hX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA5WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+VyvKvusO7evYwYduW/kfntyyUxyXEM1noLsWNW69zib7n7fApZFB9m1CMbg0LASpnGdrfc/yqN0rKJLh2tBA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c25c91eea1ded4248d60ad7557bfa8387c08df286f3864533d911d2c740c9a50",
+        "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiIwYjc3OTBiOGNkMWRmOWRjZDFjY2U2YTRhMzAzMDkwOTNhYTc5ZWY0YjQxMGVhNjBiY2JjODMzODQ5Zjg0YmZlIiwiY291bnRlcnBhcnR5X2lkIjoiMjRkMmQ3NzYzMzIxMjJhZWZmNjc1NzBlOWMxOTU5NDMyM2UyZTA5MzIxZTM3OTUyYmM5YjkwOTJhYWRmY2E5NyJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0xIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMSIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MDVaLTkwMzczODJmYjQ1ZTI2YzgiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowNloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA2WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "9tptBvI3a+KKy0oWtr/KV2JKMX2reK6fHgt8O9Whc9da/I2MuWShhp+pIXp35p2i5Gb840Q9y+JCxk4ghkOKAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "e898a7f5f97c0876fd1bdd5675a6e567209b0b9d9a6d1f480377df34c0e4b425",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJhZWQ2ZTY4ZDE5OTU0ZGE1ZWFkMmJhZDQ1MWM4MjIxZWM3MDJmYmJhZjc3NDg4NjQ0M2VjOTMzOTNlMWQ2NjQ0IiwiY291bnRlcnBhcnR5X2lkIjoiOWMzYzdhNzVhMGU3MzBmNWY2YjU3MmFlNDY3YjkxNGNmMmVmMDU1MTFiZTEyMDVkYTEwM2FlMmZmZThlZGFkNiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0yIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMiIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTFaLWJjNWEwODc3M2E0Mzg5NjYiLCJwYXJlbnRzIjpbIjMzMDlhMjEzNzM0ZDNmYzhkNTEwNTY0YWNjMTQ1NjgyY2EzNDcwNGIyNjAyMmJkMjZjNThkN2Y2ZDgyZmMxZWEiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxMloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjEyWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "W3a8Xx2fT7DjWHaMnWGyj8t/22T/ccI1ZNjOsIqnWV5vhKXh2EBfdiDHjyJxWcteFdDQ6dGrfT/7yvzBEVR8CA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "2ff621ebcdccb15cc59879458e6733d21d49fa33d472f4015bb2bb797c58eb9b",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 3
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJiMmVhNjE2YjE3NTNiMTkwNmViYWNhYzQ0NDlkM2EyNGM4MmQ0YzI2Yjk1NzNjNzNlYWIwZjNlZmRhM2U4NDMzIiwiY291bnRlcnBhcnR5X2lkIjoiZjNiMzNkZTI0MzM1MmU0YmFlNGVjZWEwOTU0MmZjOWQwN2M2MzYyNGE3ODk1YjI4Y2E3NjE0N2FhNTBhODU0ZSJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0zIiwiYW1vdW50X2JhbmQiOiIxMF4xIEVVUiIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJFVVIiLCJleHRlcm5hbF9yZWYiOiJyZWYtMyIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTRaLTRlNmM3OTI5ODM1OGYxODkiLCJwYXJlbnRzIjpbIjExZjYzN2EzMWI5NzMzOGJjNDRlOGIzZDVlMDhkZWVmMjM3ZjlhODE1YjI0ZDdmOGUzMzIyN2NmMDg5ZDUyYjkiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjQsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxNVoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE1WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+dfHlcgqaMV+8wfkCSh1SY20zTlRvsp29ljsBPSNp07ElQgcT5Wtw08jwQEQqJZKM/4MAfvoitFiZ4gfHa+DQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "42a88959b5eecdb3d631f9ee40ddeb8691b8610caf26c028244fe6244f5b1a5c"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "oOYiUGr26I+KCztFlLhMCoI/Q7VS0Eyu+DjOST36VrrWlaXOQn8bdEFKoqUWpUbSQI2ANtwBHDUPZRhpLPJSBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "113c09d1b196c1d05262f1745c2c0e85514bc922bc10559c6a007be99f0dfa92",
+        "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "11f637a31b97338bc44e8b3d5e08deef237f9a815b24d7f8e33227cf089d52b9",
+        "3309a213734d3fc8d510564acc145682ca34704b26022bd26c58d7f6d82fc1ea",
+        "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+        "45d02921c156f25953d37e8579ed8c8afe40171e7e5dfe99a15529a53dbdbe2b",
+        "a7eac5d018e95ccce9685f4e696dbedd83cb8f3ce4593ae837c8cb4f5e751ce6"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "6cc9904d2eeb8868e58c8388ed01c7a8c6c67d1cc40652e4a55aa4fbf736ffa6",
+       "ts": "2026-01-01T00:00:29Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "8EpgJLt2cA8mmtypDFsD9BgKLrobM/cWv4N+Ut1AxdPEM2VGTFeF5lmRTlOsvCHgvGXEShKepoxoU71x2eI1Cw=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LABs8EZ868oIL3mv",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_a",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "prev_hash": "",
+       "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 5,
+       "ts": "2026-01-01T00:00:29Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+     }
+    },
+    "beta": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_b",
+         "prev_hash": "",
+         "root_hash": "dfede35bec62207464e15d9c2d6b8d37464173759a1d5ae78660695ba7007ae0",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 5,
+         "ts": "2026-01-01T00:00:30Z"
+        },
+        "kid": "LVgJQorD9eIwxSSR",
+        "sig": "L1hjP9UHC0X1e3u1EyL4oTfW9QY1/BwUhFgOrGBXwsc7c5Ivf/sC3HVgDlGeYqZFUJ//roKzbO1UX6hYZ8JZAA=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9iX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjIxWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "9I3Ty/USST/gHIh4uSiNPR8fF0QeMIja4bYo/S71LOkSKQSOCEnJyGwb86x8XD3CaaHr1nAardkL6cGiX5qDDw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "78b92e226a2629444cd074518ac916cfc771b53d6ecf569bbf89e4aa180b77a6",
+        "9e62e6e6276d824136e581931d52f4657a8306261189ca30edcbfe0406750689",
+        "1f58fecce76c602580298bd6e612ad364a7ce8cafdf47ef6cfd27f87546b91d0"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJmNWRhYmNlYjllZWY5YjIxZmZhOTZiMGI2YjZhNjU2YTE2MTYwNWQ5OWQwMmNhZWViMzgzNmI2OWQwYjQxZDQzIiwiY291bnRlcnBhcnR5X2lkIjoiYzJjMTc1YTFlZmQwZTMxZDQ2NmU0YTRlMzU3YWZjNjBiMWRmMzY4ZDAxNDY4YzQyNDBkNjRhN2QwMGY0N2JmYiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0xIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMSIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTdaLTZiYjRjMGY0NDhhNjA0ZTkiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE4WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "ZLJnDtkAStYGShjZ2Mx4rWnacrMYuJ+0nsvUrX/DTp46RoPLKioh1VOT8AuwcL+PcjmdkJ3e9kgCy6DC1sd/Ag=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "a4343df65d118a13894123810d3678058a0ac83f118e78b0eccae4f2be92cf44",
+        "5f08c7e795e524ceef24298f46404c78613400b568dd94ba1a9c062fbc456d08",
+        "1f58fecce76c602580298bd6e612ad364a7ce8cafdf47ef6cfd27f87546b91d0"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJjNDY3YzYzMDg3ZjFlZDJlMWY4ZDkxNzk2ZTk0ZWY2OGJjZGJjNjMzODgxZmFiMmUxNjM3MTM5MjA3NGNlYzc1IiwiY291bnRlcnBhcnR5X2lkIjoiNWU1M2ZlNDEwMzhjNzM4NDhmMTk4MmVlYTdjZjg1ZTQyYThhOTA1NDFkOWE4OGU4MDc5MzI3MWIyZGJiYzQzZSJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0yIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMiIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MjNaLTA3OGEwOGMzYWE5OTQ3YTQiLCJwYXJlbnRzIjpbIjIyNjQzOGM3MDQ3OTczMzk1NjM4NmNiZTRmZDRkMzhhYzZlZTdjNDYyNzUxZDQzNzU1YWUwZjEwYTY2M2IxM2UiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyNFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjI0WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "bvnfeFFHDio5FWK0l3JsWtoNzYdwLnUpwg65zt/YV9aRGs9N1V+RWkz9xv6ouWzBGOubrJAT305xr6jabztkBw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "8822c4b7d8386f87cb00328f028cedff72b82f1cd0702efae38c07df091afd0e",
+        "5f08c7e795e524ceef24298f46404c78613400b568dd94ba1a9c062fbc456d08",
+        "1f58fecce76c602580298bd6e612ad364a7ce8cafdf47ef6cfd27f87546b91d0"
+       ],
+       "leaf_index": 3
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiIzYTFiYjEzMzI2OGExYjJmNDNiOTFiMjliMzZlYTdlMjY3YmZhMGM5ZDY1YTI2NjgzYzBjZGE1NzQzYjVhNDkzIiwiY291bnRlcnBhcnR5X2lkIjoiYjZkZmU0OTg1MTdhZTQ0YjU2YTVhYTE0Zjk4N2MxOWI2NTRjY2I4MTNjZjdiNzZlNDYzODhmMmY2MzU3ZDI0MiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0zIiwiYW1vdW50X2JhbmQiOiIxMF4xIEVVUiIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJFVVIiLCJleHRlcm5hbF9yZWYiOiJyZWYtMyIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MjZaLWVkZDkzZDAyM2Q5MzljMmEiLCJwYXJlbnRzIjpbImFjM2FkOTI3MjRmYTcyN2E0MmZiYmQyMmUwOGFkM2NjYmI4YjRmZmNkMmVhY2Q5YjcyYjU5NjIyZjEyM2FkNWMiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjQsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyN1oiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjI3WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "LaKiD4w8xXso9EyXU8rSv5/WpcaMioU5MhD+OTIhRu86z8t3ZJSSeHxnNmwkAyxOzAH2pXBO+97DMO4Kzl42BQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "343ec2b02c92c6d2bcced1eb7b651fb28a4b1e6f9c97f5769cb80537a4d3c873"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAzWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMVmdKUW9yRDllSXd4U1NSIiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6Ii1tbWo2aVFkVlFOOXlFajNuR0hHT0lVLVd0VU5VVHdtSlJ5TWRUXzhzZDAifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MVmdKUW9yRDllSXd4U1NSIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "cEgrqhGXUxpy18ymB+0pBV3ARATxlnrGQ4ef0aGnUpTyh74dH6f9y5cTl1gNo4IrXjOOahqbvUHeSYOqWfEdCQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "e7b444d29d72fda1737968d19e4e69788ccc20437b03957d3f77615b0472ffbd",
+        "9e62e6e6276d824136e581931d52f4657a8306261189ca30edcbfe0406750689",
+        "1f58fecce76c602580298bd6e612ad364a7ce8cafdf47ef6cfd27f87546b91d0"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+        "226438c70479733956386cbe4fd4d38ac6ee7c462751d43755ae0f10a663b13e",
+        "841c6511c47c34e2e09d38cc2edc1df64072bdf16cdb4e311c6be7973a92313f",
+        "ac3ad92724fa727a42fbbd22e08ad3ccbb8b4ffcd2eacd9b72b59622f123ad5c",
+        "b64b7b77475271eb44f265518e0f545028358af6acd575cdfff528f07dc5f331"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "2df692acec2d354164cee7507b5f73a85a1c1ace38498e383636265527c36290",
+       "ts": "2026-01-01T00:00:30Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "pnDamcYM1RFsOAQbUA3o0vTQGhuufJSdHjyo9TLqeerpQqHMh3llmV9UJEAx55VlsWLRe8alaUG+bCkRwF4DAw=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LVgJQorD9eIwxSSR",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "-mmj6iQdVQN9yEj3nGHGOIU-WtUNUTwmJRyMdT_8sd0"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_b",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "prev_hash": "",
+       "root_hash": "dfede35bec62207464e15d9c2d6b8d37464173759a1d5ae78660695ba7007ae0",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 5,
+       "ts": "2026-01-01T00:00:30Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "L1hjP9UHC0X1e3u1EyL4oTfW9QY1/BwUhFgOrGBXwsc7c5Ivf/sC3HVgDlGeYqZFUJ//roKzbO1UX6hYZ8JZAA=="
+     }
+    }
+   },
+   "case_ref": "agreement",
+   "contested_claims": [
+    "unseen"
+   ],
+   "party_labels": [
+    "alpha",
+    "beta"
+   ],
+   "reconciliation": {
+    "claims": [
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "amount_band",
+       "currency",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-1",
+      "conflicting_fields": {},
+      "contested": false,
+      "one_sided_fields": {},
+      "outcome": "AGREEMENT",
+      "receipt_hashes": {
+       "alpha": [
+        "3309a213734d3fc8d510564acc145682ca34704b26022bd26c58d7f6d82fc1ea"
+       ],
+       "beta": [
+        "226438c70479733956386cbe4fd4d38ac6ee7c462751d43755ae0f10a663b13e"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim and every material field carried by both sides matches.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "amount_band",
+       "currency",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-2",
+      "conflicting_fields": {},
+      "contested": false,
+      "one_sided_fields": {},
+      "outcome": "AGREEMENT",
+      "receipt_hashes": {
+       "alpha": [
+        "11f637a31b97338bc44e8b3d5e08deef237f9a815b24d7f8e33227cf089d52b9"
+       ],
+       "beta": [
+        "ac3ad92724fa727a42fbbd22e08ad3ccbb8b4ffcd2eacd9b72b59622f123ad5c"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim and every material field carried by both sides matches.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "amount_band",
+       "currency",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-3",
+      "conflicting_fields": {},
+      "contested": false,
+      "one_sided_fields": {},
+      "outcome": "AGREEMENT",
+      "receipt_hashes": {
+       "alpha": [
+        "45d02921c156f25953d37e8579ed8c8afe40171e7e5dfe99a15529a53dbdbe2b"
+       ],
+       "beta": [
+        "841c6511c47c34e2e09d38cc2edc1df64072bdf16cdb4e311c6be7973a92313f"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim and every material field carried by both sides matches.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "claim_id": "unseen",
+      "contested": true,
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [],
+       "beta": []
+      },
+      "statement": "Neither party's verified bundle carries a receipt supporting this claim.",
+      "supported_by": [],
+      "unsupported_by": [
+       "alpha",
+       "beta"
+      ]
+     }
+    ],
+    "parties": {
+     "alpha": {
+      "claims": 3,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_a",
+      "trust_root": "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+      "uncorrelated_receipts": 1
+     },
+     "beta": {
+      "claims": 3,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_b",
+      "trust_root": "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+      "uncorrelated_receipts": 1
+     }
+    },
+    "schema": "evd/two-party-reconciliation/v1",
+    "scope": "This reconciliation reports what each party's independently verified bundle can support. It does not determine fault, intent, liability, or which party's record reflects what actually happened. Absence of a receipt from a presented export is absence of support, not proof that no event occurred.",
+    "summary": {
+     "AGREEMENT": 3,
+     "CONFLICT": 0,
+     "UNSUPPORTED": 1,
+     "contested": 1
+    }
+   },
+   "schema": "evd/dispute-artifact/v1"
+  },
+  "conflict": {
+   "bundles": {
+    "alpha": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_a",
+         "prev_hash": "",
+         "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 5,
+         "ts": "2026-01-01T00:00:29Z"
+        },
+        "kid": "LABs8EZ868oIL3mv",
+        "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9hX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA5WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+VyvKvusO7evYwYduW/kfntyyUxyXEM1noLsWNW69zib7n7fApZFB9m1CMbg0LASpnGdrfc/yqN0rKJLh2tBA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c25c91eea1ded4248d60ad7557bfa8387c08df286f3864533d911d2c740c9a50",
+        "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiIwYjc3OTBiOGNkMWRmOWRjZDFjY2U2YTRhMzAzMDkwOTNhYTc5ZWY0YjQxMGVhNjBiY2JjODMzODQ5Zjg0YmZlIiwiY291bnRlcnBhcnR5X2lkIjoiMjRkMmQ3NzYzMzIxMjJhZWZmNjc1NzBlOWMxOTU5NDMyM2UyZTA5MzIxZTM3OTUyYmM5YjkwOTJhYWRmY2E5NyJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0xIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMSIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MDVaLTkwMzczODJmYjQ1ZTI2YzgiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowNloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA2WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "9tptBvI3a+KKy0oWtr/KV2JKMX2reK6fHgt8O9Whc9da/I2MuWShhp+pIXp35p2i5Gb840Q9y+JCxk4ghkOKAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "e898a7f5f97c0876fd1bdd5675a6e567209b0b9d9a6d1f480377df34c0e4b425",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJhZWQ2ZTY4ZDE5OTU0ZGE1ZWFkMmJhZDQ1MWM4MjIxZWM3MDJmYmJhZjc3NDg4NjQ0M2VjOTMzOTNlMWQ2NjQ0IiwiY291bnRlcnBhcnR5X2lkIjoiOWMzYzdhNzVhMGU3MzBmNWY2YjU3MmFlNDY3YjkxNGNmMmVmMDU1MTFiZTEyMDVkYTEwM2FlMmZmZThlZGFkNiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0yIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMiIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTFaLWJjNWEwODc3M2E0Mzg5NjYiLCJwYXJlbnRzIjpbIjMzMDlhMjEzNzM0ZDNmYzhkNTEwNTY0YWNjMTQ1NjgyY2EzNDcwNGIyNjAyMmJkMjZjNThkN2Y2ZDgyZmMxZWEiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxMloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjEyWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "W3a8Xx2fT7DjWHaMnWGyj8t/22T/ccI1ZNjOsIqnWV5vhKXh2EBfdiDHjyJxWcteFdDQ6dGrfT/7yvzBEVR8CA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "2ff621ebcdccb15cc59879458e6733d21d49fa33d472f4015bb2bb797c58eb9b",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 3
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJiMmVhNjE2YjE3NTNiMTkwNmViYWNhYzQ0NDlkM2EyNGM4MmQ0YzI2Yjk1NzNjNzNlYWIwZjNlZmRhM2U4NDMzIiwiY291bnRlcnBhcnR5X2lkIjoiZjNiMzNkZTI0MzM1MmU0YmFlNGVjZWEwOTU0MmZjOWQwN2M2MzYyNGE3ODk1YjI4Y2E3NjE0N2FhNTBhODU0ZSJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0zIiwiYW1vdW50X2JhbmQiOiIxMF4xIEVVUiIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJFVVIiLCJleHRlcm5hbF9yZWYiOiJyZWYtMyIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTRaLTRlNmM3OTI5ODM1OGYxODkiLCJwYXJlbnRzIjpbIjExZjYzN2EzMWI5NzMzOGJjNDRlOGIzZDVlMDhkZWVmMjM3ZjlhODE1YjI0ZDdmOGUzMzIyN2NmMDg5ZDUyYjkiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjQsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxNVoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE1WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+dfHlcgqaMV+8wfkCSh1SY20zTlRvsp29ljsBPSNp07ElQgcT5Wtw08jwQEQqJZKM/4MAfvoitFiZ4gfHa+DQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "42a88959b5eecdb3d631f9ee40ddeb8691b8610caf26c028244fe6244f5b1a5c"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "oOYiUGr26I+KCztFlLhMCoI/Q7VS0Eyu+DjOST36VrrWlaXOQn8bdEFKoqUWpUbSQI2ANtwBHDUPZRhpLPJSBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "113c09d1b196c1d05262f1745c2c0e85514bc922bc10559c6a007be99f0dfa92",
+        "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "11f637a31b97338bc44e8b3d5e08deef237f9a815b24d7f8e33227cf089d52b9",
+        "3309a213734d3fc8d510564acc145682ca34704b26022bd26c58d7f6d82fc1ea",
+        "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+        "45d02921c156f25953d37e8579ed8c8afe40171e7e5dfe99a15529a53dbdbe2b",
+        "a7eac5d018e95ccce9685f4e696dbedd83cb8f3ce4593ae837c8cb4f5e751ce6"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "6cc9904d2eeb8868e58c8388ed01c7a8c6c67d1cc40652e4a55aa4fbf736ffa6",
+       "ts": "2026-01-01T00:00:29Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "8EpgJLt2cA8mmtypDFsD9BgKLrobM/cWv4N+Ut1AxdPEM2VGTFeF5lmRTlOsvCHgvGXEShKepoxoU71x2eI1Cw=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LABs8EZ868oIL3mv",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_a",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "prev_hash": "",
+       "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 5,
+       "ts": "2026-01-01T00:00:29Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+     }
+    },
+    "beta": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_b",
+         "prev_hash": "",
+         "root_hash": "3546cd0192028368f0801d53f3f63fa4aeb7f52d2ea3709f7c0eb5132d68497d",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 5,
+         "ts": "2026-01-01T00:00:30Z"
+        },
+        "kid": "LVgJQorD9eIwxSSR",
+        "sig": "135tOedu2ZkLFv7g4/y7E3j4kJIjDIVgdVHR1MaEzqhzQiCvdRROn1X186mDnAgu5BW3C1y6GKqjfo5LOEgZDQ=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9iX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjIxWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "9I3Ty/USST/gHIh4uSiNPR8fF0QeMIja4bYo/S71LOkSKQSOCEnJyGwb86x8XD3CaaHr1nAardkL6cGiX5qDDw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "78b92e226a2629444cd074518ac916cfc771b53d6ecf569bbf89e4aa180b77a6",
+        "9e62e6e6276d824136e581931d52f4657a8306261189ca30edcbfe0406750689",
+        "733a0271b35af64ad919ffa0061a7cc4cde921be4a55b3a0e794c16198639bb8"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJmNWRhYmNlYjllZWY5YjIxZmZhOTZiMGI2YjZhNjU2YTE2MTYwNWQ5OWQwMmNhZWViMzgzNmI2OWQwYjQxZDQzIiwiY291bnRlcnBhcnR5X2lkIjoiYzJjMTc1YTFlZmQwZTMxZDQ2NmU0YTRlMzU3YWZjNjBiMWRmMzY4ZDAxNDY4YzQyNDBkNjRhN2QwMGY0N2JmYiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0xIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMSIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTdaLTZiYjRjMGY0NDhhNjA0ZTkiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE4WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "ZLJnDtkAStYGShjZ2Mx4rWnacrMYuJ+0nsvUrX/DTp46RoPLKioh1VOT8AuwcL+PcjmdkJ3e9kgCy6DC1sd/Ag=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "a4343df65d118a13894123810d3678058a0ac83f118e78b0eccae4f2be92cf44",
+        "5f08c7e795e524ceef24298f46404c78613400b568dd94ba1a9c062fbc456d08",
+        "733a0271b35af64ad919ffa0061a7cc4cde921be4a55b3a0e794c16198639bb8"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJjNDY3YzYzMDg3ZjFlZDJlMWY4ZDkxNzk2ZTk0ZWY2OGJjZGJjNjMzODgxZmFiMmUxNjM3MTM5MjA3NGNlYzc1IiwiY291bnRlcnBhcnR5X2lkIjoiNWU1M2ZlNDEwMzhjNzM4NDhmMTk4MmVlYTdjZjg1ZTQyYThhOTA1NDFkOWE4OGU4MDc5MzI3MWIyZGJiYzQzZSJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0yIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMiIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MjNaLTA3OGEwOGMzYWE5OTQ3YTQiLCJwYXJlbnRzIjpbIjIyNjQzOGM3MDQ3OTczMzk1NjM4NmNiZTRmZDRkMzhhYzZlZTdjNDYyNzUxZDQzNzU1YWUwZjEwYTY2M2IxM2UiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyNFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjI0WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "bvnfeFFHDio5FWK0l3JsWtoNzYdwLnUpwg65zt/YV9aRGs9N1V+RWkz9xv6ouWzBGOubrJAT305xr6jabztkBw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "8822c4b7d8386f87cb00328f028cedff72b82f1cd0702efae38c07df091afd0e",
+        "5f08c7e795e524ceef24298f46404c78613400b568dd94ba1a9c062fbc456d08",
+        "733a0271b35af64ad919ffa0061a7cc4cde921be4a55b3a0e794c16198639bb8"
+       ],
+       "leaf_index": 3
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiIzYTFiYjEzMzI2OGExYjJmNDNiOTFiMjliMzZlYTdlMjY3YmZhMGM5ZDY1YTI2NjgzYzBjZGE1NzQzYjVhNDkzIiwiY291bnRlcnBhcnR5X2lkIjoiYjZkZmU0OTg1MTdhZTQ0YjU2YTVhYTE0Zjk4N2MxOWI2NTRjY2I4MTNjZjdiNzZlNDYzODhmMmY2MzU3ZDI0MiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0zIiwiYW1vdW50X2JhbmQiOiIxMF4xIFVTRCIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMyIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MjZaLWVkZDkzZDAyM2Q5MzljMmEiLCJwYXJlbnRzIjpbImFjM2FkOTI3MjRmYTcyN2E0MmZiYmQyMmUwOGFkM2NjYmI4YjRmZmNkMmVhY2Q5YjcyYjU5NjIyZjEyM2FkNWMiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjQsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyN1oiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjI3WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "h5STkl4s4pHg9xeceHCGu2LRYDpFZA+kQ5mqv6fAUHi0o/Evd54mU9rdPNCBuMknd2sDwhbtHKvjQuH82/pjDw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "343ec2b02c92c6d2bcced1eb7b651fb28a4b1e6f9c97f5769cb80537a4d3c873"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAzWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMVmdKUW9yRDllSXd4U1NSIiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6Ii1tbWo2aVFkVlFOOXlFajNuR0hHT0lVLVd0VU5VVHdtSlJ5TWRUXzhzZDAifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MVmdKUW9yRDllSXd4U1NSIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "cEgrqhGXUxpy18ymB+0pBV3ARATxlnrGQ4ef0aGnUpTyh74dH6f9y5cTl1gNo4IrXjOOahqbvUHeSYOqWfEdCQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "e7b444d29d72fda1737968d19e4e69788ccc20437b03957d3f77615b0472ffbd",
+        "9e62e6e6276d824136e581931d52f4657a8306261189ca30edcbfe0406750689",
+        "733a0271b35af64ad919ffa0061a7cc4cde921be4a55b3a0e794c16198639bb8"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+        "086ae1b829bfe4a34f898e938dd25db5de627c070e469af8bfe1be90700d7401",
+        "226438c70479733956386cbe4fd4d38ac6ee7c462751d43755ae0f10a663b13e",
+        "ac3ad92724fa727a42fbbd22e08ad3ccbb8b4ffcd2eacd9b72b59622f123ad5c",
+        "b64b7b77475271eb44f265518e0f545028358af6acd575cdfff528f07dc5f331"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "4bab6a0124a44972e140a8613d7ade6dbe4228e5a72d6a0198ef510b3394b730",
+       "ts": "2026-01-01T00:00:30Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "6g+ym7Oq6/9jxVb3GaqEQaOiU3SdWMsW2D+Ba3Egm3nsacACgnvNmHVoD5TYCeDbT2msdtNS1j1x4rUZwtnrDw=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LVgJQorD9eIwxSSR",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "-mmj6iQdVQN9yEj3nGHGOIU-WtUNUTwmJRyMdT_8sd0"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_b",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "prev_hash": "",
+       "root_hash": "3546cd0192028368f0801d53f3f63fa4aeb7f52d2ea3709f7c0eb5132d68497d",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 5,
+       "ts": "2026-01-01T00:00:30Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "135tOedu2ZkLFv7g4/y7E3j4kJIjDIVgdVHR1MaEzqhzQiCvdRROn1X186mDnAgu5BW3C1y6GKqjfo5LOEgZDQ=="
+     }
+    }
+   },
+   "case_ref": "conflict",
+   "contested_claims": [
+    "unseen"
+   ],
+   "party_labels": [
+    "alpha",
+    "beta"
+   ],
+   "reconciliation": {
+    "claims": [
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "amount_band",
+       "currency",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-1",
+      "conflicting_fields": {},
+      "contested": false,
+      "one_sided_fields": {},
+      "outcome": "AGREEMENT",
+      "receipt_hashes": {
+       "alpha": [
+        "3309a213734d3fc8d510564acc145682ca34704b26022bd26c58d7f6d82fc1ea"
+       ],
+       "beta": [
+        "226438c70479733956386cbe4fd4d38ac6ee7c462751d43755ae0f10a663b13e"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim and every material field carried by both sides matches.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "amount_band",
+       "currency",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-2",
+      "conflicting_fields": {},
+      "contested": false,
+      "one_sided_fields": {},
+      "outcome": "AGREEMENT",
+      "receipt_hashes": {
+       "alpha": [
+        "11f637a31b97338bc44e8b3d5e08deef237f9a815b24d7f8e33227cf089d52b9"
+       ],
+       "beta": [
+        "ac3ad92724fa727a42fbbd22e08ad3ccbb8b4ffcd2eacd9b72b59622f123ad5c"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim and every material field carried by both sides matches.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-3",
+      "conflicting_fields": {
+       "amount_band": {
+        "alpha": [
+         "10^1 EUR"
+        ],
+        "beta": [
+         "10^1 USD"
+        ]
+       },
+       "currency": {
+        "alpha": [
+         "EUR"
+        ],
+        "beta": [
+         "USD"
+        ]
+       }
+      },
+      "contested": true,
+      "one_sided_fields": {},
+      "outcome": "CONFLICT",
+      "receipt_hashes": {
+       "alpha": [
+        "45d02921c156f25953d37e8579ed8c8afe40171e7e5dfe99a15529a53dbdbe2b"
+       ],
+       "beta": [
+        "086ae1b829bfe4a34f898e938dd25db5de627c070e469af8bfe1be90700d7401"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim; the named material fields do not carry the same values. This reconciliation reports the disagreement; it does not determine which record is accurate.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "claim_id": "unseen",
+      "contested": true,
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [],
+       "beta": []
+      },
+      "statement": "Neither party's verified bundle carries a receipt supporting this claim.",
+      "supported_by": [],
+      "unsupported_by": [
+       "alpha",
+       "beta"
+      ]
+     }
+    ],
+    "parties": {
+     "alpha": {
+      "claims": 3,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_a",
+      "trust_root": "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+      "uncorrelated_receipts": 1
+     },
+     "beta": {
+      "claims": 3,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_b",
+      "trust_root": "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+      "uncorrelated_receipts": 1
+     }
+    },
+    "schema": "evd/two-party-reconciliation/v1",
+    "scope": "This reconciliation reports what each party's independently verified bundle can support. It does not determine fault, intent, liability, or which party's record reflects what actually happened. Absence of a receipt from a presented export is absence of support, not proof that no event occurred.",
+    "summary": {
+     "AGREEMENT": 2,
+     "CONFLICT": 1,
+     "UNSUPPORTED": 1,
+     "contested": 2
+    }
+   },
+   "schema": "evd/dispute-artifact/v1"
+  },
+  "dropped": {
+   "bundles": {
+    "alpha": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_a",
+         "prev_hash": "",
+         "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 5,
+         "ts": "2026-01-01T00:00:29Z"
+        },
+        "kid": "LABs8EZ868oIL3mv",
+        "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9hX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA5WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+VyvKvusO7evYwYduW/kfntyyUxyXEM1noLsWNW69zib7n7fApZFB9m1CMbg0LASpnGdrfc/yqN0rKJLh2tBA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c25c91eea1ded4248d60ad7557bfa8387c08df286f3864533d911d2c740c9a50",
+        "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiIwYjc3OTBiOGNkMWRmOWRjZDFjY2U2YTRhMzAzMDkwOTNhYTc5ZWY0YjQxMGVhNjBiY2JjODMzODQ5Zjg0YmZlIiwiY291bnRlcnBhcnR5X2lkIjoiMjRkMmQ3NzYzMzIxMjJhZWZmNjc1NzBlOWMxOTU5NDMyM2UyZTA5MzIxZTM3OTUyYmM5YjkwOTJhYWRmY2E5NyJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0xIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMSIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MDVaLTkwMzczODJmYjQ1ZTI2YzgiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowNloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA2WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "9tptBvI3a+KKy0oWtr/KV2JKMX2reK6fHgt8O9Whc9da/I2MuWShhp+pIXp35p2i5Gb840Q9y+JCxk4ghkOKAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "e898a7f5f97c0876fd1bdd5675a6e567209b0b9d9a6d1f480377df34c0e4b425",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJhZWQ2ZTY4ZDE5OTU0ZGE1ZWFkMmJhZDQ1MWM4MjIxZWM3MDJmYmJhZjc3NDg4NjQ0M2VjOTMzOTNlMWQ2NjQ0IiwiY291bnRlcnBhcnR5X2lkIjoiOWMzYzdhNzVhMGU3MzBmNWY2YjU3MmFlNDY3YjkxNGNmMmVmMDU1MTFiZTEyMDVkYTEwM2FlMmZmZThlZGFkNiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0yIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMiIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTFaLWJjNWEwODc3M2E0Mzg5NjYiLCJwYXJlbnRzIjpbIjMzMDlhMjEzNzM0ZDNmYzhkNTEwNTY0YWNjMTQ1NjgyY2EzNDcwNGIyNjAyMmJkMjZjNThkN2Y2ZDgyZmMxZWEiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxMloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjEyWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "W3a8Xx2fT7DjWHaMnWGyj8t/22T/ccI1ZNjOsIqnWV5vhKXh2EBfdiDHjyJxWcteFdDQ6dGrfT/7yvzBEVR8CA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "2ff621ebcdccb15cc59879458e6733d21d49fa33d472f4015bb2bb797c58eb9b",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 3
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJiMmVhNjE2YjE3NTNiMTkwNmViYWNhYzQ0NDlkM2EyNGM4MmQ0YzI2Yjk1NzNjNzNlYWIwZjNlZmRhM2U4NDMzIiwiY291bnRlcnBhcnR5X2lkIjoiZjNiMzNkZTI0MzM1MmU0YmFlNGVjZWEwOTU0MmZjOWQwN2M2MzYyNGE3ODk1YjI4Y2E3NjE0N2FhNTBhODU0ZSJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0zIiwiYW1vdW50X2JhbmQiOiIxMF4xIEVVUiIsImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJFVVIiLCJleHRlcm5hbF9yZWYiOiJyZWYtMyIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTRaLTRlNmM3OTI5ODM1OGYxODkiLCJwYXJlbnRzIjpbIjExZjYzN2EzMWI5NzMzOGJjNDRlOGIzZDVlMDhkZWVmMjM3ZjlhODE1YjI0ZDdmOGUzMzIyN2NmMDg5ZDUyYjkiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjQsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxNVoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE1WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+dfHlcgqaMV+8wfkCSh1SY20zTlRvsp29ljsBPSNp07ElQgcT5Wtw08jwQEQqJZKM/4MAfvoitFiZ4gfHa+DQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "42a88959b5eecdb3d631f9ee40ddeb8691b8610caf26c028244fe6244f5b1a5c"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "oOYiUGr26I+KCztFlLhMCoI/Q7VS0Eyu+DjOST36VrrWlaXOQn8bdEFKoqUWpUbSQI2ANtwBHDUPZRhpLPJSBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "113c09d1b196c1d05262f1745c2c0e85514bc922bc10559c6a007be99f0dfa92",
+        "6af996ba93044c2298a188f1bcabf8099b415dd0c9bcff9476f47ee1efa99d3d",
+        "f0582cd8d29c727d9fc9b26e6a53048ac8adf2dca6778a3e2910608c8c7e103e"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "11f637a31b97338bc44e8b3d5e08deef237f9a815b24d7f8e33227cf089d52b9",
+        "3309a213734d3fc8d510564acc145682ca34704b26022bd26c58d7f6d82fc1ea",
+        "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+        "45d02921c156f25953d37e8579ed8c8afe40171e7e5dfe99a15529a53dbdbe2b",
+        "a7eac5d018e95ccce9685f4e696dbedd83cb8f3ce4593ae837c8cb4f5e751ce6"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "6cc9904d2eeb8868e58c8388ed01c7a8c6c67d1cc40652e4a55aa4fbf736ffa6",
+       "ts": "2026-01-01T00:00:29Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "8EpgJLt2cA8mmtypDFsD9BgKLrobM/cWv4N+Ut1AxdPEM2VGTFeF5lmRTlOsvCHgvGXEShKepoxoU71x2eI1Cw=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LABs8EZ868oIL3mv",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_a",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "prev_hash": "",
+       "root_hash": "3e73219d906ccea26971b2f1f7188783e9edc344c0fcf4f8daf412fe776953cb",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 5,
+       "ts": "2026-01-01T00:00:29Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "szZQmUZcawSjl5Qkow/YIct06XpdzxhGdaCuQxlenunvTw9Gh7cn8Z+3p8wdYPFVAQxmDYySbJHAEHPjTqrjAg=="
+     }
+    },
+    "beta": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_b",
+         "prev_hash": "",
+         "root_hash": "dfede35bec62207464e15d9c2d6b8d37464173759a1d5ae78660695ba7007ae0",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 5,
+         "ts": "2026-01-01T00:00:30Z"
+        },
+        "kid": "LVgJQorD9eIwxSSR",
+        "sig": "L1hjP9UHC0X1e3u1EyL4oTfW9QY1/BwUhFgOrGBXwsc7c5Ivf/sC3HVgDlGeYqZFUJ//roKzbO1UX6hYZ8JZAA=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9iX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyMFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjIxWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "9I3Ty/USST/gHIh4uSiNPR8fF0QeMIja4bYo/S71LOkSKQSOCEnJyGwb86x8XD3CaaHr1nAardkL6cGiX5qDDw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "78b92e226a2629444cd074518ac916cfc771b53d6ecf569bbf89e4aa180b77a6",
+        "9e62e6e6276d824136e581931d52f4657a8306261189ca30edcbfe0406750689",
+        "1f58fecce76c602580298bd6e612ad364a7ce8cafdf47ef6cfd27f87546b91d0"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiJmNWRhYmNlYjllZWY5YjIxZmZhOTZiMGI2YjZhNjU2YTE2MTYwNWQ5OWQwMmNhZWViMzgzNmI2OWQwYjQxZDQzIiwiY291bnRlcnBhcnR5X2lkIjoiYzJjMTc1YTFlZmQwZTMxZDQ2NmU0YTRlMzU3YWZjNjBiMWRmMzY4ZDAxNDY4YzQyNDBkNjRhN2QwMGY0N2JmYiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0xIiwiYW1vdW50X2JhbmQiOiIxMF4yIFVTRCIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJVU0QiLCJleHRlcm5hbF9yZWYiOiJyZWYtMSIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MTdaLTZiYjRjMGY0NDhhNjA0ZTkiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE4WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "ZLJnDtkAStYGShjZ2Mx4rWnacrMYuJ+0nsvUrX/DTp46RoPLKioh1VOT8AuwcL+PcjmdkJ3e9kgCy6DC1sd/Ag=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "a4343df65d118a13894123810d3678058a0ac83f118e78b0eccae4f2be92cf44",
+        "5f08c7e795e524ceef24298f46404c78613400b568dd94ba1a9c062fbc456d08",
+        "1f58fecce76c602580298bd6e612ad364a7ce8cafdf47ef6cfd27f87546b91d0"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6InBheW1lbnQuZXhlY3V0ZSIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6eyJhbW91bnRfZXhhY3QiOiIzYTFiYjEzMzI2OGExYjJmNDNiOTFiMjliMzZlYTdlMjY3YmZhMGM5ZDY1YTI2NjgzYzBjZGE1NzQzYjVhNDkzIiwiY291bnRlcnBhcnR5X2lkIjoiYjZkZmU0OTg1MTdhZTQ0YjU2YTVhYTE0Zjk4N2MxOWI2NTRjY2I4MTNjZjdiNzZlNDYzODhmMmY2MzU3ZDI0MiJ9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImFjdC0zIiwiYW1vdW50X2JhbmQiOiIxMF4xIEVVUiIsImJpcnRodGFnX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSIsImNvdW50ZXJwYXJ0eV9jbGFzcyI6ImV4dGVybmFsIiwiY3VycmVuY3kiOiJFVVIiLCJleHRlcm5hbF9yZWYiOiJyZWYtMyIsIm1hbmRhdGVfcHJlc2VudCI6ZmFsc2UsInJldmlzaW9uX2lkIjoiYjY0YjdiNzc0NzUyNzFlYjQ0ZjI2NTUxOGUwZjU0NTAyODM1OGFmNmFjZDU3NWNkZmZmNTI4ZjA3ZGM1ZjMzMSJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJwYXltZW50LTIwMjYtMDEtMDFUMDA6MDA6MjZaLWVkZDkzZDAyM2Q5MzljMmEiLCJwYXJlbnRzIjpbImFjM2FkOTI3MjRmYTcyN2E0MmZiYmQyMmUwOGFkM2NjYmI4YjRmZmNkMmVhY2Q5YjcyYjU5NjIyZjEyM2FkNWMiXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjQsInNlc3Npb25faWQiOiJzXzEiLCJzZXNzaW9uX2luZmVycmVkIjpmYWxzZSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoyN1oiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjI3WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "LaKiD4w8xXso9EyXU8rSv5/WpcaMioU5MhD+OTIhRu86z8t3ZJSSeHxnNmwkAyxOzAH2pXBO+97DMO4Kzl42BQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "343ec2b02c92c6d2bcced1eb7b651fb28a4b1e6f9c97f5769cb80537a4d3c873"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAzWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMVmdKUW9yRDllSXd4U1NSIiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6Ii1tbWo2aVFkVlFOOXlFajNuR0hHT0lVLVd0VU5VVHdtSlJ5TWRUXzhzZDAifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MVmdKUW9yRDllSXd4U1NSIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "cEgrqhGXUxpy18ymB+0pBV3ARATxlnrGQ4ef0aGnUpTyh74dH6f9y5cTl1gNo4IrXjOOahqbvUHeSYOqWfEdCQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "e7b444d29d72fda1737968d19e4e69788ccc20437b03957d3f77615b0472ffbd",
+        "9e62e6e6276d824136e581931d52f4657a8306261189ca30edcbfe0406750689",
+        "1f58fecce76c602580298bd6e612ad364a7ce8cafdf47ef6cfd27f87546b91d0"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+        "226438c70479733956386cbe4fd4d38ac6ee7c462751d43755ae0f10a663b13e",
+        "841c6511c47c34e2e09d38cc2edc1df64072bdf16cdb4e311c6be7973a92313f",
+        "b64b7b77475271eb44f265518e0f545028358af6acd575cdfff528f07dc5f331"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "2df692acec2d354164cee7507b5f73a85a1c1ace38498e383636265527c36290",
+       "ts": "2026-01-01T00:00:30Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "4hBK+XkvhzBY3igG4pyv2u846O6TRwb0v1niVbIrnC+rpI8oO4LvKVUHLOw/sssDIijxJhmEWZoi6uOGZmUAAg=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LVgJQorD9eIwxSSR",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "-mmj6iQdVQN9yEj3nGHGOIU-WtUNUTwmJRyMdT_8sd0"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_b",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "prev_hash": "",
+       "root_hash": "dfede35bec62207464e15d9c2d6b8d37464173759a1d5ae78660695ba7007ae0",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 5,
+       "ts": "2026-01-01T00:00:30Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "L1hjP9UHC0X1e3u1EyL4oTfW9QY1/BwUhFgOrGBXwsc7c5Ivf/sC3HVgDlGeYqZFUJ//roKzbO1UX6hYZ8JZAA=="
+     }
+    }
+   },
+   "case_ref": "dropped",
+   "contested_claims": [
+    "unseen"
+   ],
+   "party_labels": [
+    "alpha",
+    "beta"
+   ],
+   "reconciliation": {
+    "claims": [
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "amount_band",
+       "currency",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-1",
+      "conflicting_fields": {},
+      "contested": false,
+      "one_sided_fields": {},
+      "outcome": "AGREEMENT",
+      "receipt_hashes": {
+       "alpha": [
+        "3309a213734d3fc8d510564acc145682ca34704b26022bd26c58d7f6d82fc1ea"
+       ],
+       "beta": [
+        "226438c70479733956386cbe4fd4d38ac6ee7c462751d43755ae0f10a663b13e"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim and every material field carried by both sides matches.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "claim_id": "act-2",
+      "contested": true,
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [
+        "11f637a31b97338bc44e8b3d5e08deef237f9a815b24d7f8e33227cf089d52b9"
+       ],
+       "beta": []
+      },
+      "statement": "alpha's verified bundle carries a receipt for this claim; beta's verified bundle contains none, and its signed export manifest proves the presented set intact, not that the party's log holds nothing else. Absence of support is not proof that no event occurred.",
+      "supported_by": [
+       "alpha"
+      ],
+      "unsupported_by": [
+       "beta"
+      ]
+     },
+     {
+      "agreed_fields": [
+       "action_type",
+       "external_ref",
+       "amount_band",
+       "currency",
+       "counterparty_class",
+       "mandate_present"
+      ],
+      "claim_id": "act-3",
+      "conflicting_fields": {},
+      "contested": false,
+      "one_sided_fields": {},
+      "outcome": "AGREEMENT",
+      "receipt_hashes": {
+       "alpha": [
+        "45d02921c156f25953d37e8579ed8c8afe40171e7e5dfe99a15529a53dbdbe2b"
+       ],
+       "beta": [
+        "841c6511c47c34e2e09d38cc2edc1df64072bdf16cdb4e311c6be7973a92313f"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim and every material field carried by both sides matches.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "claim_id": "unseen",
+      "contested": true,
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [],
+       "beta": []
+      },
+      "statement": "Neither party's verified bundle carries a receipt supporting this claim.",
+      "supported_by": [],
+      "unsupported_by": [
+       "alpha",
+       "beta"
+      ]
+     }
+    ],
+    "parties": {
+     "alpha": {
+      "claims": 3,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_a",
+      "trust_root": "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+      "uncorrelated_receipts": 1
+     },
+     "beta": {
+      "claims": 2,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_b",
+      "trust_root": "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+      "uncorrelated_receipts": 1
+     }
+    },
+    "schema": "evd/two-party-reconciliation/v1",
+    "scope": "This reconciliation reports what each party's independently verified bundle can support. It does not determine fault, intent, liability, or which party's record reflects what actually happened. Absence of a receipt from a presented export is absence of support, not proof that no event occurred.",
+    "summary": {
+     "AGREEMENT": 2,
+     "CONFLICT": 0,
+     "UNSUPPORTED": 2,
+     "contested": 2
+    }
+   },
+   "schema": "evd/dispute-artifact/v1"
+  },
+  "empty": {
+   "bundles": {
+    "alpha": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_a",
+         "prev_hash": "",
+         "root_hash": "45510c09d1d1a4782602b70861117dbe36aee14236b6d47916ee84d312df58f2",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 3,
+         "ts": "2026-01-01T00:00:17Z"
+        },
+        "kid": "LABs8EZ868oIL3mv",
+        "sig": "O7+TBkpkAbzcxaGUoVL3ApJErz4OZjLsnIi6+OksgoLP/suMVqYdfGQ131LPqb93Nk+BrGBJKcGJFiBOvxJ9CA=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9hX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA5WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+VyvKvusO7evYwYduW/kfntyyUxyXEM1noLsWNW69zib7n7fApZFB9m1CMbg0LASpnGdrfc/yqN0rKJLh2tBA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c25c91eea1ded4248d60ad7557bfa8387c08df286f3864533d911d2c740c9a50",
+        "f9bfaf5178dad55b6b399d7c8c598383db0ccbbe3fbe832daa95e4c678eb0885"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImJpcnRodGFnX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsInJldmlzaW9uX2lkIjoiYTdlYWM1ZDAxOGU5NWNjY2U5Njg1ZjRlNjk2ZGJlZGQ4M2NiOGYzY2U0NTkzYWU4MzdjOGNiNGY1ZTc1MWNlNiIsInN0YXR1cyI6InNldHRsZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6MDVaLTkwMzczODJmYjQ1ZTI2YzgiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInRlbmFudF9pZCI6InRfcGFydHlfYSIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MDZaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDowNloifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "HF6qOdgDb9Xyi21QnxsL3b5rnglOwl0vGmk2UYJQjqDhqPglB/d3hPsNvksoVbZ75RDEnH5l6zup3W65WbRMDQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "oOYiUGr26I+KCztFlLhMCoI/Q7VS0Eyu+DjOST36VrrWlaXOQn8bdEFKoqUWpUbSQI2ANtwBHDUPZRhpLPJSBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "113c09d1b196c1d05262f1745c2c0e85514bc922bc10559c6a007be99f0dfa92",
+        "f9bfaf5178dad55b6b399d7c8c598383db0ccbbe3fbe832daa95e4c678eb0885"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+        "76b1ed53ed6b5499b8520a821ddbb67fe8609ed1d852499b770c19901f04c918",
+        "a7eac5d018e95ccce9685f4e696dbedd83cb8f3ce4593ae837c8cb4f5e751ce6"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "7130468e2b961e204094c91bc4a4a985f940a11b559eb8c498421b6fced1372e",
+       "ts": "2026-01-01T00:00:17Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "7qcQZttzCi466B5Phwj4Dl4ndG2ffgFmK40fbhb9VLXj5T+mf5D3OaD11lgiQDHDGvQNfpupfvddrG3LBKgiAA=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LABs8EZ868oIL3mv",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_a",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "prev_hash": "",
+       "root_hash": "45510c09d1d1a4782602b70861117dbe36aee14236b6d47916ee84d312df58f2",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 3,
+       "ts": "2026-01-01T00:00:17Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "O7+TBkpkAbzcxaGUoVL3ApJErz4OZjLsnIi6+OksgoLP/suMVqYdfGQ131LPqb93Nk+BrGBJKcGJFiBOvxJ9CA=="
+     }
+    },
+    "beta": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_b",
+         "prev_hash": "",
+         "root_hash": "20691940cd5cdc54dd69bbc984d047209cd83d36f6b542e99bffa0ad2ff75a9a",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 3,
+         "ts": "2026-01-01T00:00:18Z"
+        },
+        "kid": "LVgJQorD9eIwxSSR",
+        "sig": "b/r3n1vgPiZRpvYpMh8r5doUGCccS0KIdrh5Y/gQ9vEzMfzrc9HE7O6JHdAB6sj+UBoWlCJftf3agLq3rS9nCQ=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9iX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxNFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE1WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "75OAIaPbcwY9DmBCSXrKqV6SEa2eLQ2m1HV/rCUYJjcMAtl9pWrYGtCuf1kIOJ8nTiNL55STztdTMnN1whHLAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "78b92e226a2629444cd074518ac916cfc771b53d6ecf569bbf89e4aa180b77a6",
+        "5771c32b98b5f7753b9bcb018a8e1a15b15728e98fbbb79863fc23725536c10f"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImJpcnRodGFnX2lkIjoiYTY2MDQ5ZTkyZDM0NjY0YjYwMTZmMzJiODhkZmM2ZGRiMjA4YmU4NWE2NTRkOGFmYTQ2MjA0ZGUwY2I2NDBjYyIsInJldmlzaW9uX2lkIjoiYTY2MDQ5ZTkyZDM0NjY0YjYwMTZmMzJiODhkZmM2ZGRiMjA4YmU4NWE2NTRkOGFmYTQ2MjA0ZGUwY2I2NDBjYyIsInN0YXR1cyI6InNldHRsZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6MTFaLWJjNWEwODc3M2E0Mzg5NjYiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjIsInRlbmFudF9pZCI6InRfcGFydHlfYiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MTJaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDoxMloifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "C3uoycusHJG4Avo/XmKC9aawEMT5C6IVLlX6UKU0C2dh++0FVUfstg8ApjnXn3aUFeO0W5fTF3ZQGLlgBLNWCA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "6ec13dc7990a7ca0b0af6381b1a3150283617001fdfd5b36b154105b157bdad7"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAzWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMVmdKUW9yRDllSXd4U1NSIiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6Ii1tbWo2aVFkVlFOOXlFajNuR0hHT0lVLVd0VU5VVHdtSlJ5TWRUXzhzZDAifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MVmdKUW9yRDllSXd4U1NSIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "cEgrqhGXUxpy18ymB+0pBV3ARATxlnrGQ4ef0aGnUpTyh74dH6f9y5cTl1gNo4IrXjOOahqbvUHeSYOqWfEdCQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "539c6b20dbe809a73b429bb137e2785db1b7f180b8bf5ef35a716abe67e78f41",
+        "5771c32b98b5f7753b9bcb018a8e1a15b15728e98fbbb79863fc23725536c10f"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+        "527efecc0b615cba5fcf717e5c346e072c3a192aab60acd47039e8e4d0866e24",
+        "a66049e92d34664b6016f32b88dfc6ddb208be85a654d8afa46204de0cb640cc"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "1e6eaa2f3d74bf8f2539db9982903b92a1efb1c85e005abe2edc049bafb7e07d",
+       "ts": "2026-01-01T00:00:18Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "3laQRF2uUKIG8cmH42tn5qA8d2MTM/nBkyCkMx1/2/7cZ6u+fj5Sw6yM/6Dp02S25wX0LsdhHdAOkJyM9vxdBg=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LVgJQorD9eIwxSSR",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "-mmj6iQdVQN9yEj3nGHGOIU-WtUNUTwmJRyMdT_8sd0"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_b",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "prev_hash": "",
+       "root_hash": "20691940cd5cdc54dd69bbc984d047209cd83d36f6b542e99bffa0ad2ff75a9a",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 3,
+       "ts": "2026-01-01T00:00:18Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "b/r3n1vgPiZRpvYpMh8r5doUGCccS0KIdrh5Y/gQ9vEzMfzrc9HE7O6JHdAB6sj+UBoWlCJftf3agLq3rS9nCQ=="
+     }
+    }
+   },
+   "case_ref": "empty",
+   "contested_claims": [
+    "unseen"
+   ],
+   "party_labels": [
+    "alpha",
+    "beta"
+   ],
+   "reconciliation": {
+    "claims": [
+     {
+      "claim_id": "unseen",
+      "contested": true,
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [],
+       "beta": []
+      },
+      "statement": "Neither party's verified bundle carries a receipt supporting this claim.",
+      "supported_by": [],
+      "unsupported_by": [
+       "alpha",
+       "beta"
+      ]
+     }
+    ],
+    "parties": {
+     "alpha": {
+      "claims": 0,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_a",
+      "trust_root": "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+      "uncorrelated_receipts": 2
+     },
+     "beta": {
+      "claims": 0,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_b",
+      "trust_root": "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+      "uncorrelated_receipts": 2
+     }
+    },
+    "schema": "evd/two-party-reconciliation/v1",
+    "scope": "This reconciliation reports what each party's independently verified bundle can support. It does not determine fault, intent, liability, or which party's record reflects what actually happened. Absence of a receipt from a presented export is absence of support, not proof that no event occurred.",
+    "summary": {
+     "AGREEMENT": 0,
+     "CONFLICT": 0,
+     "UNSUPPORTED": 1,
+     "contested": 1
+    }
+   },
+   "schema": "evd/dispute-artifact/v1"
+  },
+  "one-sided": {
+   "bundles": {
+    "alpha": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_a",
+         "prev_hash": "",
+         "root_hash": "796d5dc0d5cc5da7e312ffcd903c04bcea5495026f1c63041a8d0aa8508d7ef0",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 3,
+         "ts": "2026-01-01T00:00:17Z"
+        },
+        "kid": "LABs8EZ868oIL3mv",
+        "sig": "9TpL+aVB+cv+wzFy9pC4w2o9dSpr4ZINrDzvo3XIWekpi+/4EKB4TU0ae1zK7ZkvhQBQxtrcMlB6gO6EAa4pAA=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9hX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA5WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+VyvKvusO7evYwYduW/kfntyyUxyXEM1noLsWNW69zib7n7fApZFB9m1CMbg0LASpnGdrfc/yqN0rKJLh2tBA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c25c91eea1ded4248d60ad7557bfa8387c08df286f3864533d911d2c740c9a50",
+        "146838ac31213d599dfcc217ed9f7e079401b07ede4a5d7d7a74b168e1c26880"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImNsYWltIiwiYmlydGh0YWdfaWQiOiJhN2VhYzVkMDE4ZTk1Y2NjZTk2ODVmNGU2OTZkYmVkZDgzY2I4ZjNjZTQ1OTNhZTgzN2M4Y2I0ZjVlNzUxY2U2IiwiY3VycmVuY3kiOiJVU0QiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJzdGF0dXMiOiJzZXR0bGVkIn0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjA1Wi05MDM3MzgyZmI0NWUyNmM4IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoyLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA2WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDZaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "OzSPin3PcMikSsSo/hu30d/7+KLz5g8JvcLkUqQF7AkfcBwSHfSfN2juqM/3swWYovkC2+nO++Pph7y3nd+oCA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "oOYiUGr26I+KCztFlLhMCoI/Q7VS0Eyu+DjOST36VrrWlaXOQn8bdEFKoqUWpUbSQI2ANtwBHDUPZRhpLPJSBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "113c09d1b196c1d05262f1745c2c0e85514bc922bc10559c6a007be99f0dfa92",
+        "146838ac31213d599dfcc217ed9f7e079401b07ede4a5d7d7a74b168e1c26880"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+        "4ae282b32663ebfbd22b08e6d151bbf054e34bfd7eb131a910149d57fecf5414",
+        "a7eac5d018e95ccce9685f4e696dbedd83cb8f3ce4593ae837c8cb4f5e751ce6"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "6b5b666601ce7deb168718371a23aaadf08f94169f0e36037f6d56290cc6b9d1",
+       "ts": "2026-01-01T00:00:17Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "hTpKwWqJSHWWAuY7DHo4Cbvm75VskCW/LaZB4IIOCVTlWu4WEOfkogzL0MxktnnsV9NON8kQABRs3tB6ywdSDA=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LABs8EZ868oIL3mv",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_a",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "prev_hash": "",
+       "root_hash": "796d5dc0d5cc5da7e312ffcd903c04bcea5495026f1c63041a8d0aa8508d7ef0",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 3,
+       "ts": "2026-01-01T00:00:17Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "9TpL+aVB+cv+wzFy9pC4w2o9dSpr4ZINrDzvo3XIWekpi+/4EKB4TU0ae1zK7ZkvhQBQxtrcMlB6gO6EAa4pAA=="
+     }
+    },
+    "beta": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_b",
+         "prev_hash": "",
+         "root_hash": "5015d4dc217f77971d18350018d1e5f9191f0211675a2b03eb1d3fce03b53351",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 3,
+         "ts": "2026-01-01T00:00:18Z"
+        },
+        "kid": "LVgJQorD9eIwxSSR",
+        "sig": "GcwnCvZVSxEkmNFIX7ealAIryjCl84lGFpQBGR4Yp29bQZ1PciP+l0jrBUrTV1d/reQ0tPltBeJSAmMsDCuXAw=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9iX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxNFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE1WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "75OAIaPbcwY9DmBCSXrKqV6SEa2eLQ2m1HV/rCUYJjcMAtl9pWrYGtCuf1kIOJ8nTiNL55STztdTMnN1whHLAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "78b92e226a2629444cd074518ac916cfc771b53d6ecf569bbf89e4aa180b77a6",
+        "29c3ef9d9b2fc73a2b72aa7f54e615bf875fb1e17390fe812cb119e85842748c"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6ImNsYWltIiwiYmlydGh0YWdfaWQiOiJhNjYwNDllOTJkMzQ2NjRiNjAxNmYzMmI4OGRmYzZkZGIyMDhiZTg1YTY1NGQ4YWZhNDYyMDRkZTBjYjY0MGNjIiwicmV2aXNpb25faWQiOiJhNjYwNDllOTJkMzQ2NjRiNjAxNmYzMmI4OGRmYzZkZGIyMDhiZTg1YTY1NGQ4YWZhNDYyMDRkZTBjYjY0MGNjIiwic3RhdHVzIjoic2V0dGxlZCJ9LCJpZGVtcG90ZW5jeV9rZXkiOiJjdXN0b20tMjAyNi0wMS0wMVQwMDowMDoxMVotYmM1YTA4NzczYTQzODk2NiIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MiwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxMloiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjEyWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "25QinQLr5rJ9/6Z4TonB3VkJzz5PoSOVk6vtO3/GkOGDSzLfR9UA7poixHPMJbLmWmgj9EwzjEY6YJI+m7Q9Aw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "6ec13dc7990a7ca0b0af6381b1a3150283617001fdfd5b36b154105b157bdad7"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAzWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMVmdKUW9yRDllSXd4U1NSIiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6Ii1tbWo2aVFkVlFOOXlFajNuR0hHT0lVLVd0VU5VVHdtSlJ5TWRUXzhzZDAifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MVmdKUW9yRDllSXd4U1NSIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "cEgrqhGXUxpy18ymB+0pBV3ARATxlnrGQ4ef0aGnUpTyh74dH6f9y5cTl1gNo4IrXjOOahqbvUHeSYOqWfEdCQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "539c6b20dbe809a73b429bb137e2785db1b7f180b8bf5ef35a716abe67e78f41",
+        "29c3ef9d9b2fc73a2b72aa7f54e615bf875fb1e17390fe812cb119e85842748c"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+        "1efe84807804eccbd627a131734c1824796284c20414b643831229313d27f792",
+        "a66049e92d34664b6016f32b88dfc6ddb208be85a654d8afa46204de0cb640cc"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "5577baef00fb08a65d345a1c2562e74e3916ab1997230f33de1743cd07883577",
+       "ts": "2026-01-01T00:00:18Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "WHM3VQtR/5EWrrVTAfvZgnfU3QCkvngVfCQxRP45Dmm3wW2JEj2TWBMz4bltJkwI/4e9ScHgc20Mut+xyZxxAA=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LVgJQorD9eIwxSSR",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "-mmj6iQdVQN9yEj3nGHGOIU-WtUNUTwmJRyMdT_8sd0"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_b",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "prev_hash": "",
+       "root_hash": "5015d4dc217f77971d18350018d1e5f9191f0211675a2b03eb1d3fce03b53351",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 3,
+       "ts": "2026-01-01T00:00:18Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "GcwnCvZVSxEkmNFIX7ealAIryjCl84lGFpQBGR4Yp29bQZ1PciP+l0jrBUrTV1d/reQ0tPltBeJSAmMsDCuXAw=="
+     }
+    }
+   },
+   "case_ref": "one-sided",
+   "contested_claims": [
+    "unseen"
+   ],
+   "party_labels": [
+    "alpha",
+    "beta"
+   ],
+   "reconciliation": {
+    "claims": [
+     {
+      "agreed_fields": [
+       "action_type",
+       "status"
+      ],
+      "claim_id": "claim",
+      "conflicting_fields": {},
+      "contested": true,
+      "one_sided_fields": {
+       "currency": "alpha"
+      },
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [
+        "4ae282b32663ebfbd22b08e6d151bbf054e34bfd7eb131a910149d57fecf5414"
+       ],
+       "beta": [
+        "1efe84807804eccbd627a131734c1824796284c20414b643831229313d27f792"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim, but one or more named material fields are carried by only one side. The presented evidence therefore cannot establish material agreement.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "claim_id": "unseen",
+      "contested": true,
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [],
+       "beta": []
+      },
+      "statement": "Neither party's verified bundle carries a receipt supporting this claim.",
+      "supported_by": [],
+      "unsupported_by": [
+       "alpha",
+       "beta"
+      ]
+     }
+    ],
+    "parties": {
+     "alpha": {
+      "claims": 1,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_a",
+      "trust_root": "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+      "uncorrelated_receipts": 1
+     },
+     "beta": {
+      "claims": 1,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_b",
+      "trust_root": "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+      "uncorrelated_receipts": 1
+     }
+    },
+    "schema": "evd/two-party-reconciliation/v1",
+    "scope": "This reconciliation reports what each party's independently verified bundle can support. It does not determine fault, intent, liability, or which party's record reflects what actually happened. Absence of a receipt from a presented export is absence of support, not proof that no event occurred.",
+    "summary": {
+     "AGREEMENT": 0,
+     "CONFLICT": 0,
+     "UNSUPPORTED": 2,
+     "contested": 2
+    }
+   },
+   "schema": "evd/dispute-artifact/v1"
+  },
+  "values": {
+   "bundles": {
+    "alpha": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_a",
+         "prev_hash": "",
+         "root_hash": "e661379fa66edfcb54466f86e41007e91c272e9d464373c31c1e14756d7bde57",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 9,
+         "ts": "2026-01-01T00:00:56Z"
+        },
+        "kid": "LABs8EZ868oIL3mv",
+        "sig": "k8eKaAB4YDBQ7OIxcK5GL0qY3PPY0BFINwUXysy73doszWPeloAntc7agGgJfrawh2SEWd5kHCwXm/mOXTpZBg=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYV9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9hX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDowOFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjA5WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "p+VyvKvusO7evYwYduW/kfntyyUxyXEM1noLsWNW69zib7n7fApZFB9m1CMbg0LASpnGdrfc/yqN0rKJLh2tBA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c25c91eea1ded4248d60ad7557bfa8387c08df286f3864533d911d2c740c9a50",
+        "07e1eb748ac09f16dfe9dd132e43a74a4792ef30e4e50ef0dc708814e1b46cb5",
+        "21fcbbed6ac14168e5098ae94ec5028193a3e41015afe459f2cf228fe5ce6186",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJ2YWx1ZSI6MC4wMDAwMX0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjA1Wi05MDM3MzgyZmI0NWUyNmM4IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoyLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA2WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDZaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "ZcsHZMLXy2SpLjUy2LiOn8G8m/HOqJAUfFSIQjFtu+EhI8z6NSCpn0gYbP399k8WWZHnm+V70dc9P+WnYPLvAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c9b7f4e7bebc3a53c57cfe539885a440adb5ba472996e07bdca258a7acba3b3e",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "21fcbbed6ac14168e5098ae94ec5028193a3e41015afe459f2cf228fe5ce6186",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJ2YWx1ZSI6MC4wMDAxfSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6MTdaLTRlNmM3OTI5ODM1OGYxODkiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInRlbmFudF9pZCI6InRfcGFydHlfYSIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MThaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDoxOFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "1rysfb9R3zyRm81Bwbt4gmcgcuBnTFNyMK0O77HST6KU5TyWeNm4GiOvF3iEAcjJfRvcHGftT6dDJR7BVRR4AA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "b0ea1c278af70ac05da022a8b35ecb1675ab6b13561b75b8f814f485a64c9862",
+        "efd6aaa59943d20bbc3342a5911581338c2253d3e31a685606327f125027857e",
+        "21fcbbed6ac14168e5098ae94ec5028193a3e41015afe459f2cf228fe5ce6186",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 3
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJ2YWx1ZSI6MS4yNX0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjIzWi0wNzhhMDhjM2FhOTk0N2E0IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjo0LCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjI0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MjRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "tyhTFVhrcrdScOAF72mkuWeu0myUWxomTFiVLEyAnBMonoqZLRofwJ/ZIGRrBAk6UEe9lzLemVCKUvW7wnF1DQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "b8880af6c1d34ee7977f9349fce7e66c9d6a1923c618d3d9aee4933305b438f4",
+        "d44dc99ac066dd44d8e0d464ba479bbf51cda37e05d2b098eb93d02f5ef7a513",
+        "16badd462f03dfdd97cac06a49a609d014e1a23a6cb6c3ccf6da6a4c520c6881",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJ2YWx1ZSI6LTAuMTI1fSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6MjlaLWQ2MWM4ZGE1YzgzZWY3NWUiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjUsInRlbmFudF9pZCI6InRfcGFydHlfYSIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MzBaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDozMFoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "2GTOdzmXG6/onf8CaJfJKma2U2suIYponTTHJWGUEvJJ5OG4OCtfetDzqth19NvDrgDYAb1srOgGzBGH+ki7AQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "0a20ada1aa9210a9001f4b218b45163777da2906ee5b7d1b12aaa1a3c08ff516",
+        "d44dc99ac066dd44d8e0d464ba479bbf51cda37e05d2b098eb93d02f5ef7a513",
+        "16badd462f03dfdd97cac06a49a609d014e1a23a6cb6c3ccf6da6a4c520c6881",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 5
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJ2YWx1ZSI6IsOpIn0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjM1Wi04NTkwMjcxZTIzZTE5ZTI4IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjo2LCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjM2WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MzZaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "1WHr3flVnsOBZ0qm3SjlMQJh6jTNVjeFXxJkExFz2Z/RFxpg8B2d37L6TsyVBZdR0h+BdXo3oqbsB+y5NsjNDA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "253c9c1e3004cef861860f9639a09285f58a4a9a04a0a6bc0dc3bb10eb77983d",
+        "b076b70cee767a2997aa9be1c39737325e63a0b4391ef301445abb7288fac5d5",
+        "16badd462f03dfdd97cac06a49a609d014e1a23a6cb6c3ccf6da6a4c520c6881",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 6
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJ2YWx1ZSI6IvCfmIAifSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6NDFaLTc5ZmJmMDFkYjZmNjFmN2MiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjcsInRlbmFudF9pZCI6InRfcGFydHlfYSIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6NDJaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDo0MloifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "GS31nHkCn88mkPVkNB58t/hUSTVtPK/C6jetmMEGnoj4kzvDhPiwqFuHfO+7aCuLi/7KPDCCariTxFJztjrlBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "47ab6ec20e02391384c0c9dac372a5c637a9b9e361390d765eee238700152477",
+        "b076b70cee767a2997aa9be1c39737325e63a0b4391ef301445abb7288fac5d5",
+        "16badd462f03dfdd97cac06a49a609d014e1a23a6cb6c3ccf6da6a4c520c6881",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 7
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2FfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJyZXZpc2lvbl9pZCI6ImE3ZWFjNWQwMThlOTVjY2NlOTY4NWY0ZTY5NmRiZWRkODNjYjhmM2NlNDU5M2FlODM3YzhjYjRmNWU3NTFjZTYiLCJ2YWx1ZSI6eyJhIjpbdHJ1ZSxudWxsXSwieiI6Mn19LCJpZGVtcG90ZW5jeV9rZXkiOiJjdXN0b20tMjAyNi0wMS0wMVQwMDowMDo0N1otZDQyNDk4ZTU3NThlM2VmOSIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6OCwidGVuYW50X2lkIjoidF9wYXJ0eV9hIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDo0OFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjQ4WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "FIEZP33vgZObUKnqhBkdY4NwqaU/+WMmri12N7FLhiugjYE+rhMiCJn9kjoZMyPa9vm1SbmfJ+ot+YFkbgUhDQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "5700606f541206f3b4e9ea5ebf4d6d5c098f931dd5a9487793c0b961905c191c"
+       ],
+       "leaf_index": 8
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAxWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMQUJzOEVaODY4b0lMM212Iiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6ImNEcWR3cjdac3hqeklKMWNfdEtBdU1LdXdER21EbzJkd0VlRUxrWXRKYlEifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MQUJzOEVaODY4b0lMM212IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2EiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjAyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDJaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LABs8EZ868oIL3mv",
+          "sig": "oOYiUGr26I+KCztFlLhMCoI/Q7VS0Eyu+DjOST36VrrWlaXOQn8bdEFKoqUWpUbSQI2ANtwBHDUPZRhpLPJSBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "113c09d1b196c1d05262f1745c2c0e85514bc922bc10559c6a007be99f0dfa92",
+        "07e1eb748ac09f16dfe9dd132e43a74a4792ef30e4e50ef0dc708814e1b46cb5",
+        "21fcbbed6ac14168e5098ae94ec5028193a3e41015afe459f2cf228fe5ce6186",
+        "e1ab1aff3bffe5a5aca598d464f9799c617073d7c9fb8b00052fb7b8260b31b2"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+        "4dfdf2fba49582e15273e5a19b0a8d2ddd9388044eeece610097ae604a48d041",
+        "6ddaaca195476293643ac70529f2f46901282c5a6cdb1a0a6986e9bdacfed91c",
+        "8b791b6f2e12ef175b92d2210c34bcf70011fb0fefb2f64a3666e3022ed50832",
+        "9f6d7d2da9c5512e4d59bd17f1375733068a3c1eddbfdf0e32383561bb9d7f26",
+        "a7eac5d018e95ccce9685f4e696dbedd83cb8f3ce4593ae837c8cb4f5e751ce6",
+        "b41cbbab3a092bff54983e005d2a5d2d162597458f3594f8540864b5fda00d0f",
+        "c4ee8923faf037acff739db7aa00ab562909557d0847bab072663e23a96a6514",
+        "f69e0ae94f60711b63a3ae3099b5d07132b082d06715f72c868d69a4278bf427"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "53c24ee5de9465559d2ec63888010c990b96ea5d84b8489b7f08bdce59278847",
+       "ts": "2026-01-01T00:00:56Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "dz63o1BOst5rmmt6ZWng8xuQvNE4CMNyPlMlAlnyAGBvpz3umDgsa7tsD+0Yiifjsfzxa2fOkFATttd+aHjvDw=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LABs8EZ868oIL3mv",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "cDqdwr7ZsxjzIJ1c_tKAuMKuwDGmDo2dwEeELkYtJbQ"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_a",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_a",
+       "prev_hash": "",
+       "root_hash": "e661379fa66edfcb54466f86e41007e91c272e9d464373c31c1e14756d7bde57",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 9,
+       "ts": "2026-01-01T00:00:56Z"
+      },
+      "kid": "LABs8EZ868oIL3mv",
+      "sig": "k8eKaAB4YDBQ7OIxcK5GL0qY3PPY0BFINwUXysy73doszWPeloAntc7agGgJfrawh2SEWd5kHCwXm/mOXTpZBg=="
+     }
+    },
+    "beta": {
+     "checkpoint_chain": [
+      {
+       "checkpoint": {
+        "body": {
+         "origin": "evd://tenant/t_party_b",
+         "prev_hash": "",
+         "root_hash": "67ceb7cf0d55e4049cd18a6c624147d278e7ba7a4289246c689c3f17e7115507",
+         "schema": "evd/checkpoint/v1",
+         "tree_size": 10,
+         "ts": "2026-01-01T00:00:57Z"
+        },
+        "kid": "LVgJQorD9eIwxSSR",
+        "sig": "3dW1SKGgYaUZqlgTp8FMRbeJeHGfcuTz/n+TfwmkM0/AMQoHT3z9FDN5+dpSS+qwRDlFTOD3e1eHx8Dc5EyUBg=="
+       }
+      }
+     ],
+     "entries": [
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImxpbmVhZ2UuYWRvcHRlZCIsImFnZW50X2lkIjoicGFydHlfYl9ib3QiLCJjb21taXRtZW50cyI6e30sImNvbnRleHQiOnsia2luZCI6ImFkb3B0ZWQifSwiaWRlbXBvdGVuY3lfa2V5IjoibGluZWFnZS1wYXJ0eV9iX2JvdCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6MSwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDoxNFoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjE1WiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "75OAIaPbcwY9DmBCSXrKqV6SEa2eLQ2m1HV/rCUYJjcMAtl9pWrYGtCuf1kIOJ8nTiNL55STztdTMnN1whHLAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "78b92e226a2629444cd074518ac916cfc771b53d6ecf569bbf89e4aa180b77a6",
+        "d28448c07784370007db86a6c280c3c07bded4ee7562a133c88cf17eb26cf499",
+        "4e6b1eb4011031b9a4035dc00be13272838d40eafb2d69e58bea68d0e947b1b2",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 1
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6MC4wMDAwMX0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjExWi1iYzVhMDg3NzNhNDM4OTY2IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoyLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjEyWiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MTJaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "hFQtaELz0vEv+bbP5DNZyZbkrDFr0ELe1nozp56oX2zYcwfbtx+Yn1Z0+TY62WmI43tNxzyTfnLoy2/w67wJCA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "d92fde35dd78235c604720912f3e5018aa1e1a0970255c8a0ef5a7c4d66da6a4",
+        "6ec13dc7990a7ca0b0af6381b1a3150283617001fdfd5b36b154105b157bdad7",
+        "4e6b1eb4011031b9a4035dc00be13272838d40eafb2d69e58bea68d0e947b1b2",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 2
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6MC4wMDAxfSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6MjBaLTZiYjRjMGY0NDhhNjA0ZTkiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjMsInRlbmFudF9pZCI6InRfcGFydHlfYiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MjFaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDoyMVoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "R88zTasg63QXfXn4Jv6dIcm2VnThYSPl0i9U2JluEGLJXI+yBs1YS5M1abyLW/qzxOEBzLYh72Zbor9n8yA6CA=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "c1c984d765f6a4ff98065f8629c9c235edcfc7eef8481de0ac4dc34138b326ab",
+        "6ec13dc7990a7ca0b0af6381b1a3150283617001fdfd5b36b154105b157bdad7",
+        "4e6b1eb4011031b9a4035dc00be13272838d40eafb2d69e58bea68d0e947b1b2",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 3
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6MS4yNX0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjI2Wi1lZGQ5M2QwMjNkOTM5YzJhIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjo0LCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjI3WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MjdaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "K6oBRjX3+JVR6sjZVCcrfD+aJoSJi93w7gxgQl31fCI3C3wM1YOJiIwFb8VnQbk0600xkycEnohkPTAMjhmjBQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "7ed1955e32194204955e87ce8d6ab838ae52effc7f0cdd3d9fd1993eea1087ef",
+        "03de716f240f15d484275336181f93825fb9b1f60e2ae3f0be5f6a180cabd5b6",
+        "5d3faf770887817bb269c32526937a0cda22fc7c260db1301b9f0d695feb50d8",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 4
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6LTAuMTI1fSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6MzJaLTQ2YzZiMWUxZmUwNjEwYmMiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjUsInRlbmFudF9pZCI6InRfcGFydHlfYiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6MzNaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDozM1oifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "EnWliw1h+KEOSx5FIRyxkcgUEsr7oKDiGQHgsyqXkoAS/ODzrUgsCO/SOY2/S8MCw60Ee2knfxxoc7hGjUhVCg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "539a97c561bd9c478609cf2661714789957521259b96a8f8e8211ad56eec9253",
+        "03de716f240f15d484275336181f93825fb9b1f60e2ae3f0be5f6a180cabd5b6",
+        "5d3faf770887817bb269c32526937a0cda22fc7c260db1301b9f0d695feb50d8",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 5
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6IsOpIn0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjM4Wi1lOTljMTBkMzYyYzcxODUzIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjo2LCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjM5WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MzlaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "wy46c5v3pGndUXMHVcjHQrzQKkGy3I60NDSD/py6PzIVpWdvq1h3wcZEI1wfT9F4b8tpfliFAZkTNWud/TjsAQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "3f3c53d41a947eb82900495cd08df3bf5997a9a10599e38cb8c5c5efa184a2d9",
+        "dfe4a79396abab0fb0aff2ac63ff2e3e259cd73928fe65b291484255f2679ffd",
+        "5d3faf770887817bb269c32526937a0cda22fc7c260db1301b9f0d695feb50d8",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 6
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6IvCfmIAifSwiaWRlbXBvdGVuY3lfa2V5IjoiY3VzdG9tLTIwMjYtMDEtMDFUMDA6MDA6NDRaLTE0MGUxZjhkZTRiNjBjOTkiLCJwYXJlbnRzIjpbXSwic2NoZW1hIjoiZXZkL3JlY2VpcHQvdjEiLCJzZXEiOjcsInRlbmFudF9pZCI6InRfcGFydHlfYiIsInRzX2NsaWVudCI6IjIwMjYtMDEtMDFUMDA6MDA6NDVaIiwidHNfc2VydmVyIjoiMjAyNi0wMS0wMVQwMDowMDo0NVoifQ==",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "TIb0jzVKf+iZ9VEMYcHPXGDX3ng6w45IsGeMRoMBpxaZNIi+eV1tNvbiuKK9b57sFBl6eNpIt24Qq+woK4DLDg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "e178c91828a96848f7bdf688cf2e556dcacde10a41b61e524c89d7fef99cf79e",
+        "dfe4a79396abab0fb0aff2ac63ff2e3e259cd73928fe65b291484255f2679ffd",
+        "5d3faf770887817bb269c32526937a0cda22fc7c260db1301b9f0d695feb50d8",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 7
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6eyJhIjpbdHJ1ZSxudWxsXSwieiI6Mn19LCJpZGVtcG90ZW5jeV9rZXkiOiJjdXN0b20tMjAyNi0wMS0wMVQwMDowMDo1MFotMGI5OTcyYTIwYWFkNjIwOCIsInBhcmVudHMiOltdLCJzY2hlbWEiOiJldmQvcmVjZWlwdC92MSIsInNlcSI6OCwidGVuYW50X2lkIjoidF9wYXJ0eV9iIiwidHNfY2xpZW50IjoiMjAyNi0wMS0wMVQwMDowMDo1MVoiLCJ0c19zZXJ2ZXIiOiIyMDI2LTAxLTAxVDAwOjAwOjUxWiJ9",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "TipyENUYbCiSQpFE9+AEi5kfmHd2YKNqWD4krHIO99F8OIBYRB8xVAYtGOBkaoqnteh24oW/OrWVVdDJFt6zBg=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "3d8533a765c7b827e81490eee39a0178513ce2a0efdbd888431c7d875c0b97b3",
+        "86207e873d18450e5c9d0952bfafc70b01e12160929a334e225b5a53a314dbb5"
+       ],
+       "leaf_index": 8
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6IngudHJhbnNmZXIiLCJhZ2VudF9pZCI6InBhcnR5X2JfYm90IiwiY29tbWl0bWVudHMiOnt9LCJjb250ZXh0Ijp7ImFjdGlvbl9pZCI6InJldHJpZXMiLCJiaXJ0aHRhZ19pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJyZXZpc2lvbl9pZCI6ImE2NjA0OWU5MmQzNDY2NGI2MDE2ZjMyYjg4ZGZjNmRkYjIwOGJlODVhNjU0ZDhhZmE0NjIwNGRlMGNiNjQwY2MiLCJ2YWx1ZSI6Is6pIn0sImlkZW1wb3RlbmN5X2tleSI6ImN1c3RvbS0yMDI2LTAxLTAxVDAwOjAwOjUzWi0yM2I3YTZkZWM1OWYyN2M5IiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjo5LCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjU0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6NTRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "71s7BV7m1D3quX//i46wZlWllsmRVnC0jOVYnemM1Osv4z6EiEw9fbfs/J2WO+YFfb1K0pnBrib0go4HM/Y8Cw=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "b520d49dbe620abb1c559e3fab4724e9e2b2e5cf9aae5b8a0d99c463c867aca9",
+        "86207e873d18450e5c9d0952bfafc70b01e12160929a334e225b5a53a314dbb5"
+       ],
+       "leaf_index": 9
+      },
+      {
+       "envelope": {
+        "payload": "eyJhY3Rpb25fdHlwZSI6ImV2ZC5rZXkuY3JlYXRlZCIsImFnZW50X2lkIjoiX3N5c3RlbSIsImNvbW1pdG1lbnRzIjp7fSwiY29udGV4dCI6eyJlZmZlY3RpdmVfdHMiOiIyMDI2LTAxLTAxVDAwOjAwOjAzWiIsImp3ayI6eyJhbGciOiJFZERTQSIsImNydiI6IkVkMjU1MTkiLCJraWQiOiJMVmdKUW9yRDllSXd4U1NSIiwia3R5IjoiT0tQIiwidXNlIjoic2lnIiwieCI6Ii1tbWo2aVFkVlFOOXlFajNuR0hHT0lVLVd0VU5VVHdtSlJ5TWRUXzhzZDAifX0sImlkZW1wb3RlbmN5X2tleSI6ImV2ZC1rZXktY3JlYXRlZC1MVmdKUW9yRDllSXd4U1NSIiwicGFyZW50cyI6W10sInNjaGVtYSI6ImV2ZC9yZWNlaXB0L3YxIiwic2VxIjoxLCJ0ZW5hbnRfaWQiOiJ0X3BhcnR5X2IiLCJ0c19jbGllbnQiOiIyMDI2LTAxLTAxVDAwOjAwOjA0WiIsInRzX3NlcnZlciI6IjIwMjYtMDEtMDFUMDA6MDA6MDRaIn0=",
+        "payloadType": "application/vnd.evd.receipt.v1+json",
+        "signatures": [
+         {
+          "keyid": "LVgJQorD9eIwxSSR",
+          "sig": "cEgrqhGXUxpy18ymB+0pBV3ARATxlnrGQ4ef0aGnUpTyh74dH6f9y5cTl1gNo4IrXjOOahqbvUHeSYOqWfEdCQ=="
+         }
+        ]
+       },
+       "inclusion_proof": [
+        "539c6b20dbe809a73b429bb137e2785db1b7f180b8bf5ef35a716abe67e78f41",
+        "d28448c07784370007db86a6c280c3c07bded4ee7562a133c88cf17eb26cf499",
+        "4e6b1eb4011031b9a4035dc00be13272838d40eafb2d69e58bea68d0e947b1b2",
+        "fcf17fc5e0635574c9329bbd80172a5cec9a1ec2f7d53606ca5fc3ef197272a9"
+       ],
+       "leaf_index": 0
+      }
+     ],
+     "export_manifest": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "producer": {
+        "capabilities": {
+         "bundle.schema": "evd/bundle/v1",
+         "canonical.jcs_max_depth": 64,
+         "checkpoint.fields": [
+          "origin",
+          "prev_hash",
+          "root_hash",
+          "schema",
+          "tree_size",
+          "ts"
+         ],
+         "checkpoint.optional": [
+          "alg"
+         ],
+         "checkpoint.payload_type": "application/vnd.evd.checkpoint.v1+json",
+         "checkpoint.schema": "evd/checkpoint/v1",
+         "checkpoint.signed_fields": [
+          "body",
+          "kid",
+          "sig"
+         ],
+         "checkpoint_chain.sparse_profile": "evd/checkpoint-chain/sparse-proof-v1",
+         "commitment.producer_request_domain": "73776172726d2d726563656970742d70726f64756365722d726571756573742f763100",
+         "export_manifest.payload_type": "application/vnd.evd.export-manifest.v1+json",
+         "export_manifest.schema": "evd/export-manifest/v1",
+         "merkle.empty_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+         "merkle.leaf_prefix": "00",
+         "merkle.node_prefix": "01",
+         "receipt.max_parents": 32,
+         "receipt.optional": [
+          "alg",
+          "session_id",
+          "session_inferred"
+         ],
+         "receipt.payload_type": "application/vnd.evd.receipt.v1+json",
+         "receipt.required": [
+          "action_type",
+          "agent_id",
+          "commitments",
+          "context",
+          "idempotency_key",
+          "parents",
+          "schema",
+          "seq",
+          "tenant_id",
+          "ts_client",
+          "ts_server"
+         ],
+         "receipt.schema": "evd/receipt/v1",
+         "schema": "evd/capability-digest/v1"
+        },
+        "capability_digest": "2fccb4ff6ae71bc77838f421ddab9c2ec9d99a7d4978badc3c22290d4d5a7615"
+       },
+       "receipt_hashes": [
+        "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+        "2c2f3f90378b96dd74b11d8aa7cf62d4e38e56636562dd3c8c853f4adc4702e6",
+        "53745ded4a8330a17065642b449a4eef7d2912d128a5712cc286f6dc1b292825",
+        "586406819eb2ba20df372743ad121c5b603ec38c877314ed8502b5f5c84ac01a",
+        "7b40cf15f1c9e063d47b5fb8a054dfb78a4a74f3a891266504eb7ed1f1204086",
+        "7d4be6d769fe2ece0ce08d138c841d861cf922d8d26afa88df9f26f6543448a8",
+        "a66049e92d34664b6016f32b88dfc6ddb208be85a654d8afa46204de0cb640cc",
+        "b65e14b427ef4cb8c9e1bbbad512ae98744d77070f59e0f5b4ee96e538a99fb3",
+        "d3ddc1b000a538be28d34cf8d055ca8bf3ce1b2369d00aae51b664632cefc682",
+        "d982a3487c25882c4041aea442fcfa48bbe3025ae986a9ae34ac43efbc9b5f7f"
+       ],
+       "schema": "evd/export-manifest/v1",
+       "target_checkpoint_hash": "d6d8243470ed7debc999619d3b7bc1db5cbd6b202a084e3c88ef60229fca48e6",
+       "ts": "2026-01-01T00:00:57Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "JuoKr5azV376utUb0U7p01ADxYZuEe+LZlJMbui7l84xhPjzqp1oOnPXa4miaO0I7TQW70fQ4POM03c+UB75Cw=="
+     },
+     "jwks": {
+      "keys": [
+       {
+        "alg": "EdDSA",
+        "crv": "Ed25519",
+        "kid": "LVgJQorD9eIwxSSR",
+        "kty": "OKP",
+        "use": "sig",
+        "x": "-mmj6iQdVQN9yEj3nGHGOIU-WtUNUTwmJRyMdT_8sd0"
+       }
+      ]
+     },
+     "origin": "evd://tenant/t_party_b",
+     "schema": "evd/bundle/v1",
+     "target_checkpoint": {
+      "body": {
+       "origin": "evd://tenant/t_party_b",
+       "prev_hash": "",
+       "root_hash": "67ceb7cf0d55e4049cd18a6c624147d278e7ba7a4289246c689c3f17e7115507",
+       "schema": "evd/checkpoint/v1",
+       "tree_size": 10,
+       "ts": "2026-01-01T00:00:57Z"
+      },
+      "kid": "LVgJQorD9eIwxSSR",
+      "sig": "3dW1SKGgYaUZqlgTp8FMRbeJeHGfcuTz/n+TfwmkM0/AMQoHT3z9FDN5+dpSS+qwRDlFTOD3e1eHx8Dc5EyUBg=="
+     }
+    }
+   },
+   "case_ref": "values",
+   "contested_claims": [
+    "unseen"
+   ],
+   "party_labels": [
+    "alpha",
+    "beta"
+   ],
+   "reconciliation": {
+    "claims": [
+     {
+      "agreed_fields": [
+       "action_type"
+      ],
+      "claim_id": "retries",
+      "conflicting_fields": {
+       "value": {
+        "alpha": [
+         "\u00e9",
+         "\ud83d\ude00",
+         -0.125,
+         0.0001,
+         1.25,
+         1e-05,
+         {
+          "a": [
+           true,
+           null
+          ],
+          "z": 2
+         }
+        ],
+        "beta": [
+         "\u00e9",
+         "\u03a9",
+         "\ud83d\ude00",
+         -0.125,
+         0.0001,
+         1.25,
+         1e-05,
+         {
+          "a": [
+           true,
+           null
+          ],
+          "z": 2
+         }
+        ]
+       }
+      },
+      "contested": true,
+      "one_sided_fields": {},
+      "outcome": "CONFLICT",
+      "receipt_hashes": {
+       "alpha": [
+        "4dfdf2fba49582e15273e5a19b0a8d2ddd9388044eeece610097ae604a48d041",
+        "b41cbbab3a092bff54983e005d2a5d2d162597458f3594f8540864b5fda00d0f",
+        "6ddaaca195476293643ac70529f2f46901282c5a6cdb1a0a6986e9bdacfed91c",
+        "8b791b6f2e12ef175b92d2210c34bcf70011fb0fefb2f64a3666e3022ed50832",
+        "c4ee8923faf037acff739db7aa00ab562909557d0847bab072663e23a96a6514",
+        "f69e0ae94f60711b63a3ae3099b5d07132b082d06715f72c868d69a4278bf427",
+        "9f6d7d2da9c5512e4d59bd17f1375733068a3c1eddbfdf0e32383561bb9d7f26"
+       ],
+       "beta": [
+        "d3ddc1b000a538be28d34cf8d055ca8bf3ce1b2369d00aae51b664632cefc682",
+        "2c2f3f90378b96dd74b11d8aa7cf62d4e38e56636562dd3c8c853f4adc4702e6",
+        "7d4be6d769fe2ece0ce08d138c841d861cf922d8d26afa88df9f26f6543448a8",
+        "53745ded4a8330a17065642b449a4eef7d2912d128a5712cc286f6dc1b292825",
+        "7b40cf15f1c9e063d47b5fb8a054dfb78a4a74f3a891266504eb7ed1f1204086",
+        "d982a3487c25882c4041aea442fcfa48bbe3025ae986a9ae34ac43efbc9b5f7f",
+        "b65e14b427ef4cb8c9e1bbbad512ae98744d77070f59e0f5b4ee96e538a99fb3",
+        "586406819eb2ba20df372743ad121c5b603ec38c877314ed8502b5f5c84ac01a"
+       ]
+      },
+      "statement": "Both parties' verified bundles carry receipts for this claim; the named material fields do not carry the same values. This reconciliation reports the disagreement; it does not determine which record is accurate.",
+      "supported_by": [
+       "alpha",
+       "beta"
+      ],
+      "unsupported_by": []
+     },
+     {
+      "claim_id": "unseen",
+      "contested": true,
+      "outcome": "UNSUPPORTED",
+      "receipt_hashes": {
+       "alpha": [],
+       "beta": []
+      },
+      "statement": "Neither party's verified bundle carries a receipt supporting this claim.",
+      "supported_by": [],
+      "unsupported_by": [
+       "alpha",
+       "beta"
+      ]
+     }
+    ],
+    "parties": {
+     "alpha": {
+      "claims": 1,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_a",
+      "trust_root": "34aaddce18760bb8d5cf8b044660da32922e11445d98f9b1575ce1cf69da650b",
+      "uncorrelated_receipts": 1
+     },
+     "beta": {
+      "claims": 1,
+      "export_complete": true,
+      "origin": "evd://tenant/t_party_b",
+      "trust_root": "02f8203c7f7a913bd120070a75a86f9e76fb61dfb5582daf597b156f270d9d05",
+      "uncorrelated_receipts": 1
+     }
+    },
+    "schema": "evd/two-party-reconciliation/v1",
+    "scope": "This reconciliation reports what each party's independently verified bundle can support. It does not determine fault, intent, liability, or which party's record reflects what actually happened. Absence of a receipt from a presented export is absence of support, not proof that no event occurred.",
+    "summary": {
+     "AGREEMENT": 0,
+     "CONFLICT": 1,
+     "UNSUPPORTED": 1,
+     "contested": 2
+    }
+   },
+   "schema": "evd/dispute-artifact/v1"
+  }
+ },
+ "value_keys": [
+  {
+   "expected": "null",
+   "input": "null"
+  },
+  {
+   "expected": "true",
+   "input": "true"
+  },
+  {
+   "expected": "false",
+   "input": "false"
+  },
+  {
+   "expected": "\"\\u007f\"",
+   "input": "\"\\u007f\""
+  },
+  {
+   "expected": "\"\\u00e9\"",
+   "input": "\"\\u00e9\""
+  },
+  {
+   "expected": "\"\\ud83d\\ude00\"",
+   "input": "\"\\ud83d\\ude00\""
+  },
+  {
+   "expected": "{\"\\u00e9\": [1e-05, \"\\b\"]}",
+   "input": "{\"\\u00e9\": [1e-05, \"\\b\"]}"
+  },
+  {
+   "expected": "0.0",
+   "input": "0.0"
+  },
+  {
+   "expected": "-0.0",
+   "input": "-0.0"
+  },
+  {
+   "expected": "1e-05",
+   "input": "1e-05"
+  },
+  {
+   "expected": "0.0001",
+   "input": "0.0001"
+  },
+  {
+   "expected": "1000000000000000.0",
+   "input": "1000000000000000.0"
+  },
+  {
+   "expected": "1e+16",
+   "input": "1e+16"
+  },
+  {
+   "expected": "1e+20",
+   "input": "1e+20"
+  },
+  {
+   "expected": "1e+21",
+   "input": "1e+21"
+  },
+  {
+   "expected": "-1.2345e-12",
+   "input": "-1.2345e-12"
+  },
+  {
+   "expected": "1.0000000000000002",
+   "input": "1.0000000000000002"
+  },
+  {
+   "expected": "7.022163500034868e+126",
+   "input": "7.022163500034868e+126"
+  },
+  {
+   "expected": "8.646210981257397e+40",
+   "input": "8.646210981257397e+40"
+  },
+  {
+   "expected": "6.591872079453218e-96",
+   "input": "6.591872079453218e-96"
+  },
+  {
+   "expected": "-4.064166487487147e+237",
+   "input": "-4.064166487487147e+237"
+  },
+  {
+   "expected": "8.821553618754224e-11",
+   "input": "8.821553618754224e-11"
+  },
+  {
+   "expected": "1.9049237767070976e-19",
+   "input": "1.9049237767070976e-19"
+  },
+  {
+   "expected": "-3.2554782072416575e-45",
+   "input": "-3.2554782072416575e-45"
+  },
+  {
+   "expected": "-5.785044726220544e-251",
+   "input": "-5.785044726220544e-251"
+  },
+  {
+   "expected": "8.151573025319152e-236",
+   "input": "8.151573025319152e-236"
+  },
+  {
+   "expected": "3.408319050395116e-70",
+   "input": "3.408319050395116e-70"
+  },
+  {
+   "expected": "-4.047049456734795e-137",
+   "input": "-4.047049456734795e-137"
+  },
+  {
+   "expected": "-4.8009690491465157e+98",
+   "input": "-4.8009690491465157e+98"
+  },
+  {
+   "expected": "-5.4095159036601055e-157",
+   "input": "-5.4095159036601055e-157"
+  },
+  {
+   "expected": "-1.6070574615839019e-12",
+   "input": "-1.6070574615839019e-12"
+  },
+  {
+   "expected": "-203101208.75967887",
+   "input": "-203101208.75967887"
+  },
+  {
+   "expected": "-1.1226798144211161e-298",
+   "input": "-1.1226798144211161e-298"
+  },
+  {
+   "expected": "1.0372264073711539e-41",
+   "input": "1.0372264073711539e-41"
+  },
+  {
+   "expected": "1.3898794243416425e+248",
+   "input": "1.3898794243416425e+248"
+  },
+  {
+   "expected": "-5.008415811286538e-199",
+   "input": "-5.008415811286538e-199"
+  },
+  {
+   "expected": "1.900818758021414e+145",
+   "input": "1.900818758021414e+145"
+  },
+  {
+   "expected": "-4.69870184297582e-204",
+   "input": "-4.69870184297582e-204"
+  },
+  {
+   "expected": "5.277147926201213e+277",
+   "input": "5.277147926201213e+277"
+  },
+  {
+   "expected": "1.1190992411932636e-232",
+   "input": "1.1190992411932636e-232"
+  },
+  {
+   "expected": "-1.9889151826059202e+263",
+   "input": "-1.9889151826059202e+263"
+  },
+  {
+   "expected": "1.72623418785403e-127",
+   "input": "1.72623418785403e-127"
+  },
+  {
+   "expected": "3.42063862291972e-228",
+   "input": "3.42063862291972e-228"
+  },
+  {
+   "expected": "3.334487827564947e-175",
+   "input": "3.334487827564947e-175"
+  },
+  {
+   "expected": "2.0021966795567655e-32",
+   "input": "2.0021966795567655e-32"
+  },
+  {
+   "expected": "-1.1689600999720396e+210",
+   "input": "-1.1689600999720396e+210"
+  },
+  {
+   "expected": "4.6554692309134e+103",
+   "input": "4.6554692309134e+103"
+  },
+  {
+   "expected": "-1.1347559439147663e+114",
+   "input": "-1.1347559439147663e+114"
+  },
+  {
+   "expected": "3.670654778491984e+230",
+   "input": "3.670654778491984e+230"
+  },
+  {
+   "expected": "-2754627219551.1787",
+   "input": "-2754627219551.1787"
+  },
+  {
+   "expected": "-3.0839634008207296e+254",
+   "input": "-3.0839634008207296e+254"
+  },
+  {
+   "expected": "4.233854117452968e+217",
+   "input": "4.233854117452968e+217"
+  },
+  {
+   "expected": "-1.2294975134474706e-48",
+   "input": "-1.2294975134474706e-48"
+  },
+  {
+   "expected": "-8.369693573691391e+37",
+   "input": "-8.369693573691391e+37"
+  },
+  {
+   "expected": "4.6314731023260367e-153",
+   "input": "4.6314731023260367e-153"
+  },
+  {
+   "expected": "9.340671155254837e+167",
+   "input": "9.340671155254837e+167"
+  },
+  {
+   "expected": "-3.1388630868257743e-274",
+   "input": "-3.1388630868257743e-274"
+  },
+  {
+   "expected": "-982947.1039957041",
+   "input": "-982947.1039957041"
+  },
+  {
+   "expected": "-8.830593302491363e+146",
+   "input": "-8.830593302491363e+146"
+  },
+  {
+   "expected": "2.2022513133396294e+149",
+   "input": "2.2022513133396294e+149"
+  },
+  {
+   "expected": "8.451517016162092e+58",
+   "input": "8.451517016162092e+58"
+  },
+  {
+   "expected": "2.147483171982991e-72",
+   "input": "2.147483171982991e-72"
+  },
+  {
+   "expected": "2.004028316379534e-184",
+   "input": "2.004028316379534e-184"
+  },
+  {
+   "expected": "3.358767811488113e+172",
+   "input": "3.358767811488113e+172"
+  },
+  {
+   "expected": "-2.3211026402785407e-223",
+   "input": "-2.3211026402785407e-223"
+  },
+  {
+   "expected": "8.650574513536752e+291",
+   "input": "8.650574513536752e+291"
+  },
+  {
+   "expected": "-1.612350053014845e-153",
+   "input": "-1.612350053014845e-153"
+  },
+  {
+   "expected": "-1.135842762306577e-13",
+   "input": "-1.135842762306577e-13"
+  },
+  {
+   "expected": "-8.843209198782601e+130",
+   "input": "-8.843209198782601e+130"
+  },
+  {
+   "expected": "4.6680335641603896e-235",
+   "input": "4.6680335641603896e-235"
+  },
+  {
+   "expected": "8.991713583498147e-258",
+   "input": "8.991713583498147e-258"
+  },
+  {
+   "expected": "-4.820719897078542e+173",
+   "input": "-4.820719897078542e+173"
+  },
+  {
+   "expected": "-2.312977395282008e+244",
+   "input": "-2.312977395282008e+244"
+  },
+  {
+   "expected": "9.66651826965046e+158",
+   "input": "9.66651826965046e+158"
+  },
+  {
+   "expected": "-5.601128147660879e-27",
+   "input": "-5.601128147660879e-27"
+  },
+  {
+   "expected": "5.71215634969718e-264",
+   "input": "5.71215634969718e-264"
+  },
+  {
+   "expected": "-5.381888155759588e+166",
+   "input": "-5.381888155759588e+166"
+  },
+  {
+   "expected": "-686689.014255984",
+   "input": "-686689.014255984"
+  },
+  {
+   "expected": "1.916576226852052e-109",
+   "input": "1.916576226852052e-109"
+  },
+  {
+   "expected": "-2.2827959386785e+133",
+   "input": "-2.2827959386785e+133"
+  },
+  {
+   "expected": "-9.940922259828222e-306",
+   "input": "-9.940922259828222e-306"
+  },
+  {
+   "expected": "-1.2007052424818564e-287",
+   "input": "-1.2007052424818564e-287"
+  },
+  {
+   "expected": "8.674288468865366e+147",
+   "input": "8.674288468865366e+147"
+  },
+  {
+   "expected": "1.922931776296374e-256",
+   "input": "1.922931776296374e-256"
+  },
+  {
+   "expected": "1.0416218516348408e+72",
+   "input": "1.0416218516348408e+72"
+  },
+  {
+   "expected": "1.2503651339434464e-290",
+   "input": "1.2503651339434464e-290"
+  },
+  {
+   "expected": "-1.6466577134675018e+263",
+   "input": "-1.6466577134675018e+263"
+  },
+  {
+   "expected": "3.7659118794746006e-270",
+   "input": "3.7659118794746006e-270"
+  },
+  {
+   "expected": "9.017391580256069e+52",
+   "input": "9.017391580256069e+52"
+  },
+  {
+   "expected": "-1.806805362298944e-197",
+   "input": "-1.806805362298944e-197"
+  },
+  {
+   "expected": "-1.86594418426982e+197",
+   "input": "-1.86594418426982e+197"
+  },
+  {
+   "expected": "-6.3675552417727575e-25",
+   "input": "-6.3675552417727575e-25"
+  },
+  {
+   "expected": "-7.33904292170464e+30",
+   "input": "-7.33904292170464e+30"
+  },
+  {
+   "expected": "1.8984462694626735e+168",
+   "input": "1.8984462694626735e+168"
+  },
+  {
+   "expected": "2.201177731506025e+38",
+   "input": "2.201177731506025e+38"
+  },
+  {
+   "expected": "5.189933924526341e-284",
+   "input": "5.189933924526341e-284"
+  },
+  {
+   "expected": "-5.856471116262876e-26",
+   "input": "-5.856471116262876e-26"
+  },
+  {
+   "expected": "-1.0551534991897331e-103",
+   "input": "-1.0551534991897331e-103"
+  },
+  {
+   "expected": "-5.9610766061576695e-77",
+   "input": "-5.9610766061576695e-77"
+  },
+  {
+   "expected": "1.0629098544775564e+82",
+   "input": "1.0629098544775564e+82"
+  },
+  {
+   "expected": "-3.729952420761062e+164",
+   "input": "-3.729952420761062e+164"
+  },
+  {
+   "expected": "-8.828094655726651e-237",
+   "input": "-8.828094655726651e-237"
+  },
+  {
+   "expected": "-2.5568285559537253e-75",
+   "input": "-2.5568285559537253e-75"
+  },
+  {
+   "expected": "-2.2189211145102457e-294",
+   "input": "-2.2189211145102457e-294"
+  },
+  {
+   "expected": "-3.194913581451345e-274",
+   "input": "-3.194913581451345e-274"
+  },
+  {
+   "expected": "9.567808250207162e+289",
+   "input": "9.567808250207162e+289"
+  },
+  {
+   "expected": "-0.0016055370494998354",
+   "input": "-0.0016055370494998354"
+  },
+  {
+   "expected": "-9.361204742549001e+128",
+   "input": "-9.361204742549001e+128"
+  },
+  {
+   "expected": "1.606560289139866e+81",
+   "input": "1.606560289139866e+81"
+  },
+  {
+   "expected": "-2.1120681948285423e+244",
+   "input": "-2.1120681948285423e+244"
+  },
+  {
+   "expected": "-9.59430718600355e+107",
+   "input": "-9.59430718600355e+107"
+  },
+  {
+   "expected": "-9.929094274924016e-241",
+   "input": "-9.929094274924016e-241"
+  },
+  {
+   "expected": "-5.0487618440218674e-223",
+   "input": "-5.0487618440218674e-223"
+  },
+  {
+   "expected": "-6.841929277865895e-42",
+   "input": "-6.841929277865895e-42"
+  },
+  {
+   "expected": "-1.7034825511400935e+62",
+   "input": "-1.7034825511400935e+62"
+  },
+  {
+   "expected": "1.0791007536704656e+133",
+   "input": "1.0791007536704656e+133"
+  },
+  {
+   "expected": "1.634154324121204e-122",
+   "input": "1.634154324121204e-122"
+  },
+  {
+   "expected": "1.39791774375902e-121",
+   "input": "1.39791774375902e-121"
+  },
+  {
+   "expected": "-6.425925799463228e-290",
+   "input": "-6.425925799463228e-290"
+  },
+  {
+   "expected": "4.3775126234070983e+248",
+   "input": "4.3775126234070983e+248"
+  },
+  {
+   "expected": "-2.0561540060933746e-127",
+   "input": "-2.0561540060933746e-127"
+  },
+  {
+   "expected": "1.997138569387303e-298",
+   "input": "1.997138569387303e-298"
+  },
+  {
+   "expected": "-1.432314456133103e+50",
+   "input": "-1.432314456133103e+50"
+  },
+  {
+   "expected": "-8.52752474415453e+95",
+   "input": "-8.52752474415453e+95"
+  },
+  {
+   "expected": "-3.772432962816627e+226",
+   "input": "-3.772432962816627e+226"
+  },
+  {
+   "expected": "1.4891957739274006e+259",
+   "input": "1.4891957739274006e+259"
+  },
+  {
+   "expected": "-2.3804217344151294e-206",
+   "input": "-2.3804217344151294e-206"
+  },
+  {
+   "expected": "-4.55476551257739e-95",
+   "input": "-4.55476551257739e-95"
+  },
+  {
+   "expected": "-2.4296730138861357e-261",
+   "input": "-2.4296730138861357e-261"
+  },
+  {
+   "expected": "-5.115873959705046e+127",
+   "input": "-5.115873959705046e+127"
+  },
+  {
+   "expected": "5.512305642333773e-25",
+   "input": "5.512305642333773e-25"
+  },
+  {
+   "expected": "-1.0635539273458993e-57",
+   "input": "-1.0635539273458993e-57"
+  },
+  {
+   "expected": "-2.803933914558713e+56",
+   "input": "-2.803933914558713e+56"
+  },
+  {
+   "expected": "-2.1349826215867136e+120",
+   "input": "-2.1349826215867136e+120"
+  },
+  {
+   "expected": "2.078885532651717e+293",
+   "input": "2.078885532651717e+293"
+  },
+  {
+   "expected": "-1.8116102429294174e-78",
+   "input": "-1.8116102429294174e-78"
+  },
+  {
+   "expected": "-2.58953646682877e+134",
+   "input": "-2.58953646682877e+134"
+  },
+  {
+   "expected": "1.6601632117601453e-126",
+   "input": "1.6601632117601453e-126"
+  },
+  {
+   "expected": "2.9400648477047214e+285",
+   "input": "2.9400648477047214e+285"
+  },
+  {
+   "expected": "-6.997756644077805e+297",
+   "input": "-6.997756644077805e+297"
+  },
+  {
+   "expected": "-1.7500782668217797e-22",
+   "input": "-1.7500782668217797e-22"
+  },
+  {
+   "expected": "-9.032458083918906e-176",
+   "input": "-9.032458083918906e-176"
+  },
+  {
+   "expected": "-7.379300086565029e-306",
+   "input": "-7.379300086565029e-306"
+  },
+  {
+   "expected": "1.4963770592832766e+150",
+   "input": "1.4963770592832766e+150"
+  },
+  {
+   "expected": "8.365577704863673e-81",
+   "input": "8.365577704863673e-81"
+  },
+  {
+   "expected": "2.2235029593136306e+107",
+   "input": "2.2235029593136306e+107"
+  },
+  {
+   "expected": "4.2414574912176045e-239",
+   "input": "4.2414574912176045e-239"
+  },
+  {
+   "expected": "-3.655990527499787e+143",
+   "input": "-3.655990527499787e+143"
+  },
+  {
+   "expected": "3.1675193878206517e-174",
+   "input": "3.1675193878206517e-174"
+  },
+  {
+   "expected": "-9.791357729184316e-79",
+   "input": "-9.791357729184316e-79"
+  },
+  {
+   "expected": "3.0745140922555032e-294",
+   "input": "3.0745140922555032e-294"
+  },
+  {
+   "expected": "6.093908341182877e+24",
+   "input": "6.093908341182877e+24"
+  },
+  {
+   "expected": "1.9213469713279455e+134",
+   "input": "1.9213469713279455e+134"
+  },
+  {
+   "expected": "-6.660656976030061e-181",
+   "input": "-6.660656976030061e-181"
+  },
+  {
+   "expected": "5.7393925995293377e+259",
+   "input": "5.7393925995293377e+259"
+  },
+  {
+   "expected": "-9.357053708485547e-155",
+   "input": "-9.357053708485547e-155"
+  },
+  {
+   "expected": "4.872970473939869e-282",
+   "input": "4.872970473939869e-282"
+  },
+  {
+   "expected": "5.046208739424419e-38",
+   "input": "5.046208739424419e-38"
+  },
+  {
+   "expected": "-9319411.923882945",
+   "input": "-9319411.923882945"
+  },
+  {
+   "expected": "-4.574662708083124e+210",
+   "input": "-4.574662708083124e+210"
+  },
+  {
+   "expected": "-3.937454983746558e+289",
+   "input": "-3.937454983746558e+289"
+  },
+  {
+   "expected": "2.5541681785892216e-187",
+   "input": "2.5541681785892216e-187"
+  },
+  {
+   "expected": "3.5855238522302513e-57",
+   "input": "3.5855238522302513e-57"
+  },
+  {
+   "expected": "6.096563992775425e-16",
+   "input": "6.096563992775425e-16"
+  },
+  {
+   "expected": "-1.1726125053040525e+56",
+   "input": "-1.1726125053040525e+56"
+  },
+  {
+   "expected": "1.2369310859023157e-126",
+   "input": "1.2369310859023157e-126"
+  },
+  {
+   "expected": "-5.871994754654587e+194",
+   "input": "-5.871994754654587e+194"
+  },
+  {
+   "expected": "7.494333113978645e+147",
+   "input": "7.494333113978645e+147"
+  },
+  {
+   "expected": "-6.904408630085665e+178",
+   "input": "-6.904408630085665e+178"
+  },
+  {
+   "expected": "1.765690471698262e+173",
+   "input": "1.765690471698262e+173"
+  },
+  {
+   "expected": "-5.078576002601441e-177",
+   "input": "-5.078576002601441e-177"
+  },
+  {
+   "expected": "8.126480540240963e+68",
+   "input": "8.126480540240963e+68"
+  },
+  {
+   "expected": "1.5611219066018404e-245",
+   "input": "1.5611219066018404e-245"
+  },
+  {
+   "expected": "1.3411579096926498e-189",
+   "input": "1.3411579096926498e-189"
+  },
+  {
+   "expected": "-1.9054194790094237e-142",
+   "input": "-1.9054194790094237e-142"
+  },
+  {
+   "expected": "-5.17881943588345e-288",
+   "input": "-5.17881943588345e-288"
+  },
+  {
+   "expected": "1.2714293084995956e+277",
+   "input": "1.2714293084995956e+277"
+  },
+  {
+   "expected": "8.859033042616916e-237",
+   "input": "8.859033042616916e-237"
+  },
+  {
+   "expected": "-1.0567140411927884e+48",
+   "input": "-1.0567140411927884e+48"
+  },
+  {
+   "expected": "-2.4525469275600736e-09",
+   "input": "-2.4525469275600736e-09"
+  },
+  {
+   "expected": "2.0846155109388782e+281",
+   "input": "2.0846155109388782e+281"
+  },
+  {
+   "expected": "1.177219562766794e+143",
+   "input": "1.177219562766794e+143"
+  },
+  {
+   "expected": "6.675820918580263e+91",
+   "input": "6.675820918580263e+91"
+  },
+  {
+   "expected": "-1.1616838367946154e-189",
+   "input": "-1.1616838367946154e-189"
+  },
+  {
+   "expected": "-4.323727453578729e-252",
+   "input": "-4.323727453578729e-252"
+  },
+  {
+   "expected": "-1.3646388478068527e-249",
+   "input": "-1.3646388478068527e-249"
+  },
+  {
+   "expected": "-9.890987675923203e-38",
+   "input": "-9.890987675923203e-38"
+  },
+  {
+   "expected": "2.8174711402930146e+172",
+   "input": "2.8174711402930146e+172"
+  },
+  {
+   "expected": "-7.352093416313159e-239",
+   "input": "-7.352093416313159e-239"
+  },
+  {
+   "expected": "-8.044377278913217e+20",
+   "input": "-8.044377278913217e+20"
+  },
+  {
+   "expected": "1.7531340921050741e+186",
+   "input": "1.7531340921050741e+186"
+  },
+  {
+   "expected": "-3.3691306350308898e-18",
+   "input": "-3.3691306350308898e-18"
+  },
+  {
+   "expected": "-1.6824814437024787e-288",
+   "input": "-1.6824814437024787e-288"
+  },
+  {
+   "expected": "8.967708877239988e-201",
+   "input": "8.967708877239988e-201"
+  },
+  {
+   "expected": "5.130953297566269e-80",
+   "input": "5.130953297566269e-80"
+  },
+  {
+   "expected": "3.151842452685025e-196",
+   "input": "3.151842452685025e-196"
+  },
+  {
+   "expected": "-2.913774189504712e+201",
+   "input": "-2.913774189504712e+201"
+  },
+  {
+   "expected": "-6.6482886932854195e-217",
+   "input": "-6.6482886932854195e-217"
+  },
+  {
+   "expected": "3.560698710844198e+261",
+   "input": "3.560698710844198e+261"
+  },
+  {
+   "expected": "-1.0802720509631986e-19",
+   "input": "-1.0802720509631986e-19"
+  },
+  {
+   "expected": "4.68399026030732e-24",
+   "input": "4.68399026030732e-24"
+  },
+  {
+   "expected": "-2.2139150670061424e+257",
+   "input": "-2.2139150670061424e+257"
+  },
+  {
+   "expected": "-1.2356759611499574e-243",
+   "input": "-1.2356759611499574e-243"
+  },
+  {
+   "expected": "1.0002434216772156e+77",
+   "input": "1.0002434216772156e+77"
+  },
+  {
+   "expected": "-1.3865101123688698e-230",
+   "input": "-1.3865101123688698e-230"
+  },
+  {
+   "expected": "169.2734787163583",
+   "input": "169.2734787163583"
+  },
+  {
+   "expected": "2.753528793115426e-88",
+   "input": "2.753528793115426e-88"
+  },
+  {
+   "expected": "2.3711546419449017e+29",
+   "input": "2.3711546419449017e+29"
+  },
+  {
+   "expected": "-1.0623797487422697e-209",
+   "input": "-1.0623797487422697e-209"
+  },
+  {
+   "expected": "4.855594196182301e+122",
+   "input": "4.855594196182301e+122"
+  },
+  {
+   "expected": "-74658.43547319034",
+   "input": "-74658.43547319034"
+  },
+  {
+   "expected": "4.845064198587431e-241",
+   "input": "4.845064198587431e-241"
+  },
+  {
+   "expected": "-4.767422277808596e-256",
+   "input": "-4.767422277808596e-256"
+  },
+  {
+   "expected": "5.15319528686628e-11",
+   "input": "5.15319528686628e-11"
+  },
+  {
+   "expected": "8.808186517373494e-154",
+   "input": "8.808186517373494e-154"
+  },
+  {
+   "expected": "8.711247753029322e+132",
+   "input": "8.711247753029322e+132"
+  },
+  {
+   "expected": "-4.067771923081871e-115",
+   "input": "-4.067771923081871e-115"
+  },
+  {
+   "expected": "-1.7008925683274448e+190",
+   "input": "-1.7008925683274448e+190"
+  },
+  {
+   "expected": "-3.887155348766633e-75",
+   "input": "-3.887155348766633e-75"
+  },
+  {
+   "expected": "2.181382036555932e-117",
+   "input": "2.181382036555932e-117"
+  },
+  {
+   "expected": "-5.254331927716263e+227",
+   "input": "-5.254331927716263e+227"
+  },
+  {
+   "expected": "-2.9990662158971987e-229",
+   "input": "-2.9990662158971987e-229"
+  },
+  {
+   "expected": "7.865000725484359e+71",
+   "input": "7.865000725484359e+71"
+  },
+  {
+   "expected": "-1.1099600963430188e+64",
+   "input": "-1.1099600963430188e+64"
+  },
+  {
+   "expected": "-1.3789702666223736e-63",
+   "input": "-1.3789702666223736e-63"
+  },
+  {
+   "expected": "3.719479799778817e+170",
+   "input": "3.719479799778817e+170"
+  },
+  {
+   "expected": "-4.462942002105474e+64",
+   "input": "-4.462942002105474e+64"
+  },
+  {
+   "expected": "-6.175344163299121e-271",
+   "input": "-6.175344163299121e-271"
+  },
+  {
+   "expected": "2.6251088650965828e-61",
+   "input": "2.6251088650965828e-61"
+  },
+  {
+   "expected": "1.0345109719094645e-61",
+   "input": "1.0345109719094645e-61"
+  },
+  {
+   "expected": "-3.0711762656901416e+122",
+   "input": "-3.0711762656901416e+122"
+  },
+  {
+   "expected": "-1.169428180955526e-199",
+   "input": "-1.169428180955526e-199"
+  },
+  {
+   "expected": "1.0201573395185841e+158",
+   "input": "1.0201573395185841e+158"
+  },
+  {
+   "expected": "2.843196241227211e+284",
+   "input": "2.843196241227211e+284"
+  },
+  {
+   "expected": "-2.6061780640293535e-76",
+   "input": "-2.6061780640293535e-76"
+  },
+  {
+   "expected": "2.312729764496954e-148",
+   "input": "2.312729764496954e-148"
+  },
+  {
+   "expected": "-2.8086961890099492e-173",
+   "input": "-2.8086961890099492e-173"
+  },
+  {
+   "expected": "30.656802301147",
+   "input": "30.656802301147"
+  },
+  {
+   "expected": "1.2480362410178648e-193",
+   "input": "1.2480362410178648e-193"
+  },
+  {
+   "expected": "-4.575091309328739e+286",
+   "input": "-4.575091309328739e+286"
+  },
+  {
+   "expected": "-7.096346592562263e+25",
+   "input": "-7.096346592562263e+25"
+  },
+  {
+   "expected": "5.420835270463369e+143",
+   "input": "5.420835270463369e+143"
+  },
+  {
+   "expected": "-2.0798184757832845e-91",
+   "input": "-2.0798184757832845e-91"
+  },
+  {
+   "expected": "-7.214927979542312e+53",
+   "input": "-7.214927979542312e+53"
+  },
+  {
+   "expected": "6.341722331383485e+299",
+   "input": "6.341722331383485e+299"
+  },
+  {
+   "expected": "4.948469867629735e+300",
+   "input": "4.948469867629735e+300"
+  },
+  {
+   "expected": "2.899245333511295e+51",
+   "input": "2.899245333511295e+51"
+  },
+  {
+   "expected": "1.0709460702792405e+58",
+   "input": "1.0709460702792405e+58"
+  },
+  {
+   "expected": "-1.392284758516122e+205",
+   "input": "-1.392284758516122e+205"
+  },
+  {
+   "expected": "-5.590399357320859e-239",
+   "input": "-5.590399357320859e-239"
+  },
+  {
+   "expected": "7.218908810789076e-303",
+   "input": "7.218908810789076e-303"
+  },
+  {
+   "expected": "-6.618859754192545e+201",
+   "input": "-6.618859754192545e+201"
+  },
+  {
+   "expected": "-2.546323988063295e-43",
+   "input": "-2.546323988063295e-43"
+  },
+  {
+   "expected": "6.803340112639653e+23",
+   "input": "6.803340112639653e+23"
+  },
+  {
+   "expected": "1.1389399856756304e+60",
+   "input": "1.1389399856756304e+60"
+  },
+  {
+   "expected": "5.524231377223684e-130",
+   "input": "5.524231377223684e-130"
+  },
+  {
+   "expected": "-1.1603465062701659e-253",
+   "input": "-1.1603465062701659e-253"
+  },
+  {
+   "expected": "-4.005734093795236e+290",
+   "input": "-4.005734093795236e+290"
+  },
+  {
+   "expected": "5.522105905560925e-144",
+   "input": "5.522105905560925e-144"
+  },
+  {
+   "expected": "4.69050889921391e-193",
+   "input": "4.69050889921391e-193"
+  },
+  {
+   "expected": "1.8154305132863852e-233",
+   "input": "1.8154305132863852e-233"
+  },
+  {
+   "expected": "-5.9992793290569736e+66",
+   "input": "-5.9992793290569736e+66"
+  },
+  {
+   "expected": "6.378879818953674e-182",
+   "input": "6.378879818953674e-182"
+  },
+  {
+   "expected": "9.643054491127608e+55",
+   "input": "9.643054491127608e+55"
+  },
+  {
+   "expected": "-2.7035174484645745e+190",
+   "input": "-2.7035174484645745e+190"
+  },
+  {
+   "expected": "-1.2363252030038689e-234",
+   "input": "-1.2363252030038689e-234"
+  },
+  {
+   "expected": "7.367614756904263e-93",
+   "input": "7.367614756904263e-93"
+  },
+  {
+   "expected": "4.1089356304485037e-53",
+   "input": "4.1089356304485037e-53"
+  },
+  {
+   "expected": "6.213814287786538e+171",
+   "input": "6.213814287786538e+171"
+  },
+  {
+   "expected": "-9.69530029587121e-15",
+   "input": "-9.69530029587121e-15"
+  },
+  {
+   "expected": "2.802704286146127e+144",
+   "input": "2.802704286146127e+144"
+  },
+  {
+   "expected": "-0.0005300944239647462",
+   "input": "-0.0005300944239647462"
+  },
+  {
+   "expected": "1.7720825718422017e+128",
+   "input": "1.7720825718422017e+128"
+  }
+ ]
+}

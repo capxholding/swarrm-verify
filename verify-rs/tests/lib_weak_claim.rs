@@ -21,7 +21,7 @@ fn load_bundle(name: &str) -> Value {
 fn the_baseline_bundle_is_genuinely_valid() {
     let bundle = load_bundle("valid_e1.json");
     assert!(bundle["jwks"]["keys"][0]["kid"].is_string(), "fixture must exercise the string-kid path");
-    assert!(swarrm_verify::verify_bundle(&bundle));
+    assert!(swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
 }
 
 /// SPEC/bundle-v1.md §3.1: "every JWK's kid matches its key material; reject
@@ -35,7 +35,7 @@ fn a_present_non_string_kid_is_malformed_not_absent() {
     for junk in [json!(false), json!(0), json!(3.5), json!({}), json!([]), json!("")] {
         let mut bundle = base.clone();
         bundle["jwks"]["keys"][0]["kid"] = junk.clone();
-        assert!(!swarrm_verify::verify_bundle(&bundle), "jwks.keys[0].kid = {junk} is malformed, not an absent claim");
+        assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "jwks.keys[0].kid = {junk} is malformed, not an absent claim");
     }
 }
 
@@ -53,11 +53,11 @@ fn an_absent_or_null_kid_makes_no_claim() {
     let base = load_bundle("valid_e1.json");
     let mut nulled = base.clone();
     nulled["jwks"]["keys"][0]["kid"] = Value::Null;
-    assert!(swarrm_verify::verify_bundle(&nulled), "null kid claims nothing and must not fail the bundle");
+    assert!(swarrm_verify::verify_bundle(&nulled, None)["ok"].as_bool().expect("bundle report verdict"), "null kid claims nothing and must not fail the bundle");
 
     let mut absent = base;
     absent["jwks"]["keys"][0].as_object_mut().unwrap().remove("kid");
-    assert!(swarrm_verify::verify_bundle(&absent), "absent kid claims nothing and must not fail the bundle");
+    assert!(swarrm_verify::verify_bundle(&absent, None)["ok"].as_bool().expect("bundle report verdict"), "absent kid claims nothing and must not fail the bundle");
 }
 
 /// An alias — a syntactically fine kid that names other key material — is still
@@ -66,7 +66,7 @@ fn an_absent_or_null_kid_makes_no_claim() {
 fn a_string_kid_that_aliases_other_key_material_is_rejected() {
     let mut bundle = load_bundle("valid_e1.json");
     bundle["jwks"]["keys"][0]["kid"] = json!("AAAAAAAAAAAAAAAA");
-    assert!(!swarrm_verify::verify_bundle(&bundle));
+    assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
 }
 
 /// JSON `false` is not Merkle position zero. Python's bool-is-int rule let
@@ -75,7 +75,7 @@ fn a_string_kid_that_aliases_other_key_material_is_rejected() {
 fn a_boolean_leaf_index_is_malformed_not_leaf_zero() {
     let mut bundle = load_bundle("valid_e1.json");
     bundle["entries"][0]["leaf_index"] = json!(false);
-    assert!(!swarrm_verify::verify_bundle(&bundle));
+    assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
 }
 
 /// Anchor time is unsigned additive metadata, but it can never evade the
@@ -86,11 +86,11 @@ fn a_noncanonical_or_early_anchor_time_is_rejected() {
     for time in ["2026-01-01T00:00:00.Z", "2026-02-30T00:00:00Z", "not-a-timestamp", "2025-01-01T00:00:00Z"] {
         let mut bundle = base.clone();
         bundle["anchor_records"][0]["block_ts"] = json!(time);
-        assert!(!swarrm_verify::verify_bundle(&bundle), "block_ts={time}");
+        assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "block_ts={time}");
     }
     let mut leap_day = base;
     leap_day["anchor_records"][0]["block_ts"] = json!("2028-02-29T00:00:00.000001Z");
-    assert!(swarrm_verify::verify_bundle(&leap_day), "a real leap-day fraction remains canonical");
+    assert!(swarrm_verify::verify_bundle(&leap_day, None)["ok"].as_bool().expect("bundle report verdict"), "a real leap-day fraction remains canonical");
 }
 
 /// Malformed proof elements were dropped by `filter_map`, so a proof with junk
@@ -103,7 +103,7 @@ fn a_malformed_element_rejects_the_whole_inclusion_proof() {
     for junk in [json!("zz"), json!("abc"), json!(""), json!("00"), json!(false), json!(0), json!(null), json!([]), json!("ffff")] {
         let mut bundle = base.clone();
         bundle["entries"][0]["inclusion_proof"].as_array_mut().unwrap().push(junk.clone());
-        assert!(!swarrm_verify::verify_bundle(&bundle), "inclusion proof element {junk} must reject the proof, not shorten it");
+        assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "inclusion proof element {junk} must reject the proof, not shorten it");
     }
     // absent/null stays the no-claim empty proof, and a carried non-list is
     // malformed — all three are NOT VERIFIED here, as in Python.
@@ -115,7 +115,7 @@ fn a_malformed_element_rejects_the_whole_inclusion_proof() {
                 bundle["entries"][0].as_object_mut().unwrap().remove("inclusion_proof");
             }
         }
-        assert!(!swarrm_verify::verify_bundle(&bundle), "a four-leaf tree is not proven by a proof that is not two hashes");
+        assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "a four-leaf tree is not proven by a proof that is not two hashes");
     }
 }
 
@@ -123,31 +123,31 @@ fn a_malformed_element_rejects_the_whole_inclusion_proof() {
 #[test]
 fn a_malformed_element_rejects_the_whole_consistency_proof() {
     let base = load_bundle("b21_authority_valid.json");
-    assert!(swarrm_verify::verify_bundle(&base), "the two-checkpoint fixture must be valid to start");
+    assert!(swarrm_verify::verify_bundle(&base, None)["ok"].as_bool().expect("bundle report verdict"), "the two-checkpoint fixture must be valid to start");
     let step = base["checkpoint_chain"].as_array().unwrap().len() - 1;
     for junk in [json!("zz"), json!("abc"), json!(false), json!(null), json!({})] {
         let mut bundle = base.clone();
         bundle["checkpoint_chain"][step]["consistency_from_prev"].as_array_mut().unwrap().push(junk.clone());
-        assert!(!swarrm_verify::verify_bundle(&bundle), "consistency proof element {junk} must reject the proof, not shorten it");
+        assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "consistency proof element {junk} must reject the proof, not shorten it");
     }
     for carried in [json!("abc"), json!({}), Value::Null] {
         let mut bundle = base.clone();
         bundle["checkpoint_chain"][step]["consistency_from_prev"] = carried;
-        assert!(!swarrm_verify::verify_bundle(&bundle), "a 6-to-8 leaf extension is not proven by a proof that is not three hashes");
+        assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "a 6-to-8 leaf extension is not proven by a proof that is not three hashes");
     }
 }
 
 #[test]
 fn sparse_checkpoint_profile_must_be_explicit_and_still_prove_growth() {
     let mut bundle = load_bundle("b21_authority_valid.json");
-    assert!(swarrm_verify::verify_bundle(&bundle));
+    assert!(swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
     bundle["checkpoint_chain_profile"] = json!("evd/checkpoint-chain/sparse-proof-v1");
-    assert!(swarrm_verify::verify_bundle(&bundle));
+    assert!(swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
     bundle["checkpoint_chain"][1]["consistency_from_prev"] = json!([]);
-    assert!(!swarrm_verify::verify_bundle(&bundle), "sparse history must still prove growth");
+    assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "sparse history must still prove growth");
     bundle = load_bundle("b21_authority_valid.json");
     for malformed in [Value::Null, json!(false), json!("evd/checkpoint-chain/unknown-v1")] {
         bundle["checkpoint_chain_profile"] = malformed;
-        assert!(!swarrm_verify::verify_bundle(&bundle));
+        assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
     }
 }

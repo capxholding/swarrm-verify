@@ -210,11 +210,13 @@ carried; sparse proof is never rendered as a complete checkpoint-history export.
 - The manifest does not make the PRODUCER honest. A key holder can sign a
   manifest that omits a receipt at export time; `export_bundle`'s force-
   inclusion of findings, lineage, authority and key entries remains the
-  producer-side control. What the manifest adds is that such an omission is now
-  a signed, non-repudiable statement, contradicted by any second export or by
-  the log itself. It also says nothing about receipts the producer never
-  exported — a root over an operator-selected set proves the set is intact,
-  never that it is complete.
+  producer-side control. The manifest signs the selected receipt set, not a
+  claim that it contains every receipt in the log. A second export containing
+  other receipts does not contradict that statement: both selected sets can
+  be intact under the same checkpoint. Detecting log-completeness divergence
+  requires a separate signed completeness claim bound to a defined scope and
+  checkpoint; this format does not provide one. A root over an operator-selected
+  set proves the set is intact, never that the log was fully exported.
 - **`producer` is a SELF-DECLARATION, not proof of provenance.** It is the
   subject describing the subject — the producer holds the signing key, so a
   producer willing to lie can sign whatever version it likes, the same defect
@@ -481,3 +483,55 @@ never given. Anything that reads as "nothing was omitted" is a claim above the
 mechanism. Absence of `continuity` never gates — a bundle carrying none
 verifies exactly as it did before this existed, and simply proves nothing about
 its elided intervals.
+
+
+### Issuer-bound continuity (`evd/continuity/v2`)
+
+New continuity issuance uses the v2 body: the seven v1 members above plus
+`authority_checkpoint_hash`, a lowercase 64-hex SHA-256 checkpoint body hash.
+The envelope remains exactly `body`, `kid`, `sig`, signed over the complete
+canonical body. The schema member is `evd/continuity/v2`.
+
+The authority checkpoint MUST be the bundle's exact target checkpoint and
+appear in its verified chain. The assertion's signer MUST be that checkpoint's
+issuer, authorized by the authenticated key history at its timestamp and tree
+size. Both interval endpoints MUST appear in the chain in increasing chain
+order, with exact matching tree sizes and origin. Self-consistency and signature
+checks remain mandatory. Unknown versions, extra members and absent authority
+bindings are not v1 fallbacks.
+
+Issuance MUST additionally verify current issuer authority and an unchanged
+current checkpoint head while holding the log's authority write reservation
+through signing. A changed receipt tree or checkpoint head requires fresh
+preparation, not silent rebinding. Signed sparse exports issue assertions for
+their elided intervals; read-only exports without an issuer key assert nothing.
+
+Existing v1 assertions retain their known-log-key interpretation, including
+keys that are not issuers. They do not acquire v2 authority guarantees. Both
+versions describe only the presented interval cover: neither proves that no
+external action or receipt was omitted, nor changes the underlying bundle
+verdict. Issuer authority here is log authority, not independently attested
+organizational identity.
+
+
+### Browser verification result (`evd/browser-bundle-verification-result/v3`)
+
+The byte-oriented browser verifier returns exactly `schema`, `verdict`,
+`bundle_digest`, `error` and `continuity`. A VERIFIED result carries the
+SHA-256 digest of the canonical verified bundle and a continuity object with
+exactly `present` (boolean), `ok` (boolean) and `gaps` (nonnegative integer).
+These are the native verifier's continuity assessment, not values inferred by
+JavaScript from unverified bundle fields. A NOT_VERIFIED or ERROR result MUST
+carry null for both `bundle_digest` and `continuity`; ERROR additionally carries
+an error code, while other verdicts carry null for `error`.
+
+Consumers MUST reject unknown versions, extra or missing members and invalid
+field types. V2's four-member result is not interchangeable with v3. The page,
+glue and WASM must be delivered together with their exact integrity pins.
+
+Render an invalid continuity assessment even when `present` is false: a
+malformed assertion collection is not the absence of assertions. A valid
+assessment with `present=false` makes no assertion claim. A valid present
+cover describes only the supplied intervals and must retain the limitation
+that capture/export completeness is not established. Continuity does not
+change the underlying bundle verdict.

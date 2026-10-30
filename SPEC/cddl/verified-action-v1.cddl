@@ -117,7 +117,34 @@ SourceBatch = {
   cursor_start: text, cursor_end: text, filter_digest: hex32,
   mapping_version: text, declared_count: uint, event_key_root: hex32,
   finality_watermark: text, exclusions: [* text], gaps: [* text],
-  ? population_proof: { kind: text, source_scope_defined: bool, verified: bool },
+  ? population_proof: PopulationProof,
+}
+
+; A proof is evidence only after its signature verifies under a relying-party
+; population_keys anchor. The carried verified flag is never that verdict.
+PopulationProof = {
+  ? kind: text, source_scope_defined: bool, ? verified: bool,
+  ? source_id: text, ? signature: b64,
+}
+
+; Verdict/certificate inputs can describe absent observation or historical
+; evidence; they are not necessarily a delivered SourceBatch. Keep the delivery
+; contract above strict, and name these existing v1 alternatives explicitly.
+BatchEvidence = SourceBatch / UnscannedBatchEvidence / LegacyPopulationBatch
+
+UnscannedBatchEvidence = {
+  schema: "evd/source-batch/v1", source_identity_ref: text,
+  period_start: ts, period_end: ts,
+  cursor_start: "", cursor_end: "", filter_digest: "",
+  mapping_version: text, declared_count: 0, event_key_root: hex32,
+  finality_watermark: "", exclusions: [* text], gaps: [* text],
+}
+
+; Historical certificates carry this partial population statement. It is not a
+; complete source delivery, and without period/digest bindings it cannot prove
+; Node observation. Original signed bytes retain their existing interpretation.
+LegacyPopulationBatch = {
+  population_proof: PopulationProof, exclusions: [* text], gaps: [* text],
 }
 
 SourceProof = {
@@ -469,7 +496,7 @@ VerdictInput = {
   ? source_proofs: [* SourceProof],
   ? control_evidence: ControlDomainEvidence,
   ? control_declarations: [* { declarer: text, claims_overlap: bool }],
-  ? batch: SourceBatch,
+  ? batch: BatchEvidence,
   ; batch_digest = sha256(JCS(batch)) — the scan statement NAMES WHAT IT SAW.
   ; Without it the signed bytes are identical for every clean scan and the
   ; signature replays onto any batch; absent/mismatched => NOT_OBSERVED (§2.4).

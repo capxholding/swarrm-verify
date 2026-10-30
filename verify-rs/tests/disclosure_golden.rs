@@ -18,7 +18,7 @@ fn disclosure_golden_agrees_with_expected() {
     let dir = golden_dir();
     let bundle_json = fs::read_to_string(dir.join("disclosure_bundle.json")).unwrap();
     let bundle: Value = serde_json::from_str(&bundle_json).unwrap();
-    assert!(swarrm_verify::verify_bundle(&bundle));
+    assert!(swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
     let cases: Vec<Value> = serde_json::from_str(&fs::read_to_string(dir.join("disclosure_cases.json")).unwrap()).unwrap();
     assert!(cases.len() >= 40);
     for case in cases {

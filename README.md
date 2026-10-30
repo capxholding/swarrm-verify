@@ -3,9 +3,12 @@
 **Don't trust us. Verify it yourself.** This repository is the public,
 Apache-2.0 Rust/WASM second implementation for [Swarrm](https://swarrm.ai)
 evidence bundles (`evd/bundle/v1`), certificates, selective disclosures, and
-the CWT/COSE-only `swarrm-b28/v1` Counterparty Assurance profile — the same
-compiled verifier that runs client-side at
-[swarrm.ai/verify](https://swarrm.ai/verify).
+the CWT/COSE-only `swarrm-b28/v1` Counterparty Assurance profile.
+The [hosted browser verifier](https://swarrm.ai/verify) publishes its exact
+source revision and artifact digests in [its integrity record](https://swarrm.ai/INTEGRITY.txt).
+
+Version 2 changes the native report API and browser result schema. Read the
+[migration contract](verify-rs/README.md#version-2-api) before upgrading.
 
 [Verify a bundle](https://swarrm.ai/verify) ·
 [Download the sample](https://swarrm.ai/samples/sample_bundle.json) ·

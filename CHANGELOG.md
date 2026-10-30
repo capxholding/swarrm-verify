@@ -6,6 +6,22 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ## [Unreleased]
 
+## [2.0.0]
+
+### Changed
+
+- The native bundle API returns one verdict-and-evidence report through
+  `verify_bundle(&bundle, trust)`, replacing the boolean API and
+  `verify_bundle_levels`. Browser and Node bundle results use schema v3.
+  See [the migration contract](verify-rs/README.md#version-2-api).
+- Verify continuity assertions, acknowledgements, and dispute packages with
+  the matching source, golden fixtures, and browser artifacts.
+
+### Security
+
+- Reject timestamp tokens with missing, duplicate, or multivalued mandatory
+  signed attributes, even when the signature itself is authentic.
+
 ## [1.0.8] - 2026-08-14
 
 ### Security

@@ -1,5 +1,82 @@
 {
   "_note": "Cross-verifier RFC 3161 cases: each verifier asserts ITS column. With the \u00a70.2\u00b73 sanction extended to rsa+p384 (owner 2026-08-03), BOTH engines verify the real freeTSA token (ECDSA P-384 signer + RSA-signed chain) AND the AlfaSign/qtsa.eu qualified-TSP demo token (tsa_rsa_bare: RSASSA-PKCS1v15 signer under the BARE rsaEncryption OID with the hash carried by the digest algorithm, RSA chain) \u2014 the python/rust columns AGREE on every case and no why_diverges remains. The AlfaTrust token is a public timestamp (no demo credentials in the fixture); EVD_TSA_QUALIFIED stays 0 (the label is an operator claim, not a crypto property).",
+  "tsa_p256_attrs_content_duplicate": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_content_duplicate.der"
+  },
+  "tsa_p256_attrs_content_empty": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_content_empty.der"
+  },
+  "tsa_p256_attrs_content_missing": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_content_missing.der"
+  },
+  "tsa_p256_attrs_content_multiple": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_content_multiple.der"
+  },
+  "tsa_p256_attrs_content_wrong": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_content_wrong.der"
+  },
+  "tsa_p256_attrs_digest_duplicate": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_digest_duplicate.der"
+  },
+  "tsa_p256_attrs_digest_empty": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_digest_empty.der"
+  },
+  "tsa_p256_attrs_digest_missing": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_digest_missing.der"
+  },
+  "tsa_p256_attrs_digest_multiple": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_digest_multiple.der"
+  },
+  "tsa_p256_attrs_digest_wrong": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": false,
+    "rust": false,
+    "token": "tsa_p256_attrs_digest_wrong.der"
+  },
+  "tsa_p256_attrs_unknown": {
+    "chain": "tsa_p256_chain.pem",
+    "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",
+    "python": true,
+    "rust": true,
+    "token": "tsa_p256_attrs_unknown.der"
+  },
   "tsa_p256_outer_cert_algorithm": {
     "chain": "tsa_p256_outer_cert_algorithm_chain.pem",
     "digest": "7a5c8e2b9f1d4a6c3e8b0f2d5a7c9e1b4d6f8a0c2e5b7d9f1a3c5e7b9d0f2a4c",

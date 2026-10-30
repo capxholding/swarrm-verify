@@ -17,15 +17,15 @@ fn hex(raw: &[u8]) -> String {
 }
 
 #[test]
+#[ignore = "requires generated cross-runtime corpus; run make differential"]
 fn fresh_mutations_match_python_exactly_and_never_authorize() {
-    let Ok(directory) = env::var("SWARRM_B28_DIFF_DIR") else {
-        println!("SWARRM_B28_DIFF_DIR unset - no fresh differential corpus supplied; skipping");
-        return;
-    };
+    let directory = env::var("SWARRM_B28_DIFF_DIR").expect("SWARRM_B28_DIFF_DIR is required for differential parity");
+    assert!(!directory.is_empty(), "SWARRM_B28_DIFF_DIR must not be empty");
     let directory = PathBuf::from(directory);
     let manifest: Value = serde_json::from_slice(&fs::read(directory.join("manifest.json")).expect("read differential manifest")).expect("parse differential manifest");
     assert_eq!(manifest["schema"], "swarrm-b28/differential-corpus/v1");
     let cases = manifest["cases"].as_array().expect("differential cases must be an array");
+    assert!(!cases.is_empty(), "differential corpus must contain cases");
     assert_eq!(manifest["case_count"].as_u64(), Some(cases.len() as u64));
     assert!(manifest["seed_count"].as_u64().is_some_and(|n| n >= 90));
 

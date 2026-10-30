@@ -17,13 +17,13 @@ const verify_disclosure_json = (input, bundle) => wasm.verify_disclosure_json(by
 
 const dir = path.join(__dirname, "..", "..", "tests", "golden", "bundles");
 const expected = JSON.parse(fs.readFileSync(path.join(dir, "expected.json"), "utf8"));
-const RESULT_SCHEMA = "evd/browser-bundle-verification-result/v2";
+const RESULT_SCHEMA = "evd/browser-bundle-verification-result/v3";
 const VALID_E1_DIGEST = "c3c85b1143c937cacf692eb37377b72be4d53941055262623c022c64916e8239";
 
 function parseBundleResult(raw) {
   const result = JSON.parse(raw);
   const fields = result && !Array.isArray(result) ? Object.keys(result).sort().join(",") : "";
-  if (fields !== "bundle_digest,error,schema,verdict" || result.schema !== RESULT_SCHEMA ||
+  if (fields !== "bundle_digest,continuity,error,schema,verdict" || result.schema !== RESULT_SCHEMA ||
       !["VERIFIED", "NOT_VERIFIED", "ERROR"].includes(result.verdict)) {
     throw new Error(`invalid browser verifier result: ${raw}`);
   }
@@ -33,13 +33,73 @@ function parseBundleResult(raw) {
   const errorOk = result.verdict === "ERROR"
     ? typeof result.error === "string" && result.error.length > 0
     : result.error === null;
-  if (!hashOk || !errorOk) throw new Error(`invalid browser verifier result: ${raw}`);
+  const continuity = result.continuity;
+  const continuityOk = result.verdict === "VERIFIED"
+    ? continuity && !Array.isArray(continuity) &&
+      Object.keys(continuity).sort().join(",") === "gaps,ok,present" &&
+      typeof continuity.present === "boolean" && typeof continuity.ok === "boolean" &&
+      Number.isSafeInteger(continuity.gaps) && continuity.gaps >= 0
+    : continuity === null;
+  if (!hashOk || !errorOk || !continuityOk) throw new Error(`invalid browser verifier result: ${raw}`);
   return result;
 }
 
 let failures = 0;
+for (const file of ["bundles.json", "issuer-bundles.json"]) {
+  const corpus = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "tests", "golden", "continuity", file), "utf8"));
+  for (const entry of corpus.cases) {
+    const bundle = structuredClone(corpus.bundle);
+    if (Object.hasOwn(entry, "continuity")) bundle.continuity = entry.continuity;
+    const result = parseBundleResult(verify_bundle_json(JSON.stringify(bundle)));
+    const expected = {present: entry.expected.continuity_present, ok: entry.expected.continuity_ok, gaps: entry.expected.continuity_gaps};
+    const ok = result.verdict === "VERIFIED" && isDeepStrictEqual(result.continuity, expected);
+    if (!ok) failures++;
+    console.log(`${ok ? "OK " : "XX "} continuity/${file}/${entry.name}`);
+  }
+}
+
+const acknowledgements = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "tests", "golden", "acknowledgement", "cases.json"), "utf8"));
+for (const entry of acknowledgements.cases) {
+  const envelope = Buffer.from(entry.envelope_hex, "hex");
+  const context = Buffer.from(entry.context_hex, "hex");
+  const result = JSON.parse(wasm.verify_acknowledgement_json(envelope, context, bytes(JSON.stringify(entry.bundle || acknowledgements.bundle))));
+  const accepted = entry.coverage !== null;
+  const digest = value => crypto.createHash("sha256").update(value).digest("hex");
+  const factsOk = accepted
+    ? isDeepStrictEqual(result.acknowledgement, entry.acknowledgement) &&
+      result.context_digest === digest(context) && result.envelope_digest === digest(envelope) && result.bundle_digest === entry.bundle_digest
+    : [result.acknowledgement, result.bundle_digest, result.context_digest, result.envelope_digest].every(value => value === null);
+  const ok = Object.keys(result).sort().join(",") === "acknowledgement,bundle_digest,context_digest,coverage,envelope_digest,schema,verdict" &&
+    result.schema === "evd/acknowledgement-assessment/v1" && result.coverage === entry.coverage &&
+    result.verdict === (accepted ? "VERIFIED" : "NOT_VERIFIED") && factsOk;
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} acknowledgement/${entry.name}`);
+}
+
+const disputes = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "tests", "golden", "dispute", "cases.json"), "utf8"));
+for (const entry of disputes.cases) {
+  const pkg = structuredClone(disputes.packages[entry.base]);
+  for (const [pointer, value] of entry.changes) {
+    const parts = pointer.slice(1).split("/");
+    let target = pkg;
+    for (const part of parts.slice(0, -1)) target = target[part];
+    target[parts.at(-1)] = value;
+  }
+  const result = JSON.parse(wasm.verify_dispute_json(bytes(JSON.stringify(pkg))));
+  const dataOk = entry.accepted
+    ? isDeepStrictEqual(result.reconciliation, pkg.reconciliation) && /^[0-9a-f]{64}$/.test(result.package_digest)
+    : result.reconciliation === null && result.package_digest === null;
+  const ok = Object.keys(result).sort().join(",") === "package_digest,reconciliation,schema,verdict" &&
+    result.schema === "evd/dispute-verification-result/v1" && dataOk &&
+    result.verdict === (entry.accepted ? "VERIFIED" : "NOT_VERIFIED");
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} dispute/${entry.name}`);
+}
+
 const declarations = fs.readFileSync(path.join(__dirname, "..", "pkg-node", "swarrm_verify.d.ts"), "utf8");
 const byteApiOk =
+  /verify_dispute_json\(package_json: Uint8Array\)/.test(declarations) &&
+  /verify_acknowledgement_json\(envelope: Uint8Array, context: Uint8Array, bundle_json: Uint8Array\)/.test(declarations) &&
   /verify_bundle_json\(json: Uint8Array\)/.test(declarations) &&
   /derive_vector_json\(verdict_input_json: Uint8Array, trust_json: Uint8Array\)/.test(declarations) &&
   /verify_disclosure_json\(package_json: Uint8Array, bundle_json: Uint8Array\)/.test(declarations);
@@ -161,6 +221,23 @@ if (failures) {
   process.exit(1);
 }
 console.log(`\nWASM agrees with all ${Object.keys(expected).length} golden fixtures`);
+
+const reconcileDir = path.join(dir, "..", "reconcile");
+const reconcileExpected = JSON.parse(fs.readFileSync(path.join(reconcileDir, "expected_vectors.json"), "utf8"));
+const reconcileTrust = fs.readFileSync(path.join(reconcileDir, "trust_context.json"), "utf8");
+const reconcileNames = Object.keys(reconcileExpected).sort();
+const reconcileFiles = fs.readdirSync(reconcileDir).filter(name => name.endsWith(".json") &&
+  !["expected_vectors.json", "trust_context.json"].includes(name)).sort();
+if (!reconcileNames.length || !isDeepStrictEqual(reconcileFiles, reconcileNames.map(name => `${name}.json`))) {
+  throw new Error("reconciliation fixture inventory differs from declared vectors");
+}
+for (const name of reconcileNames) {
+  const input = fs.readFileSync(path.join(reconcileDir, `${name}.json`), "utf8");
+  const got = JSON.parse(derive_vector_json(input, reconcileTrust));
+  const ok = isDeepStrictEqual(got, reconcileExpected[name]);
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} reconciliation/${name}`);
+}
 
 const disclosureBundle = fs.readFileSync(path.join(dir, "disclosure_bundle.json"), "utf8");
 const disclosureCases = JSON.parse(fs.readFileSync(path.join(dir, "disclosure_cases.json"), "utf8"));
@@ -387,6 +464,50 @@ if (b28DiffDir) {
   console.log(`WASM == Python on ${diffManifest.cases.length} fresh mutations; read-only/no authorization`);
 } else {
   console.log("fresh differential skipped: SWARRM_B28_DIFF_DIR unset");
+}
+// Compare complete results in fresh processes with distinct ambient time zones.
+{
+  const { spawnSync } = require("child_process");
+  const scratch = fs.mkdtempSync(path.join(require("os").tmpdir(), "swarrm-parity-env-"));
+  const modulePath = require.resolve("../pkg-node/swarrm_verify.js");
+  const probe = `
+    const fs = require("fs"), path = require("path");
+    const wasm = require(process.argv[1]);
+    const dir = process.argv[2];
+    const expected = JSON.parse(fs.readFileSync(path.join(dir, "expected.json"), "utf8"));
+    const results = {};
+    for (const name of Object.keys(expected).sort()) {
+      const result = JSON.parse(wasm.verify_bundle_json(fs.readFileSync(path.join(dir, name + ".json"))));
+      if (result.verdict !== expected[name]) throw new Error("verdict mismatch: " + name);
+      results[name] = result;
+    }
+    process.stdout.write(JSON.stringify(results));
+  `;
+  let baseline = null;
+  try {
+    for (const [index, zone] of ["UTC", "America/New_York", "Asia/Tokyo"].entries()) {
+      const cwd = path.join(scratch, `foreign ${index} é`);
+      fs.mkdirSync(cwd, { mode: 0o700 });
+      const child = spawnSync(process.execPath,
+        ["--no-wasm-tier-up", "--no-wasm-dynamic-tiering", "-e", probe, modulePath, dir],
+        { cwd, env: { TZ: zone, LANG: "C", LC_ALL: "C" },
+          timeout: 60000, maxBuffer: 8 * 1024 * 1024 });
+      if (child.error || child.status !== 0 || child.signal || child.stderr.length) {
+        throw new Error(`environment probe failed: ${zone}; status=${child.status}; signal=${child.signal}`);
+      }
+      const results = JSON.parse(child.stdout.toString("utf8"));
+      if (!isDeepStrictEqual(Object.keys(results).sort(), Object.keys(expected).sort())) {
+        throw new Error("environment probe omitted or added corpus members");
+      }
+      if (baseline !== null && !child.stdout.equals(baseline)) {
+        throw new Error(`environment-dependent WASM result: ${zone}`);
+      }
+      baseline = child.stdout;
+    }
+    console.log(`OK environment parity: 3 fresh processes, ${Object.keys(expected).length} bundles, sha256=${crypto.createHash("sha256").update(baseline).digest("hex")}`);
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
 }
 if (failures) {
   console.error(`\nPARITY FAILED: ${failures} fixture(s) disagree`);

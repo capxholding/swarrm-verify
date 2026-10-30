@@ -1,0 +1,83 @@
+{
+  "action": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "currency": "EUR",
+    "value": "999999.99"
+  },
+  "authority": {
+    "authority": "NOT_VERIFIED",
+    "identity": "NOT_VERIFIED",
+    "integrity": "INVALID",
+    "intent": "NOT_RECORDED",
+    "intent_interval": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "batch": {
+    "cursor_end": "2026-01-01T00:07:00Z#000000000003",
+    "cursor_start": "",
+    "declared_count": 7,
+    "event_key_root": "3ca3bafd75a3d9c6fdff9e3e37e80026bd71e311e113b8145c89b530ed1fb4a4",
+    "exclusions": [],
+    "filter_digest": "5d063ccdc019e9829a9d0034a41676cf7c220801e85d44d66aa610cec733c9cf",
+    "finality_watermark": "2026-01-01T00:07:00Z",
+    "gaps": [
+      "unauthenticated_file_origin:2026-01-01T00:07:00Z#000000000003"
+    ],
+    "mapping_version": "camt053-v1",
+    "period_end": "2026-01-02T00:00:00Z",
+    "period_start": "2026-01-01T00:00:00Z",
+    "schema": "evd/source-batch/v1",
+    "source_identity_ref": "emu-ledger/acct-23"
+  },
+  "claim": {
+    "action_class": "payment.execute",
+    "action_id": "act-23-0000",
+    "counterparty": "acme-1369",
+    "currency": "EUR",
+    "schema": "evd/claim/v1",
+    "value": "999999.99"
+  },
+  "client_attestation_present": false,
+  "event_matches": [
+    {
+      "echoed_action_id": true,
+      "event_key": "evt-000000",
+      "final": true,
+      "immutable_ref_match": false,
+      "material_mismatch": true,
+      "unique_field_match": false
+    }
+  ],
+  "events": [
+    {
+      "counterparty": "acme-1369",
+      "currency": "EUR",
+      "event_key": "evt-000000",
+      "finality": "final",
+      "outcome": "succeeded",
+      "proof_digests": [
+        "51e7979b8e42064987cd0bf6886443b22c5092244bc89e94b59198902676d5b6"
+      ],
+      "reference": "act-23-0000",
+      "schema": "evd/source-event/v1",
+      "source_effect_time": "2026-01-01T00:00:00Z",
+      "source_identity_ref": "emu-ledger/acct-23",
+      "value": "380.99"
+    }
+  ],
+  "fork_findings_open": false,
+  "scan": {
+    "authenticated_read": false,
+    "batch_digest": "5e020ba258b530c113bbda9b1640156ac08f2f6b341176a7b2a1069b59f49257",
+    "complete": false,
+    "cursor_gap_free": true,
+    "node_id": "s3YkkeLhSDposbKe",
+    "node_signed": true,
+    "performed": true,
+    "signature": "zq5fRxOOYeBo+In6fQzqNpGVIRdZmAvyULYXo5QEaG9zUW9fJ/scyYFlRcNTx/HegJ7hnSP/GrtSMCBc/641Cg=="
+  },
+  "schema": "evd/verdict-input/v1"
+}

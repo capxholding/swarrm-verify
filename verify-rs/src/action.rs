@@ -12,7 +12,7 @@ use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{body_of, checkpoint_body_hash, ed25519_verify, hex, jcs, key_active, key_from_jwk, receipt_hash_hex, replay_key_log, sha256, verify_bundle};
+use crate::{body_of, checkpoint_body_hash, ed25519_verify, hex, jcs, key_active, key_from_jwk, receipt_hash_hex, replay_key_log, sha256, verify_bundle_report};
 
 const ID_VALS: [&str; 3] = ["VERIFIED", "NOT_VERIFIED", "CONFLICT"];
 const INTENT_VALS: [&str; 3] = ["RECORDED", "NOT_RECORDED", "CONFLICT"];
@@ -1168,7 +1168,7 @@ fn transfer_sig_ok(passport_bundle: &Value, transfer: &Value) -> bool {
 /// receipt hash; the transfer names the importing root and its sig verifies.
 fn passport_bundle_ok(passport: &Value, imported: &str, timeline: &[RootEntry]) -> bool {
     let Some(pb) = obj(passport, "bundle") else { return false };
-    if !verify_bundle(pb) {
+    if !verify_bundle_report(pb, None).0 {
         return false;
     }
     let est_ok = entry_rows(pb).iter().any(|r| EST_TYPES.contains(&r.action.as_str()) && r.rh == imported);
@@ -1444,7 +1444,7 @@ fn facts(bundle: &Value, action_id: Option<&str>) -> Value {
 /// VerdictInput.authority object. Total: any failure degrades to weak values;
 /// integrity INVALID renders everything else at its weak default.
 pub fn authority_facts(bundle: &Value, action_id: Option<&str>) -> Value {
-    if !verify_bundle(bundle) {
+    if !verify_bundle_report(bundle, None).0 {
         return weak_facts("INVALID");
     }
     facts(bundle, action_id)

@@ -9,8 +9,8 @@ fn result(input: &str) -> Value {
 
 fn assert_closed_shape(value: &Value) {
     let object = value.as_object().unwrap();
-    assert_eq!(object.len(), 4);
-    for field in ["schema", "verdict", "bundle_digest", "error"] {
+    assert_eq!(object.len(), 5);
+    for field in ["schema", "verdict", "bundle_digest", "error", "continuity"] {
         assert!(object.contains_key(field), "missing {field}");
     }
 }
@@ -42,6 +42,7 @@ fn every_non_verified_result_suppresses_the_bundle_digest() {
         assert_closed_shape(got);
         assert_ne!(got["verdict"], "VERIFIED");
         assert!(got["bundle_digest"].is_null());
+        assert!(got["continuity"].is_null());
     }
     assert_eq!(cases[0]["verdict"], "NOT_VERIFIED");
     assert_eq!(cases[1]["verdict"], "ERROR");
@@ -231,11 +232,11 @@ const SIGNED_ROOT: &str = "+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+f+
 fn hostile_hex_fails_checkpoint_roots_proofs_nonce_and_trust_keys() {
     let mut bundle: Value = serde_json::from_str(VALID).unwrap();
     bundle["checkpoint_chain"][0]["checkpoint"]["body"]["root_hash"] = Value::String(SIGNED_ROOT.to_string());
-    assert!(!verify_bundle(&bundle));
+    assert!(!verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"));
 
     let mut proof: Value = serde_json::from_str(VALID).unwrap();
     proof["entries"][0]["inclusion_proof"][0] = Value::String(SIGNED_ROOT.to_string());
-    assert!(!verify_bundle(&proof));
+    assert!(!verify_bundle(&proof, None)["ok"].as_bool().expect("bundle report verdict"));
 
     let disclosure = include_str!("../../../tests/golden/bundles/disclosure_cases.json");
     let cases: Value = serde_json::from_str(disclosure).unwrap();
@@ -319,6 +320,93 @@ fn continuity_gaps_reach_the_levels_output_and_not_just_a_test() {
         "checkpoint_chain": document["chain"],
         "continuity": document["cases"][1]["continuity"],
     });
-    let rendered = verify_bundle_levels(&bundle, None);
+    let rendered = verify_bundle(&bundle, None);
     assert!(rendered.get("continuity_gaps").is_some(), "the count must leave the engine");
+}
+
+#[test]
+fn browser_result_reports_both_continuity_corpora_without_changing_verdicts() {
+    for raw in [include_str!("../../../tests/golden/continuity/bundles.json"), include_str!("../../../tests/golden/continuity/issuer-bundles.json")] {
+        let corpus: Value = serde_json::from_str(raw).unwrap();
+        for case in corpus["cases"].as_array().unwrap() {
+            let mut bundle = corpus["bundle"].clone();
+            if let Some(assertions) = case.get("continuity") {
+                bundle["continuity"] = assertions.clone();
+            }
+            let got = result(&serde_json::to_string(&bundle).unwrap());
+            assert_closed_shape(&got);
+            assert_eq!(got["verdict"], "VERIFIED", "{}", case["name"]);
+            for (browser, native) in [("present", "continuity_present"), ("ok", "continuity_ok"), ("gaps", "continuity_gaps")] {
+                assert_eq!(got["continuity"][browser], case["expected"][native], "{}: {browser}", case["name"]);
+            }
+        }
+    }
+}
+
+#[test]
+fn acknowledgement_assessment_replays_signed_and_context_hostiles() {
+    let corpus: Value = serde_json::from_str(include_str!("../../../tests/golden/acknowledgement/cases.json")).unwrap();
+    for case in corpus["cases"].as_array().unwrap() {
+        let envelope = hex_to_bytes(case["envelope_hex"].as_str().unwrap()).unwrap();
+        let context = hex_to_bytes(case["context_hex"].as_str().unwrap()).unwrap();
+        let bundle = case.get("bundle").unwrap_or(&corpus["bundle"]);
+        let bytes = serde_json::to_vec(bundle).unwrap();
+        let got: Value = serde_json::from_str(&verify_acknowledgement_json(&envelope, &context, &bytes)).unwrap();
+        assert_eq!(got.as_object().unwrap().len(), 7);
+        assert_eq!(got["schema"], "evd/acknowledgement-assessment/v1");
+        assert_eq!(got["coverage"], case["coverage"], "{}: {got}", case["name"]);
+        assert_eq!(got["acknowledgement"], case["acknowledgement"], "{}: {got}", case["name"]);
+        assert_eq!(got["bundle_digest"], case["bundle_digest"], "{}: {got}", case["name"]);
+        if case["coverage"].is_null() {
+            assert_eq!(got["verdict"], "NOT_VERIFIED", "{}", case["name"]);
+            for field in ["acknowledgement", "bundle_digest", "context_digest", "envelope_digest"] {
+                assert!(got[field].is_null(), "{}: {field}", case["name"]);
+            }
+        } else {
+            assert_eq!(got["verdict"], "VERIFIED", "{}", case["name"]);
+            assert_eq!(got["bundle_digest"], hex(&sha256(&jcs::canonical_checked(bundle).unwrap())));
+            assert_eq!(got["context_digest"], hex(&sha256(&context)));
+            assert_eq!(got["envelope_digest"], hex(&sha256(&envelope)));
+        }
+    }
+}
+
+#[test]
+fn dispute_packages_recompute_every_statement_and_refuse_hostiles() {
+    let corpus: serde_json::Value = serde_json::from_str(include_str!("../../../tests/golden/dispute/cases.json")).unwrap();
+    for case in corpus["cases"].as_array().unwrap() {
+        let mut package = corpus["packages"][case["base"].as_str().unwrap()].clone();
+        for change in case["changes"].as_array().unwrap() {
+            let pointer = change[0].as_str().unwrap();
+            if pointer == "/extra" {
+                package["extra"] = change[1].clone();
+            } else {
+                *package.pointer_mut(pointer).unwrap() = change[1].clone();
+            }
+        }
+        let result: serde_json::Value = serde_json::from_str(&crate::verify_dispute_json(&serde_json::to_vec(&package).unwrap())).unwrap();
+        assert_eq!(result.as_object().unwrap().len(), 4, "{}", case["name"]);
+        assert_eq!(result["schema"], "evd/dispute-verification-result/v1");
+        if case["accepted"] == true {
+            assert_eq!(result["verdict"], "VERIFIED", "{}", case["name"]);
+            assert_eq!(result["reconciliation"], package["reconciliation"], "{}", case["name"]);
+            assert_eq!(result["package_digest"], crate::hex(&crate::sha256(&crate::jcs::canonical_checked(&package).unwrap())));
+        } else {
+            assert_eq!(result["verdict"], "NOT_VERIFIED", "{}", case["name"]);
+            assert!(result["reconciliation"].is_null() && result["package_digest"].is_null());
+        }
+    }
+    for raw in [b"{".as_slice(), b"{\"schema\":1,\"schema\":2}".as_slice()] {
+        let result: serde_json::Value = serde_json::from_str(&crate::verify_dispute_json(raw)).unwrap();
+        assert_eq!(result["verdict"], "NOT_VERIFIED");
+    }
+}
+
+#[test]
+fn dispute_material_value_order_matches_v1_python_serialization() {
+    let corpus: serde_json::Value = serde_json::from_str(include_str!("../../../tests/golden/dispute/cases.json")).unwrap();
+    for case in corpus["value_keys"].as_array().unwrap() {
+        let input: serde_json::Value = serde_json::from_str(case["input"].as_str().unwrap()).unwrap();
+        assert_eq!(crate::dispute::value_key(&input).unwrap(), case["expected"].as_str().unwrap(), "{}", case["input"]);
+    }
 }

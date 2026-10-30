@@ -44,7 +44,7 @@ fn evidence_levels_agree_with_expected() {
         }
         let bundle = read(&dir, &format!("{name}.json"));
         for (label, ctx) in [("with_trust", Some(&trust)), ("without_trust", None)] {
-            let got = swarrm_verify::verify_bundle_levels(&bundle, ctx);
+            let got = swarrm_verify::verify_bundle(&bundle, ctx);
             assert_eq!(got["ok"], Value::Bool(true), "{name}/{label}: fixture must verify");
             assert_eq!(sorted_u64(&got["recorder_attested"]), sorted_u64(&want[label]["recorder_attested"]), "{name}/{label}: recorder_attested");
             assert_eq!(sorted_str(&got["trusted_tst_checkpoints"]), sorted_str(&want[label]["trusted_tst_checkpoints"]), "{name}/{label}: trusted_tst_checkpoints");
@@ -59,9 +59,36 @@ fn a_supplied_root_never_trusts_the_forged_ca() {
     let dir = golden_dir();
     let trust = read(&dir, "trust_evidence.json");
     let bundle = read(&dir, "evidence_tst_forged_ca.json");
-    assert!(swarrm_verify::verify_bundle(&bundle), "the carried-chain GATE passes a forged CA");
-    let got = swarrm_verify::verify_bundle_levels(&bundle, Some(&trust));
+    assert!(swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "the carried-chain GATE passes a forged CA");
+    let got = swarrm_verify::verify_bundle(&bundle, Some(&trust));
     assert!(got["trusted_tst_checkpoints"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn public_report_keeps_verdict_and_evidence_in_one_contract() {
+    let dir = golden_dir();
+    let trust = read(&dir, "trust_evidence.json");
+    let valid = read(&dir, "evidence_tst_trusted.json");
+    let mut invalid = valid.clone();
+    invalid["schema"] = Value::String("evd/bundle/unknown".into());
+    let members = ["ok", "recorder_attested", "trusted_tst_checkpoints", "chain_sizes", "continuity_gaps", "continuity_present", "continuity_ok"];
+    let expected: std::collections::BTreeSet<_> = members.into_iter().collect();
+    for (bundle, accepted) in [(&valid, true), (&invalid, false)] {
+        let report = swarrm_verify::verify_bundle(bundle, Some(&trust));
+        assert_eq!(report.as_object().unwrap().keys().map(String::as_str).collect::<std::collections::BTreeSet<_>>(), expected);
+        assert_eq!(report["ok"].as_bool().unwrap(), accepted);
+        assert!(report["continuity_gaps"].as_u64().is_some());
+        assert!(report["continuity_present"].as_bool().is_some());
+        assert!(report["continuity_ok"].as_bool().is_some());
+        assert!(report["chain_sizes"].is_object());
+        assert!(report["recorder_attested"].is_array());
+        assert!(report["trusted_tst_checkpoints"].is_array());
+        if !accepted {
+            assert_eq!(report["recorder_attested"], serde_json::json!([]));
+            assert_eq!(report["trusted_tst_checkpoints"], serde_json::json!([]));
+            assert_eq!(report["chain_sizes"], serde_json::json!({}));
+        }
+    }
 }
 
 #[test]
@@ -69,7 +96,7 @@ fn public_sample_uses_a_real_sigstore_token_under_the_supplied_root() {
     let samples = golden_dir();
     let bundle = read(&samples, "public_sample_sigstore.json");
     let trust = read(&samples, "public_sample_sigstore_trust.json");
-    let got = swarrm_verify::verify_bundle_levels(&bundle, Some(&trust));
+    let got = swarrm_verify::verify_bundle(&bundle, Some(&trust));
     assert_eq!(got["ok"], Value::Bool(true));
     assert_eq!(sorted_str(&got["trusted_tst_checkpoints"]), vec!["1bea54aa22cf39b0d9af2a37058e07c08411f559bcbe8143f60cddcd471bdf1b"]);
 }

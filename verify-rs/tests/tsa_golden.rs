@@ -55,3 +55,26 @@ fn tsa_malformed_input_is_false_never_a_panic() {
     assert!(swarrm_verify::tsa::verify_tst(&token, real, &chain));
     assert!(!swarrm_verify::tsa::verify_tst(&token, &real.to_uppercase(), &chain));
 }
+
+#[test]
+fn signed_attributes_bind_bundle_acceptance_and_rooted_time() {
+    let dir = golden_dir();
+    let read = |name: &str| -> Value { serde_json::from_slice(&fs::read(dir.join(name)).unwrap()).unwrap() };
+    let expected = read("expected.json");
+    let trust = read("trust_evidence.json");
+    let mut checked = std::collections::BTreeSet::new();
+    for (name, verdict) in expected.as_object().unwrap() {
+        if !name.starts_with("evidence_tst_attrs_") {
+            continue;
+        }
+        let bundle = read(&format!("{name}.json"));
+        let result = swarrm_verify::verify_bundle(&bundle, Some(&trust));
+        let accepted = verdict.as_str() == Some("VERIFIED");
+        assert_eq!(result["ok"], accepted, "bundle {name}");
+        let rooted = result["trusted_tst_checkpoints"].as_array().unwrap();
+        assert_eq!(rooted.len(), if accepted { 1 } else { 0 }, "time award {name}");
+        checked.insert(name.strip_prefix("evidence_tst_attrs_").unwrap());
+    }
+    let required = ["content_missing", "content_wrong", "content_duplicate", "content_multiple", "content_empty", "digest_multiple", "digest_missing", "digest_wrong", "digest_empty", "digest_duplicate", "unknown"].into_iter().collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(checked, required, "review the complete signed-attribute mutation identities");
+}

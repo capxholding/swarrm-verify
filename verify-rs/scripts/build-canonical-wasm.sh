@@ -18,6 +18,11 @@ fi
 
 crate_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 repo_root=$(cd "$crate_dir/.." && pwd -P)
+presentation_source="$repo_root/website/pkg/verification_presentation.js"
+if [[ $target == web && ( ! -f $presentation_source || -L $presentation_source ) ]]; then
+  echo "canonical build requires regular shared presentation source" >&2
+  exit 1
+fi
 cargo_root=${CARGO_HOME:-${HOME:?HOME is required}/.cargo}
 mkdir -p "$cargo_root"
 cargo_root=$(cd "$cargo_root" && pwd -P)
@@ -74,3 +79,7 @@ export CARGO_INCREMENTAL=0 LC_ALL=C TZ=UTC
 cd "$crate_dir"
 wasm-pack build --mode no-install --target "$target" --out-dir "$output" \
   --features wasm --locked
+
+if [[ $target == web ]]; then
+  cp "$presentation_source" "$output/verification_presentation.js"
+fi

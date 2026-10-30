@@ -18,9 +18,10 @@ CertificateCore = {
       material_mismatch: bool }],
   ? source_identity: SourceIdentity,
   ? control_evidence: ControlDomainEvidence,
-  ? batch: SourceBatch,
+  ? batch: BatchEvidence,
   ? scan: { performed: bool, complete: bool, cursor_gap_free: bool,
-            authenticated_read: bool, node_signed: bool },
+            authenticated_read: bool, node_signed: bool,
+            ? batch_digest: hex32, ? node_id: text, ? signature: text },
   coverage_doc: { * text => any },                ; evd/coverage-manifest/v1
   ? node_attestation: NodeAttestation,
   open_findings: [* { finding_id: hex32, rule_id: text, state: finding-state,

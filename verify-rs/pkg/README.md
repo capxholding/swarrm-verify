@@ -19,6 +19,19 @@ cargo +1.90.0 clippy --locked --all-targets -- -D warnings
 git diff --exit-code -- Cargo.lock
 ```
 
+## Version 2 API
+
+The independent verifier is versioned separately from Swarrm core. Version 2
+returns one native report through `verify_bundle(&bundle, trust)`. Read its
+boolean `ok` field for the verdict; the same report includes recorder,
+timestamp and continuity facts. This replaces version 1's boolean
+`verify_bundle(&bundle)` and separate `verify_bundle_levels` call.
+
+Browser and Node callers keep `verify_bundle_json(bytes)`, but must accept the
+v3 result defined in `SPEC/bundle-v1.md`. Its continuity member makes it
+incompatible with the released v2 result. Deliver the matching page, JavaScript
+and WASM together; never relabel an old module as the new version.
+
 ## Browser (WASM) verifier
 
 The committed browser artifact is reproduced in CI on Linux x86-64 with Rust

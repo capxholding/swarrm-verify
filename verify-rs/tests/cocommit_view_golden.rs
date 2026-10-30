@@ -69,7 +69,7 @@ fn cocommit_shown_view_is_in_the_shared_verdict_suite() {
 #[test]
 fn both_engines_accept_the_shown_view_fixture() {
     let bundle = load_bundle();
-    assert!(swarrm_verify::verify_bundle(&bundle), "cocommit_shown_view must verify");
+    assert!(swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "cocommit_shown_view must verify");
 }
 
 #[test]
@@ -102,13 +102,13 @@ fn rewriting_the_payload_unchanged_still_verifies() {
     let body = decode_payload(&bundle["entries"][index]);
     rewrite_payload(&mut bundle, &body);
     assert_eq!(bundle["entries"][index]["envelope"]["payload"], original);
-    assert!(swarrm_verify::verify_bundle(&bundle), "an unchanged rewrite must still verify");
+    assert!(swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "an unchanged rewrite must still verify");
 }
 
 #[test]
 fn mutating_a_shown_view_member_cannot_stay_silent() {
     let honest = load_bundle();
-    assert!(swarrm_verify::verify_bundle(&honest), "control fixture must verify");
+    assert!(swarrm_verify::verify_bundle(&honest, None)["ok"].as_bool().expect("bundle report verdict"), "control fixture must verify");
     for member in SHOWN_VIEW_MEMBERS {
         for kind in ["drop", "change"] {
             let mut bundle = honest.clone();
@@ -129,7 +129,7 @@ fn mutating_a_shown_view_member_cannot_stay_silent() {
                 body["context"][member] = Value::String(hex);
             }
             rewrite_payload(&mut bundle, &body);
-            assert!(!swarrm_verify::verify_bundle(&bundle), "{kind} of {member} was accepted");
+            assert!(!swarrm_verify::verify_bundle(&bundle, None)["ok"].as_bool().expect("bundle report verdict"), "{kind} of {member} was accepted");
         }
     }
 }

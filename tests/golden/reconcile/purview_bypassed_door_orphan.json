@@ -19,7 +19,7 @@
     "declared_count": 4,
     "event_key_root": "d45708420391e2135025649aeae062d498cd1e5a52a0c38b3be9bb64d6c362e6",
     "exclusions": [],
-    "filter_digest": "f44df0393f12bded635140ad1d80f2c8f3e6bd14c5e61da0d331c3641b6b06e4",
+    "filter_digest": "379f1d137771f325547bde33a83913ebeb466bdd6957f5a0b0acad1fe919eae7",
     "finality_watermark": "",
     "gaps": [
       "unauthenticated_read:purview/00000017-0000-4000-8000-000000000023/CopilotInteraction/2026/01/01/0100Z_e5cba8e3.json.gz",
@@ -54,13 +54,13 @@
   "fork_findings_open": false,
   "scan": {
     "authenticated_read": false,
-    "batch_digest": "2926e7a124765ca2fda6ecb72cd404b0d0162087445e95139b00350c5cdf76d5",
+    "batch_digest": "4dd97fb135e739d28e532e884803dc4a669bc1c1ea58a8bf69ad082f02ac599e",
     "complete": true,
     "cursor_gap_free": true,
     "node_id": "s3YkkeLhSDposbKe",
     "node_signed": true,
     "performed": true,
-    "signature": "pXgVvto7ad4iVNykp+fjPX12L/hJf+qVhAdjYyt8dGTzyUqef3Ocg64oUNfvnqOTCXez7sJVfMSj/M4rFLM8Dg=="
+    "signature": "hr7kkBi1sZ3d8fkSKTE5GJ+D44YtAZ89FJpr0n/I03F7N+xdIig1GJukJUiewvNxu4flZf3STHzwjxgcTxcpDw=="
   },
   "schema": "evd/verdict-input/v1"
 }
