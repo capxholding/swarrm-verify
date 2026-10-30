@@ -17,6 +17,11 @@ while IFS= read -r use; do
   fi
 done < <(grep -R -h -E '^[[:space:]]*uses:[[:space:]]*[^[:space:]#]+' .github/workflows | sed -E 's/.*uses:[[:space:]]*//; s/[[:space:]]+#.*$//')
 
+# Local build output must not hide a missing release asset in a clean checkout.
+for asset in swarrm_verify.js swarrm_verify_bg.wasm verification_presentation.js; do
+  git ls-files --error-unmatch "verify-rs/pkg/$asset" >/dev/null
+done
+
 cargo_version=$(awk -F '"' '/^version = "/ { print $2; exit }' verify-rs/Cargo.toml)
 lock_version=$(awk -F '"' '/^name = "swarrm-verify"$/ { getline; print $2; exit }' verify-rs/Cargo.lock)
 package_version=$(node -e 'process.stdout.write(require("./verify-rs/pkg/package.json").version)')
