@@ -4,6 +4,10 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project will follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased maintenance]
+
+Update P-256 and P-384 verification to patched RustCrypto dependencies and rebuild the browser module. The public verification API is unchanged.
+
 ## [Unreleased]
 
 ## [1.0.8] - 2026-08-14

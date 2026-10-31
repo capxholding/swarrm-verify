@@ -23,10 +23,10 @@ sha2 = { version = "0.10", features = ["oid"] }
 ed25519-dalek = "2"
 base64 = "0.22"
 # RFC 3161 parity crates. Exact pins are mirrored in ci/architecture_policy.json.
-p256 = "=0.13.2"
+p256 = "=0.14.0"
 # RSA and P-384 support RFC 3161/TSA certificate chains. These pure-Rust
 # dependencies and their exact pins are mirrored in ci/architecture_policy.json.
-p384 = "=0.13.1"
+p384 = "=0.14.0"
 rsa = "=0.9.10"
 # Certificate CBOR primitives — owner sanction O·1 (§0.2·3): ciborium is the ONLY
 # Rust CBOR codec; the canonical emitter in src/cbor.rs owns determinism
@@ -43,6 +43,9 @@ wasm-bindgen = { version = "0.2", optional = true }
 # the verifier itself never draws randomness (verify-only).
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
+# RustCrypto 0.14 also carries getrandom 0.4; keep its existing defaults and
+# enable the supported JS backend for that transitive generation as well.
+getrandom04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
 
 [features]
 wasm = ["dep:wasm-bindgen"]

@@ -6,7 +6,7 @@
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use ciborium::Value as C;
-use ed25519_dalek::{Signature as EdSignature, VerifyingKey as EdKey};
+use ed25519_dalek::{Signature as EdSignature, Verifier as _, VerifyingKey as EdKey};
 use p256::ecdsa::{signature::Verifier, Signature as P256Signature, VerifyingKey as P256Key};
 use serde_json::{Map as JsonMap, Value as J};
 use sha2::{Digest, Sha256};
@@ -638,7 +638,7 @@ fn verify_admin(admin: &Doc, selection: &C, origin: &str, previous: u64, now: u6
     }
     let (backup_eligible, backup_state, counter) = admin_flags(auth, previous)?;
     let signature = P256Signature::from_der(signature).ok()?;
-    if signature.normalize_s().is_some() {
+    if signature.normalize_s() != signature {
         return None;
     }
     let mut signed = auth.to_vec();

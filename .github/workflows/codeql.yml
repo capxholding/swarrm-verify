@@ -16,7 +16,7 @@ permissions: read-all
 jobs:
   analyze:
     name: CodeQL (${{ matrix.language }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       security-events: write
@@ -27,6 +27,16 @@ jobs:
           - actions
           - rust
     steps:
+      - name: Admit and record the hosted runner baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          test "$ID/$VERSION_ID" = ubuntu/24.04
+          test "$RUNNER_OS/$RUNNER_ARCH/${ImageOS:-}" = Linux/X64/ubuntu24
+          test -n "${ImageVersion:-}"
+          printf 'Hosted runner: ubuntu-24.04; image=%s; arch=%s; commit=%s\n' \
+            "$ImageVersion" "$RUNNER_ARCH" "$GITHUB_SHA" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Initialize CodeQL
         uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6

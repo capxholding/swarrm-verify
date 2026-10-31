@@ -29,7 +29,7 @@ permissions:
 jobs:
   fuzz:
     name: fuzz (${{ matrix.target }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -44,6 +44,16 @@ jobs:
           - target: tsa
             max_len: 262144
     steps:
+      - name: Admit and record the hosted runner baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          test "$ID/$VERSION_ID" = ubuntu/24.04
+          test "$RUNNER_OS/$RUNNER_ARCH/${ImageOS:-}" = Linux/X64/ubuntu24
+          test -n "${ImageVersion:-}"
+          printf 'Hosted runner: ubuntu-24.04; image=%s; arch=%s; commit=%s\n' \
+            "$ImageVersion" "$RUNNER_ARCH" "$GITHUB_SHA" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install the pinned nightly toolchain and cargo-fuzz
         run: |

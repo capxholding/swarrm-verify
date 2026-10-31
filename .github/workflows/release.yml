@@ -12,12 +12,22 @@ permissions:
 jobs:
   build:
     name: Build deterministic release assets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       # Required to read this commit's verifier run conclusions below.
       actions: read
     steps:
+      - name: Admit and record the hosted runner baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          test "$ID/$VERSION_ID" = ubuntu/24.04
+          test "$RUNNER_OS/$RUNNER_ARCH/${ImageOS:-}" = Linux/X64/ubuntu24
+          test -n "${ImageVersion:-}"
+          printf 'Hosted runner: ubuntu-24.04; image=%s; arch=%s; commit=%s\n' \
+            "$ImageVersion" "$RUNNER_ARCH" "$GITHUB_SHA" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -212,13 +222,23 @@ jobs:
     name: Sign, attest, and publish reviewed tag
     if: github.ref_type == 'tag'
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       id-token: write
       attestations: write
       artifact-metadata: write
     steps:
+      - name: Admit and record the hosted runner baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          test "$ID/$VERSION_ID" = ubuntu/24.04
+          test "$RUNNER_OS/$RUNNER_ARCH/${ImageOS:-}" = Linux/X64/ubuntu24
+          test -n "${ImageVersion:-}"
+          printf 'Hosted runner: ubuntu-24.04; image=%s; arch=%s; commit=%s\n' \
+            "$ImageVersion" "$RUNNER_ARCH" "$GITHUB_SHA" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-assets-${{ github.sha }}

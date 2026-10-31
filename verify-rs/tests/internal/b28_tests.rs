@@ -388,3 +388,24 @@ fn mixed_generation_is_a_finding_only_once_the_exchange_parses() {
     assert_eq!(broken["reasons"], serde_json::json!(["VERIFIER_CONTEXT_INVALID"]));
     assert_eq!(broken["should_execute"], false);
 }
+
+#[test]
+fn admin_verification_rejects_high_s_without_changing_valid_signature() {
+    let input = parse_fixture(include_bytes!("../../../tests/golden/b28/verify-input.cbor"));
+    let core = presented_core("admin_binding", ADMIN_BINDING);
+    let admin = plain(&core).unwrap();
+    let consumption = presented_core("admin_consumption", ADMIN_CONSUMPTION);
+    let previous = uint(&plain(&consumption).unwrap()["sign_count_before"]).unwrap();
+    let presentation = fixture_presentation_core();
+    let raw = bytes(&plain(&presentation).unwrap()["admin_selection"]).unwrap().to_vec();
+    let mut selection = decode(&raw, 16_384).unwrap();
+    assert!(verify_admin(&admin, &selection, &input.origin, previous, input.now).is_some());
+    let signature = P256Signature::from_der(bytes(&plain(&selection).unwrap()["signature"]).unwrap()).unwrap();
+    let high = P256Signature::from_scalars(signature.r().to_bytes(), (-signature.s()).to_bytes()).unwrap();
+    assert_ne!(high, signature);
+    assert_eq!(high.normalize_s(), signature);
+    set_member(&mut selection, "signature", C::Bytes(high.to_der().as_bytes().to_vec()));
+    assert!(verify_admin(&admin, &selection, &input.origin, previous, input.now).is_none());
+    set_member(&mut selection, "signature", C::Bytes(signature.to_der().as_bytes().to_vec()));
+    assert!(verify_admin(&admin, &selection, &input.origin, previous, input.now).is_some());
+}
