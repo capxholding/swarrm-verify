@@ -209,3 +209,12 @@ fn unscanned_batch_does_not_invent_delivery_or_observation() {
         assert_eq!(result["vector"][key], expected);
     }
 }
+
+#[test]
+fn legacy_certificate_cannot_assert_an_unsupported_limit_profile() {
+    let raw = fs::read(certs_dir().join("unsupported_limit_legacy.core.cbor")).unwrap();
+    let result: Value = serde_json::from_str(&swarrm_verify::certificate::verify_certificate_cbor(&raw)).unwrap();
+    assert_eq!(result["parse_ok"], true);
+    assert_eq!(result["cross_checks_ok"], false);
+    assert!(result["errors"].as_array().unwrap().iter().any(|error| error == "AUTHORITY_MISMATCH"));
+}

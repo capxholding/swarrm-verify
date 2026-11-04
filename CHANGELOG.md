@@ -6,6 +6,11 @@ All notable changes to `swarrm-verify` are documented here. The format is based 
 
 ## [Unreleased]
 
+### Security
+
+- Reject unknown, missing, or malformed authority-limit kinds while preserving
+  the documented meaning of supported legacy declarations.
+
 ## [2.0.0]
 
 ### Changed

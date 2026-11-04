@@ -16,12 +16,13 @@ fn golden_dir() -> PathBuf {
 fn authority_golden_agrees_with_expected() {
     let dir = golden_dir();
     let expected: Value = serde_json::from_str(&fs::read_to_string(dir.join("expected_authority.json")).unwrap()).unwrap();
-    let mut checked = 0;
+    let declared: std::collections::BTreeSet<_> = expected.as_object().unwrap().keys().cloned().collect();
+    let present: std::collections::BTreeSet<_> = fs::read_dir(&dir).unwrap().map(|entry| entry.unwrap().path()).filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json") && path.file_stem().unwrap().to_str().unwrap().starts_with("b21_")).map(|path| path.file_stem().unwrap().to_str().unwrap().to_owned()).collect();
+    assert!(!declared.is_empty(), "authority inventory must not be empty");
+    assert_eq!(declared, present, "authority fixture inventory differs");
     for (name, want) in expected.as_object().unwrap() {
         let bundle: Value = serde_json::from_str(&fs::read_to_string(dir.join(format!("{name}.json"))).unwrap()).unwrap();
         let got = swarrm_verify::action::authority_facts(&bundle, None);
         assert_eq!(&got, want, "fixture {name}: Rust authority_facts diverges");
-        checked += 1;
     }
-    assert!(checked >= 19, "expected at least 19 authority fixtures, ran {checked}");
 }

@@ -346,6 +346,14 @@ for (const [name, input] of hostileSourceProofs) {
 }
 
 const certDir = path.join(__dirname, "..", "..", "tests", "golden", "certificates");
+const legacyAuthority = fs.readFileSync(path.join(certDir, "unsupported_limit_legacy.core.cbor"));
+const legacyAuthorityResult = JSON.parse(verify_certificate_cbor(legacyAuthority));
+const legacyAuthorityOk = crypto.createHash("sha256").update(legacyAuthority).digest("hex") ===
+  "c3327072e5e02a20de1aa79fa6b6defd1aba991125c26399d006b68f8d929f18" &&
+  legacyAuthorityResult.parse_ok === true && legacyAuthorityResult.cross_checks_ok === false &&
+  legacyAuthorityResult.errors.includes("AUTHORITY_MISMATCH");
+if (!legacyAuthorityOk) failures++;
+console.log(`${legacyAuthorityOk ? "OK " : "XX "} legacy unsupported authority certificate`);
 const certExpected = JSON.parse(fs.readFileSync(path.join(certDir, "expected.json"), "utf8"));
 for (const [name, want] of Object.entries(certExpected)) {
   const bytes = fs.readFileSync(path.join(certDir, `${name}.view.cbor`));

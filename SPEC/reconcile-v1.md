@@ -49,6 +49,37 @@ the correlated business receipt when present. A claim exists iff an intent
 exists; agent activity with no intent is out of claim scope (it is still in
 the coverage population as unclaimed agent traffic).
 
+Submission and material receipts MUST name the intent's agent and occur later
+in the log. Equal action identifiers from another agent do not establish that
+relationship. Conflicting intent owners refuse collection. A collection reads
+one append-only log prefix throughout; later appends require a fresh collection.
+Action and agent identifiers must be nonempty text; converting another JSON
+type to text does not establish an identity match.
+
+### 3.1 Local M365 invocation claims
+
+For intent policy `m365-local-count/v1` and class `m365.action`, the intent-owning agent's
+later `tool.call`, after its submission, can supply the invocation material:
+`tool_name` becomes the Purview profile's `counterparty` (the plugin name,
+not a payee), and the intent's observed gateway time becomes the claimed
+`source_effect_time`. Require the same agent/action, an Entra-sourced actor
+naming that application, and the matching `m365:<tenant>` server identity.
+Preserve earlier recorded material instead of overwriting disagreement.
+
+Use the existing manifest-approved unique-field and time-tolerance rules.
+Purview does not echo the gateway's action ID; do not fabricate an echo or a
+returned Purview reference. These facts corroborate invocation, not payment
+value, financial authority or business success. Capture-only and unrecognized
+profiles gain no material through this derivation.
+
+
+Local M365 claims retain the Entra tenant as working source scope. Matching
+requires a `microsoft-purview` manifest for that tenant and events under its
+bound source identity. A configured `source_identity_ref` names an explicit
+connector identity; otherwise the identity is `source_system/account`. A
+foreign tenant or event identity refuses before facts are produced. These
+working scope fields are not added to the claim wire format.
+
 ## 4. Matching (deterministic; the verifier never picks a winner)
 
 Candidates for a claim are events matching by ANY of, priority naming only

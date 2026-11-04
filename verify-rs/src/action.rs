@@ -1304,8 +1304,7 @@ fn doc_ok(doc: &Value, action_class: &Value, lo: &str, up: &str) -> bool {
         (nts(&g(doc, "valid_from")), nts(&g(doc, "valid_to"))),
         (Some(vf), Some(vt)) if vf.as_str() <= lo && up <= vt.as_str()
     );
-    let classes = doc.get("action_classes").and_then(|c| c.as_array());
-    window && classes.map(|c| c.contains(action_class)).unwrap_or(false)
+    window && arr(doc, "action_classes").contains(action_class) && matches!(doc.pointer("/limits/kind").and_then(Value::as_str), Some("FLOW" | "STOCK" | "ONE_SHOT"))
 }
 
 /// Status replay (§5): the effective document at EVERY instant of the

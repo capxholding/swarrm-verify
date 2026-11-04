@@ -164,6 +164,20 @@ offline report to E2.
 Bundles gain an ADDITIVE `tst_records` field (absent when nothing is
 timestamped), mirroring `anchor_records`.
 
+`tsa_url` is a public endpoint identity, not an authentication channel. New
+clients and public bundle, report, certificate/view and SCITT-pack producers
+refuse user information, query parameters and fragments, including empty
+delimiters. Authentication uses separate `EVD_TSA_USERNAME` and
+`EVD_TSA_PASSWORD` settings over HTTPS; neither value belongs in a record.
+Existing stored records remain unchanged and available for private inspection;
+an unsafe endpoint blocks publication rather than being silently redacted or
+rewritten. This publication rule changes no historical token's cryptographic
+interpretation and establishes no qualified-service entitlement.
+The forensic verifier still verifies supplied legacy artifacts unchanged. Its
+text output withholds timestamp endpoints; JSON projects `tsa_url` as
+`<redacted>` and adds `tsa_url_sha256`, the SHA-256 of the original UTF-8
+endpoint string. The record and token inside the input are never rewritten.
+
 ### Normative offline verification (NO network)
 
 For each record: (1) it must reference a checkpoint `body_hash` present in
