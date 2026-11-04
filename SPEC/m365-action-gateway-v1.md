@@ -24,10 +24,17 @@ the conversation that led there.
 
 `POST {base}/m365/actions/{name}`
 
+This section describes `capture-only`. Section 8 adds mandatory permission and
+pre-forward evidence admission for the local count profile.
+
 - `{name}` MUST match `^[a-z][a-z0-9_.-]{0,63}$`. It is a path segment, an
   OpenAPI `operationId`, and the receipt's `tool_name`, so it is an identifier.
 - The request body MUST be a JSON object of at most 262,144 bytes. Anything
-  else is refused before any upstream contact (`400` or `413`).
+  else is refused before any upstream contact (`400` or `413`). Enforce the
+  bound while reading the stream; stop at the first over-limit chunk without
+  consuming its tail, regardless of the declared `Content-Length`. Arguments
+  must use duplicate-free UTF-8 JSON within the shared commitment profile,
+  including the idempotency envelope depth; out-of-profile values return `400`.
 - `Authorization: Bearer <token>` MUST carry an Entra ID access token that
   satisfies section 3. Absence or refusal is `401` with a closed reason code;
   the token is never echoed and no receipt is written.
@@ -53,7 +60,9 @@ the conversation that led there.
 
 Verification MUST reject unless every rule holds, in this order:
 
-1. Exactly three base64url segments; header and claims decode to JSON objects.
+1. Exactly three base64url segments; header and claims decode to duplicate-free
+   UTF-8 JSON objects under the shared bounded JSON profile. Parser/depth
+   refusals return the closed `malformed` reason before signature processing.
 2. `alg` is exactly `RS256`. `none`, HMAC and every other algorithm are
    refused BEFORE key lookup, so a header cannot select a weaker path.
 3. `kid` names a key in the PINNED JWKS, and that key is RSA with `alg`
@@ -63,10 +72,26 @@ Verification MUST reject unless every rule holds, in this order:
    (`https://login.microsoftonline.com/{tenant}/v2.0` for v2 tokens).
 6. `aud` equals the configured audience, or is a list containing it.
 7. `tid` equals the configured tenant.
-8. `exp` and `nbf` are integers; `now ≤ exp + skew` and `now + skew ≥ nbf`,
-   with skew fixed at 60 seconds.
+8. `exp` and `nbf` are JSON integers, excluding booleans; `now ≤ exp + skew`
+   and `now + skew ≥ nbf`, with skew fixed at 60 seconds. A different skew
+   configuration is refused before serving.
 9. A subject (`oid`, else `sub`) and an application (`azp`, else `appid`)
    are present as strings.
+
+`kid` MUST be a nonempty string; malformed key identities produce the closed
+`kid` refusal before key lookup. Usable RS256 signing-key identifiers MUST be
+unique. Invalid RSA material or a pin without a usable signing key refuses
+startup. Unusable algorithms and non-signing keys cannot satisfy a token.
+When `key_ops` is present, it MUST be a list of unique strings containing
+`verify`; a key with any other shape or without that operation is unusable.
+
+After detaching the verifier and registry, serving MUST bind the prepared
+verifier's tenant and audience to the detached gateway configuration before
+accepting requests. Preparation detaches the pin and
+action registry from caller-owned mutable objects and serializes both bounded
+manifests before startup. Later changes to those input objects MUST NOT change
+served routes, manifests, receipt identity or token admission; a configuration
+or key update requires a new prepared gateway.
 
 The JWKS is pinned in a file the operator controls. It is NOT fetched in the
 request path: a request path that fetches signing keys is one that can be
@@ -110,13 +135,14 @@ token signed by an unpinned key is refused with reason `kid`.
 | `tool.args`   | `evd/v1/tool.args`    | the request body, as canonical JSON (`core.canonical`) |
 | `tool.result` | `evd/v1/tool.result`  | the upstream response body as canonical JSON; `{}` when there is none |
 
-An upstream body that is not a JSON object is recorded as
-`{"_raw": <first 4096 characters>}` and committed as that object. Nonce
+An upstream body outside the shared JSON object/commitment profile is recorded
+as `{"_raw": <first 4096 UTF-8 characters, decoding errors replaced>}` and
+committed as that object, retaining the upstream status. Nonce
 custody is the MCP wrapper's (`mcpwrap.proxy.EvidencePlane`): this profile
 adds no second custody path.
 
 The idempotency key is `sha256(canonical({action, subject, body, nonce}))`
-with a fresh 8-byte nonce per request, so a replayed body under a different
+with a fresh 8-byte nonce per capture-only request (32 bytes under section 8), so a replayed body under a different
 identity, or the same identity twice, yields distinct receipts rather than a
 silent merge.
 
@@ -147,3 +173,60 @@ handed its import files before keys are exchanged.
    custom connector, or `openapi.json` as an M365 Copilot API plugin.
 4. Pin the tenant's JWKS; start the gateway with the same registry.
 5. The first action call produces the first receipt.
+
+## 8. Local count permission profile (1.5)
+
+`M365GatewayConfig.permission_profile` selects `capture-only` (the existing
+behavior above) or `m365-local-count/v1`. The latter requires a `CountPolicy`
+and explicit `CountBinding` entries for each application/action. Unknown modes,
+missing policy, duplicate bindings and foreign evidence tenants refuse at the
+actual application factory. Manifests and action responses name the selected
+profile. `swarrm m365 manifests --permission-profile …` declares the intended
+runtime profile; generating import files does not issue permission.
+
+A binding names the application's existing evidence Birthtag and revision and
+an imported, customer-root-signed `LimitGrantV1`. The registered agent, mandate,
+configuration, root delegation, grant version and grant head must remain active
+under the existing checkpoint/freshness policy. The grant uses operation
+`m365.action`, unit `count:m365-actions`, kind `FLOW` or `ONE_SHOT`, and the
+customer's own organization as recipient. Each admitted invocation consumes
+one unit. This permission counts calls; it does not cap payment values or
+establish a financial mandate.
+
+The grant's `action_scope_digest` is SHA-256 over
+`swarrm/m365-local-count/v1\0` followed by canonical JSON containing exactly:
+`profile`, evidence `tenant`, `entra_tenant`, `issuer`, `audience`,
+`application`, `action`, exact `upstream`, `body_schema`, hexadecimal `birthtag`
+and integer `revision`. `profile` is `m365-local-count/v1`. The schema is part
+of the route binding; this profile grants that route's admitted JSON-object
+calls, not additional business predicates inferred from schema metadata.
+
+Admission debits the existing authority store atomically. The separate local
+consumption ledger shares the unchanged population bound and grant accounting;
+it never creates an ASA or counterparty exchange. An exact consumed request
+cannot authorize a second send. Conflicting request bytes refuse. A crash,
+failed evidence write or uncertain upstream result does not refund capacity.
+Only the customer's existing root-governed grant lifecycle can change limits.
+The versioned store migrates exact legacy layouts; missing consumption history,
+unknown versions and schema rollback refuse rather than recreating a ledger.
+
+Before forwarding, the gateway retains `action.intent` and `action.submitted`
+through the existing evidence writer and encrypted nonce custody, then
+revalidates permission. Intent uses class `m365.action`, the count grant ID and
+version, registered principal-binding ID and policy version
+`m365-local-count/v1`. These are local-profile identifiers, not a conversion to
+the monetary grant profile in authority-v1 §3.3. Inputs, identity/scope evidence
+and the exact prepared logical request remain commitments. Submission records
+the gateway handoff attempt; it does not prove delivery or business completion.
+The immutable outbound body must match preparation. Missing permission returns
+`403`; unavailable permission/evidence custody returns `503` before forwarding.
+
+Governed calls use a fresh 32-byte nonce in the existing action-ID derivation.
+`x-swarrm-action-id` carries the resulting opaque ID to the upstream and caller;
+the Entra bearer token is never forwarded. The correlated `tool.call` uses that
+same universal action ID. Interrupted forwarding retains an observation gap and
+propagates the original interruption. Post-action capture failure retains the
+existing explicit fail-open gap response, never a fabricated receipt or retry.
+
+This local permission profile does not enable Counterparty Assurance `PASS`.
+Real-tenant compatibility remains distinct from emulator verification.

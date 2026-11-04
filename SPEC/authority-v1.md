@@ -112,6 +112,9 @@ signed envelopes).
 commitments: `inputs` · `context_doc`.
 **subject id:** `intent_id` = receipt_hash.
 `action.intent` claims neither hidden reasoning nor a successful outcome.
+Retry lookup must match the stored receipt's tenant, acting agent, action type
+and exact action ID before returning its hash. An ambiguous legacy key refuses;
+it must not return another identity's receipt or allocate a sequence number.
 
 ### 3.9 `action.submitted` (acting agent)
 context: `action_id` · `source_ref` (optional, the reference returned by the
@@ -191,7 +194,11 @@ document at EVERY instant of the `intent_interval` (status replay: apply
 issue/revisions/revocation by `effective_ts` across the whole interval)
 includes `action.intent.action_class` in `action_classes`, has a validity
 window covering the whole interval, and is not revoked at any instant of it.
-Dynamic limits render `NOT_VERIFIED` unless their required state is
+A grant with a missing or unsupported `limits.kind` is out of this profile
+and renders `NOT_VERIFIED`. The kind must be one of the frozen declaration
+types `FLOW`, `STOCK` or `ONE_SHOT`; a non-string kind is unsupported. Recognizing
+a declaration type does not establish remaining capacity or alter its legacy
+interpretation. Dynamic limits render `NOT_VERIFIED` unless their required state is
 independently evidenced — a declaration is not evidence (GROUNDING RULE).
 **authority = CONFLICT** iff two mutually `root_sig`-valid statements about the
 same grant cannot both hold: duplicate `(grant_id, grant_version)` with
