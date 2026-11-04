@@ -177,3 +177,53 @@ Independent readback repeats classification against the archived manifest.
 
 This sealed local source-wheel derivative does not prove CI's required editable
 install or workload, advisory, native-library, CI or publication acceptance.
+
+## Native PDF discovery and original evidence
+
+`create --native-pdf` requires a completed real render and binds the loaded
+native objects. On macOS, repeated `--native-pdf-library FAMILY=/canonical/file`
+arguments select an explicit stack. Required families are `gobject-2.0`,
+`pango-1.0`, `pangoft2-1.0`, `harfbuzz`, `harfbuzz-subset`, and `fontconfig`;
+`harfbuzz-vector` is optional. Unknown, duplicate, noncanonical, replaced,
+missing, or externally writable objects refuse before environment creation.
+Linux retains normal system discovery and refuses these macOS-only arguments.
+Project `--prepare-only` does not admit native runtime inputs; native options
+belong to the subsequent creation command.
+Recovery commands require `SWARRM_NATIVE_PDF_<FAMILY>` paths on macOS, with
+family punctuation replaced by underscores (for example, `GOBJECT_2_0`).
+Missing values refuse before launching the creator; paths are never guessed.
+
+The creator owns a private link directory inside the new environment. It copies
+no native library and changes no global loader or interpreter. The installed
+`_swarrm_pdf_loader.py`, JSON configuration and `.pth` hook are part of the
+sealed package tree. Configuration has schema `swarrm/native-pdf-loader/v1`,
+platform, directory identity, exact family/object identities and loader hash.
+The hook disables bytecode writes before importing its helper, validates the
+complete selection and refuses conflicting loader settings. A failed hook
+terminates startup. The same selection applies to closed ordinary invocations
+and materialized diagnostic copies. It grants no general environment inheritance.
+
+Native records retain `swarrm/verification-native-pdf/v1` for system discovery;
+explicit selection uses `swarrm/verification-native-pdf/v2` with `selection`.
+Every selected object must match its actually loaded family. Missing, changed
+or duplicate loaded objects refuse; import success cannot replace rendering.
+
+`native_pdf_evidence` binds an absolute private directory and
+`capture_sha256`. Its `producer-evidence/capture.json` uses
+`swarrm/native-pdf-capture/v1`, `capture_exit`, and a complete SHA-256 inventory.
+Retain original source inputs, optional bootstrap inputs, stdout, stderr,
+`output/native.json` and the original `output/render.pdf` before cleanup.
+The invocation uses `swarrm/native-pdf-invocation/v1` and binds original creator,
+original workdir, argv, interpreter, source hashes and bootstrap hashes. The producer envelope
+uses `swarrm/native-pdf-producer/v1` and preserves the runner's original outcomes,
+stream identities and cleanup observations. Zero producer exit does not erase
+capture, observation or cleanup failure. Incomplete capture cannot seal an
+environment. Failed creation preserves its probe directory outside the retired
+partial environment.
+
+Retained-evidence verification reads original source constants without executing
+them, preserves original path identities, and does not depend on the current
+reader's interpreter spelling. It can verify the capsule after temporary inputs
+are gone. This is historical byte/outcome verification, not environment reuse.
+Admission separately revalidates current source, interpreter, libraries, lookup
+ownership, package seal and retained evidence. It never rewrites an old seal.
