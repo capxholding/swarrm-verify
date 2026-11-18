@@ -406,6 +406,13 @@ const refusalGot = JSON.parse(verifyB28Exchange(refusalInput, refusalContext));
 const refusalOk = JSON.stringify(refusalGot) === JSON.stringify(b28Expected.expected_refusal);
 if (!refusalOk) failures++;
 console.log(`${refusalOk ? "OK " : "XX "} Counterparty Assurance signed refusal`);
+const organizationalRefusalInput = fs.readFileSync(path.join(b28Dir, "organizational-refusal-input.cbor"));
+const organizationalRefusalContext = fs.readFileSync(path.join(b28Dir, "organizational-refusal-context.cbor"));
+const organizationalRefusalGot = JSON.parse(verifyB28Exchange(organizationalRefusalInput, organizationalRefusalContext));
+const organizationalRefusalOk = JSON.stringify(organizationalRefusalGot) ===
+  JSON.stringify(b28Expected.expected_organizational_refusal);
+if (!organizationalRefusalOk) failures++;
+console.log(`${organizationalRefusalOk ? "OK " : "XX "} Counterparty Assurance organizational refusal`);
 for (const [name, item] of Object.entries(b28Expected.hostile)) {
   const input = fs.readFileSync(path.join(b28Dir, "hostile", `${name}.input.cbor`));
   const got = JSON.parse(verifyB28Exchange(input, presentationContext));
@@ -434,6 +441,14 @@ for (const [name, item] of Object.entries(b28Expected.refusal_hostile)) {
   const ok = JSON.stringify(got) === JSON.stringify(item.expected);
   if (!ok) failures++;
   console.log(`${ok ? "OK " : "XX "} Counterparty Assurance hostile refusal ${name}`);
+}
+for (const [name, item] of Object.entries(b28Expected.organizational_refusal_hostile)) {
+  const input = fs.readFileSync(path.join(b28Dir, "organizational-refusal-hostile", `${name}.exchange.cbor`));
+  const context = fs.readFileSync(path.join(b28Dir, "organizational-refusal-hostile", `${name}.context.cbor`));
+  const got = JSON.parse(verifyB28Exchange(input, context));
+  const ok = JSON.stringify(got) === JSON.stringify(item.expected);
+  if (!ok) failures++;
+  console.log(`${ok ? "OK " : "XX "} Counterparty Assurance hostile organizational refusal ${name}`);
 }
 for (const [name, item] of Object.entries(b28Expected.state_hostile)) {
   const input = fs.readFileSync(path.join(b28Dir, "state-hostile", `${name}.exchange.cbor`));
@@ -521,4 +536,4 @@ if (failures) {
   console.error(`\nPARITY FAILED: ${failures} fixture(s) disagree`);
   process.exit(1);
 }
-console.log(`WASM agrees with Counterparty Assurance valid plus ${Object.keys(b28Expected.hostile).length} presentation, ${Object.keys(b28Expected.context_hostile).length} context, ${Object.keys(b28Expected.refusal_hostile).length} refusal, and ${Object.keys(b28Expected.state_hostile).length} authority-state hostile fixtures`);
+console.log(`WASM agrees with Counterparty Assurance valid presentation, successor, signed refusal and organizational refusal plus ${Object.keys(b28Expected.hostile).length} presentation, ${Object.keys(b28Expected.context_hostile).length} context, ${Object.keys(b28Expected.refusal_hostile).length} refusal, ${Object.keys(b28Expected.organizational_refusal_hostile).length} organizational-refusal, and ${Object.keys(b28Expected.state_hostile).length} authority-state hostile fixtures`);

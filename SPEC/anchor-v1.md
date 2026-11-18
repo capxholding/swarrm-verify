@@ -164,6 +164,11 @@ offline report to E2.
 Bundles gain an ADDITIVE `tst_records` field (absent when nothing is
 timestamped), mirroring `anchor_records`.
 
+New timestamp requests require one complete ASN.1 `TimeStampResp` before
+token verification or record issuance. Trailing bytes, concatenated replies
+and malformed framing refuse without echoing provider-controlled content.
+This does not change the verification of retained tokens or TSA trust policy.
+
 `tsa_url` is a public endpoint identity, not an authentication channel. New
 clients and public bundle, report, certificate/view and SCITT-pack producers
 refuse user information, query parameters and fragments, including empty

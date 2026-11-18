@@ -14,6 +14,13 @@ size/hash, root prefix, identity/license members and exact reviewed links.
 Acquisition and source authentication retain their own original evidence;
 a prepared source receipt does not establish signature or advisory clearance.
 
+Source URLs must use HTTPS and contain no credentials, query, fragment, or
+whitespace. The OpenLDAP, Kerberos (`krb5`), Cyrus SASL, and PostgreSQL profiles bind their
+version to the archive root `<library>-<version>` and the URL's exact final
+path component. OpenLDAP uses `.tgz`; the other profiles use `.tar.gz`. A version
+label cannot change independently of the archive identity. Preparation still
+performs no network access or source execution.
+
 The shared source extractor refuses links by default. A reviewed profile may
 name exact relative symlinks to original regular files in the same archive.
 Preparation materializes their bytes as regular files at the original names,
@@ -45,3 +52,13 @@ repeats identity/tree observations to detect changes. Original acquisition
 paths need not remain available. Changed, extra, missing or unsafe members
 refuse. Keep producer, capture and preservation exits separately; successful
 source preparation grants no build, ABI, environment or release admission.
+
+Each CLI operation writes one JSON summary. `prepare-native-source --check`
+returns `swarrm/native-library-source-preflight/v1` with `library`,
+`inputs_sha256`, and `scope`. Preparation returns
+`swarrm/native-library-source-prepared/v1` with `library`, `source`, `sha256`,
+`receipt_sha256`, and `scope`. `verify-native-source` returns
+`swarrm/native-library-source-verified/v1` with `library`, `receipt_sha256`,
+and `scope`. These summaries are not the full material receipt. Read version,
+archive identity, and inventory from the hash-bound `receipt.json` after
+successful verification; do not infer them from missing summary fields.
