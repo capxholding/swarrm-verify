@@ -25,6 +25,7 @@ const V2_NS: &str = "swarrm/";
 const MEDIA: &str = "application/eat+cwt";
 const LOCAL_CONTEXT: &str = "swarrm-b28/local-verifier-context/v1";
 const LOCAL_REFUSAL_CONTEXT: &str = "swarrm-b28/local-refusal-context/v1";
+const LOCAL_ORGANIZATIONAL_REFUSAL_CONTEXT: &str = "swarrm-b28/local-organizational-refusal-context/v1";
 const TRUST_PACK: &str = "swarrm-b28/trust-pack/v1";
 const ACTION: &str = "swarrm-b28/action-core/v1";
 const AGENT_REF: &str = "swarrm-b28/agent-ref/v1";
@@ -459,6 +460,7 @@ type RefusalLocal = (BTreeMap<String, Vec<u8>>, BTreeMap<String, Vec<u8>>, u64);
 enum LocalContext {
     Presentation(PresentationLocal),
     Refusal(RefusalLocal),
+    OrganizationalRefusal(PresentationLocal, BTreeMap<String, Vec<u8>>),
 }
 fn local_keys(value: &C) -> Option<BTreeMap<String, Vec<u8>>> {
     sorted_entries(value, "kid public_key", |entry| {
@@ -503,6 +505,13 @@ fn parse_local_context(raw: &[u8]) -> Result<LocalContext, &'static str> {
         }
         return refusal_context(local).map(LocalContext::Refusal).ok_or("VERIFIER_CONTEXT_INVALID");
     }
+    if let Some(local) = document(&value, Some(LOCAL_ORGANIZATIONAL_REFUSAL_CONTEXT), "challenger_keys responder_keys registered_checkpoints authority_heads expected_admin_origin max_action_lifetime_s now") {
+        if uint(&local["now"]).is_none() {
+            return Err("LOCAL_CLOCK_INVALID");
+        }
+        let responders = local_keys(&local["responder_keys"]).ok_or("VERIFIER_CONTEXT_INVALID")?;
+        return presentation_context(local).map(|context| LocalContext::OrganizationalRefusal(context, responders)).ok_or("VERIFIER_CONTEXT_INVALID");
+    }
     Err("VERIFIER_CONTEXT_INVALID")
 }
 fn parse_input(exchange: &[u8], local: PresentationLocal) -> Option<InputContext> {
@@ -521,6 +530,14 @@ fn parse_refusal(exchange: &[u8], local: RefusalLocal) -> Option<RefusalContext>
     let exchange = document(&decode(exchange, MAX_INPUT)?, None, "challenge refusal")?;
     let (challenger_keys, responder_keys, now) = local;
     Some(RefusalContext { challenge: bytes(&exchange["challenge"])?.to_vec(), refusal: bytes(&exchange["refusal"])?.to_vec(), challenger_keys, responder_keys, now })
+}
+fn parse_organizational_refusal(exchange: &[u8], local: PresentationLocal, responder_keys: BTreeMap<String, Vec<u8>>) -> Option<(RefusalContext, InputContext)> {
+    let exchange = document(&decode(exchange, MAX_INPUT)?, None, "challenge refusal organizational_presentation")?;
+    let (challenger_keys, checkpoints, heads, origin, max_action_lifetime_s, now) = local;
+    let challenge = bytes(&exchange["challenge"])?.to_vec();
+    let refusal = RefusalContext { challenge: challenge.clone(), refusal: bytes(&exchange["refusal"])?.to_vec(), challenger_keys: challenger_keys.clone(), responder_keys, now };
+    let attribution = InputContext { challenge, presentation: bytes(&exchange["organizational_presentation"])?.to_vec(), roots: BTreeMap::new(), challenger_keys, checkpoints, heads, origin, max_action_lifetime_s, now };
+    Some((refusal, attribution))
 }
 const VERIFIED: [&str; 13] = ["passport_identity", "live_key_control", "root_chain", "template_admin_pop", "fresh_status", "binding", "grant", "delegation", "exact_action", "asa_reservation", "challenge", "transcript", "replay"];
 const UNEVALUATED: [&str; 5] = ["node_basis", "source_basis", "coverage_basis", "history", "post_action_evidence_readiness"];
@@ -1161,10 +1178,18 @@ fn evaluate_refusal(input: &RefusalContext) -> ResultValue {
     ResultValue::new("FAIL", "SIGNED_REFUSAL", vector)
 }
 
+fn evaluate_organizational_refusal(refusal: &RefusalContext, attribution: &InputContext) -> ResultValue {
+    let denial = evaluate_refusal(refusal);
+    if denial.reason != "SIGNED_REFUSAL" {
+        return denial;
+    }
+    let (result, context) = evaluate(attribution);
+    context.map_or_else(|| ResultValue::new("FAIL", format!("SIGNED_REFUSAL_ORGANIZATIONAL_ATTRIBUTION_INVALID:{}", result.reason), result.vector), |context| ResultValue::new("FAIL", "SIGNED_REFUSAL", context.vector))
+}
+
 /// Verify a two-field exchange: local context and exchange structure, then generation, then the root pin.
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 pub fn verify_b28_cwt(exchange: &[u8], local_context: &[u8], trust_pack: &[u8], expected_trust_pack_digest: &[u8]) -> String {
-    // A mixed generation is a property of the bytes, so the relying party's trust pack never masks it.
     let local = match parse_local_context(local_context) {
         Ok(local) => local,
         Err(reason) => {
@@ -1177,6 +1202,15 @@ pub fn verify_b28_cwt(exchange: &[u8], local_context: &[u8], trust_pack: &[u8], 
     let result = match local {
         LocalContext::Presentation(local) => parse_input(exchange, local).map(|input| single([&input.challenge, &input.presentation]).and_then(|()| pinned()).map_or_else(|refused| refused, |roots| evaluate(&InputContext { roots, ..input }).0)),
         LocalContext::Refusal(local) => parse_refusal(exchange, local).map(|input| single([&input.challenge, &input.refusal]).and_then(|()| pinned()).map_or_else(|refused| refused, |_| evaluate_refusal(&input))),
+        LocalContext::OrganizationalRefusal(local, responders) => parse_organizational_refusal(exchange, local, responders).map(|(refusal, mut attribution)| {
+            single([&refusal.challenge, &refusal.refusal]).and_then(|()| single([&refusal.challenge, &attribution.presentation])).and_then(|()| pinned()).map_or_else(
+                |refused| refused,
+                |roots| {
+                    attribution.roots = roots;
+                    evaluate_organizational_refusal(&refusal, &attribution)
+                },
+            )
+        }),
     }
     .unwrap_or_else(|| ResultValue::new("INDETERMINATE", "VERIFIER_CONTEXT_INVALID", initial_vector()));
     serde_json::to_string(&result.json()).expect("result is a fixed JSON-compatible value")

@@ -110,6 +110,20 @@ fn signed_refusal_matches_python_without_authorizing_execution() {
     assert_eq!(got["should_execute"], false);
 }
 
+#[test]
+fn organizational_refusal_matches_python_without_authorizing_execution() {
+    let expected = manifest();
+    let input = fs::read(dir().join("organizational-refusal-input.cbor")).unwrap();
+    let local = context("organizational-refusal-context.cbor");
+    let got: J = serde_json::from_str(&verify_exchange(&input, &local)).unwrap();
+    assert_eq!(got, expected["expected_organizational_refusal"]);
+    assert_eq!(got["verdict"], "FAIL");
+    assert_eq!(got["should_execute"], false);
+    assert_eq!(got["vector"]["root_chain"], "VERIFIED");
+    assert_eq!(got["vector"]["delegation"], "VERIFIED");
+    assert_eq!(got["vector"]["replay"], "INDETERMINATE");
+}
+
 // SPEC/handshake-v1.md §6: a signed refusal is judged under the same pinned
 // pack as a presentation. Python's twin (tests/test_b28_cross_language_golden.py)
 // feeds the same bytes with no pack. The valid refusal and the keyless one both
@@ -151,6 +165,20 @@ fn hostile_signed_refusals_match_python() {
     for (name, item) in expected["refusal_hostile"].as_object().unwrap() {
         let raw = fs::read(dir().join("refusal-hostile").join(format!("{name}.exchange.cbor"))).unwrap();
         let context = fs::read(dir().join("refusal-hostile").join(format!("{name}.context.cbor"))).unwrap();
+        assert_eq!(digest(&raw), item["exchange_sha256"].as_str().unwrap(), "{name} exchange");
+        assert_eq!(digest(&context), item["context_sha256"].as_str().unwrap(), "{name} context");
+        let got: J = serde_json::from_str(&verify_exchange(&raw, &context)).unwrap();
+        assert_eq!(got, item["expected"], "{name}");
+    }
+}
+
+#[test]
+fn hostile_organizational_refusals_match_python() {
+    let expected = manifest();
+    for (name, item) in expected["organizational_refusal_hostile"].as_object().unwrap() {
+        let root = dir().join("organizational-refusal-hostile");
+        let raw = fs::read(root.join(format!("{name}.exchange.cbor"))).unwrap();
+        let context = fs::read(root.join(format!("{name}.context.cbor"))).unwrap();
         assert_eq!(digest(&raw), item["exchange_sha256"].as_str().unwrap(), "{name} exchange");
         assert_eq!(digest(&context), item["context_sha256"].as_str().unwrap(), "{name} context");
         let got: J = serde_json::from_str(&verify_exchange(&raw, &context)).unwrap();

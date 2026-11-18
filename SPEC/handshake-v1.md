@@ -319,6 +319,29 @@ signature only under its local responder keys, and the signer must be the
 challenge's actor. A valid refusal is `FAIL/SIGNED_REFUSAL` with
 `should_execute=false`; it denies execution and never confers authority.
 
+Organizational attribution is an explicit stronger, backward-compatible
+verification profile. It does not change `RefusalCoreV1` or reinterpret a
+historical local-key refusal. Its exchange contains exactly `challenge`,
+`refusal` and `organizational_presentation`; its local context has schema
+`swarrm-b28/local-organizational-refusal-context/v1` and combines the ordinary
+presentation context with `responder_keys`. The organizational presentation is
+the existing `PresentationCoreV1` for the same challenge and action. The
+verifier first establishes the terminal denial, then verifies that presentation
+read-only through the pinned root, scoped delegation, credential, current
+checkpoint, status proofs, grant and ASA. This reuses the same validity,
+revocation and substitution checks as ordinary verification rather than
+introducing a second authority format.
+
+Successful attribution remains `FAIL/SIGNED_REFUSAL` and never consumes replay
+state; its vector reports the independently verified presentation dimensions
+while replay remains indeterminate. A valid denial paired with invalid
+organizational evidence is
+`FAIL/SIGNED_REFUSAL_ORGANIZATIONAL_ATTRIBUTION_INVALID:<cause>` and cannot be
+treated as organizationally attributed. Missing or malformed stronger-profile
+structure is `INDETERMINATE/VERIFIER_CONTEXT_INVALID`. A caller that supplies
+only the historical two-field exchange and local-refusal context receives the
+historical local-key result byte-for-byte. Neither profile grants execution.
+
 ## 7. Carriage and bilateral binding
 
 A2A v1 carriage uses exactly one inline `raw` Part with

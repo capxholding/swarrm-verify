@@ -1,33 +1,31 @@
 <!-- Apache-2.0 -->
-# ISO/IEC 27037 alignment — four principles, four mechanisms (INFORMATIVE)
+# ISO/IEC 27037 alignment (informative)
 
-Status: INFORMATIVE. Alignment, not a certification and not a pack.
-Swarrm is described here as **forensic readiness** in the ISO/IEC 27043
-sense: the capability to use digital evidence when required, built before
-the incident. Independent analysis is ISO/IEC 27042. Conformance methods
-are ISO/IEC 27041. Electronic discovery is the ISO/IEC 27050 cousin.
+This note maps Swarrm's evidence mechanisms to
+[ISO/IEC 27037](https://www.iso.org/standard/44381.html).
+It describes technical alignment, not certification.
 
-## 1. Four principles → four mechanisms
+## 1. Evidence handling
 
-| 27037 principle | Swarrm mechanism |
+| Activity | Swarrm mechanism |
 |---|---|
 | Identify | Action types, session lineage, and explicit `evd.gap.*` markers so missing capture is named rather than implied |
-| Collect | Fail-open capture: receipts at the instrumented surfaces; capture never blocks the agent |
+| Collect | Capture-only receipts at the instrumented surfaces |
 | Acquire | Salted, domain-separated commitments; payloads stay with the caller (or transit the hosted gateway once) |
-| Preserve | RFC 6962 append-only log, inclusion and consistency proofs, RFC 3161 / RFC 5816 timestamps labelled non-qualified |
+| Preserve | RFC 6962 append-only log, inclusion and consistency proofs, RFC 3161 / RFC 5816 timestamps labeled non-qualified |
 
-## 2. Cousin standards (paragraphs, not packs)
+## 2. Related standards
 
-- **ISO/IEC 27043 (forensic readiness).** The product is the readiness
-  layer: logs, commitments, and offline verification exist before anyone
-  asks. It is not a preventative control plane.
-- **ISO/IEC 27041 (assurance methods).** The golden / adversarial fixture
-  corpus is the conformance method: two independent verifiers must agree
-  byte-for-byte. Publishing that corpus as a 17029-shaped artefact waits
-  on relying-party lists (direction recorded under `1.3/b45-4-direction`).
-- **ISO/IEC 27042 (analysis).** Dual Python and Rust/WASM verifiers that
-  agree on the same bytes are independent analysts of the same evidence.
-- **ISO/IEC 27050 (eDiscovery).** Same identify/collect/preserve shape
-  applied to electronically stored information in a legal hold. Named so
-  it is not forgotten. Not a pack, not a legal-hold product, not a claim
-  that a bundle is a 27050 production.
+- **[ISO/IEC 27043](https://www.iso.org/standard/44407.html) (incident investigation).**
+  Logs, commitments, and offline verification support preparation before
+  an incident and subsequent evidence review.
+- **[ISO/IEC 27041](https://www.iso.org/standard/44405.html) (assurance methods).**
+  Golden and adversarial fixtures compare Python and Rust/WASM verifier
+  results on identical inputs. A formal review packet remains pending
+  relying-party arrangements.
+- **[ISO/IEC 27042](https://www.iso.org/standard/44406.html) (analysis).**
+  Receipts and verification results support an investigator's analysis
+  of the captured evidence.
+- **[ISO/IEC 27050-1](https://www.iso.org/standard/78647.html) (eDiscovery).**
+  Evidence identification, capture, and preservation can support electronic
+  discovery. Legal-hold management and evidence production remain external.

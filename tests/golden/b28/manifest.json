@@ -892,6 +892,33 @@
     },
     "verdict": "INDETERMINATE"
   },
+  "expected_organizational_refusal": {
+    "reasons": [
+      "SIGNED_REFUSAL"
+    ],
+    "should_execute": false,
+    "vector": {
+      "asa_reservation": "VERIFIED",
+      "binding": "VERIFIED",
+      "challenge": "VERIFIED",
+      "coverage_basis": "NOT_EVALUATED_V1",
+      "delegation": "VERIFIED",
+      "exact_action": "VERIFIED",
+      "fresh_status": "VERIFIED",
+      "grant": "VERIFIED",
+      "history": "NOT_EVALUATED_V1",
+      "live_key_control": "VERIFIED",
+      "node_basis": "NOT_EVALUATED_V1",
+      "passport_identity": "VERIFIED",
+      "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+      "replay": "INDETERMINATE",
+      "root_chain": "VERIFIED",
+      "source_basis": "NOT_EVALUATED_V1",
+      "template_admin_pop": "VERIFIED",
+      "transcript": "VERIFIED"
+    },
+    "verdict": "FAIL"
+  },
   "expected_read_only": {
     "reasons": [
       "DURABLE_REPLAY_REQUIRED"
@@ -2475,6 +2502,8 @@
   "inputs": {
     "challenge.cwt": "a821c58f559809d692b1fd1c207608ccc381ba3a866a93d934b6030b52cfab84",
     "invalid-trust-pack.cbor": "53b1c8a8ab6455536675a942826d28462e3a7496eb8f47ed5dddf2bba469f855",
+    "organizational-refusal-context.cbor": "d4f60f0b70d0e50f3b648b3761328b474f0495ae04aad9975b1cf2280adbb6a3",
+    "organizational-refusal-input.cbor": "9bb5a290fab9a742e5c9bf4e1a332f9b46141bde9aa34003c13f1fedffc4054d",
     "presentation.cwt": "030e41a80fe4d559c3c4abb7d682aa2c4f2f09783c0824cb892669eefaa61cdc",
     "refusal-context.cbor": "005ea25c7de8d27874148a9f1402ef34d88acab969428c8e1a3d28d990401ac2",
     "refusal-input.cbor": "ecd64583b52d7868611b8ad98cbce433ea6455a5d42b5b5e4a4566cf81e82a50",
@@ -2485,6 +2514,194 @@
     "trust-pack.cbor": "042b49806fbe4e175828bdbfc96386e8ec88a71d386ed2536d8c30459c25c5cc",
     "verify-context.cbor": "f216c07e264a59ec262e4944c0ef88bb1357987c1795b74e0e2285012dae8d07",
     "verify-input.cbor": "1e0f06c87297d7f44a46e3b2c25487063c5738c68fbf5b603af9c2200e07bcec"
+  },
+  "organizational_refusal_hostile": {
+    "expired_delegation": {
+      "context_sha256": "d4f60f0b70d0e50f3b648b3761328b474f0495ae04aad9975b1cf2280adbb6a3",
+      "exchange_sha256": "4b814d55b5162908e8c14727079492487ea0c00faa3af03ab5bf08fd73b9bab0",
+      "expected": {
+        "reasons": [
+          "SIGNED_REFUSAL_ORGANIZATIONAL_ATTRIBUTION_INVALID:AUTHORITY_DELEGATION_INACTIVE"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "INDETERMINATE",
+          "challenge": "VERIFIED",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "INDETERMINATE",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "INDETERMINATE",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "INDETERMINATE",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "INDETERMINATE",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "INDETERMINATE",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "FAIL"
+      }
+    },
+    "malformed_presentation": {
+      "context_sha256": "d4f60f0b70d0e50f3b648b3761328b474f0495ae04aad9975b1cf2280adbb6a3",
+      "exchange_sha256": "3a2d4eb479a9f2885a3e06c67869dda05d016cf78f447c1c88b141da4b5cada5",
+      "expected": {
+        "reasons": [
+          "SIGNED_REFUSAL_ORGANIZATIONAL_ATTRIBUTION_INVALID:PRESENTATION_NOT_STRICT_CWT"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "INDETERMINATE",
+          "challenge": "VERIFIED",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "INDETERMINATE",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "INDETERMINATE",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "INDETERMINATE",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "INDETERMINATE",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "INDETERMINATE",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "FAIL"
+      }
+    },
+    "missing_presentation": {
+      "context_sha256": "d4f60f0b70d0e50f3b648b3761328b474f0495ae04aad9975b1cf2280adbb6a3",
+      "exchange_sha256": "ecd64583b52d7868611b8ad98cbce433ea6455a5d42b5b5e4a4566cf81e82a50",
+      "expected": {
+        "reasons": [
+          "VERIFIER_CONTEXT_INVALID"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "INDETERMINATE",
+          "challenge": "INDETERMINATE",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "INDETERMINATE",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "INDETERMINATE",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "INDETERMINATE",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "INDETERMINATE",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "INDETERMINATE",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "INDETERMINATE"
+      }
+    },
+    "revoked_delegation": {
+      "context_sha256": "b6cf9d5d784a24aae1442ec6a7f67b4b09f14ad96bc2fcd2d1b3f7c27f3627e8",
+      "exchange_sha256": "81113717bb48d160d942b9999d4d9390dbc503718620b3c6526149b67f965503",
+      "expected": {
+        "reasons": [
+          "SIGNED_REFUSAL_ORGANIZATIONAL_ATTRIBUTION_INVALID:AUTHORITY_STATE_PROOF_INVALID:root_delegation"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "VERIFIED",
+          "challenge": "VERIFIED",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "VERIFIED",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "VERIFIED",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "VERIFIED",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "VERIFIED",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "VERIFIED",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "FAIL"
+      }
+    },
+    "substituted_responder_key": {
+      "context_sha256": "80fa3e68d51365b96b7f7e4c81ad5ddb520bb3b5b2da1296b1ef93a7bfd4a536",
+      "exchange_sha256": "9bb5a290fab9a742e5c9bf4e1a332f9b46141bde9aa34003c13f1fedffc4054d",
+      "expected": {
+        "reasons": [
+          "SIGNED_REFUSAL_INVALID"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "INDETERMINATE",
+          "challenge": "INDETERMINATE",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "INDETERMINATE",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "INDETERMINATE",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "INDETERMINATE",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "INDETERMINATE",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "INDETERMINATE",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "FAIL"
+      }
+    },
+    "unrelated_root": {
+      "context_sha256": "d4f60f0b70d0e50f3b648b3761328b474f0495ae04aad9975b1cf2280adbb6a3",
+      "exchange_sha256": "8b80a68af1907e9d89c8f03a39909c1bd3377cd1a0f96511e9c2cb2ce16fa74e",
+      "expected": {
+        "reasons": [
+          "SIGNED_REFUSAL_ORGANIZATIONAL_ATTRIBUTION_INVALID:ROOT_AUTHORITY_CHAIN_INVALID"
+        ],
+        "should_execute": false,
+        "vector": {
+          "asa_reservation": "INDETERMINATE",
+          "binding": "INDETERMINATE",
+          "challenge": "VERIFIED",
+          "coverage_basis": "NOT_EVALUATED_V1",
+          "delegation": "INDETERMINATE",
+          "exact_action": "INDETERMINATE",
+          "fresh_status": "INDETERMINATE",
+          "grant": "INDETERMINATE",
+          "history": "NOT_EVALUATED_V1",
+          "live_key_control": "INDETERMINATE",
+          "node_basis": "NOT_EVALUATED_V1",
+          "passport_identity": "INDETERMINATE",
+          "post_action_evidence_readiness": "NOT_EVALUATED_V1",
+          "replay": "INDETERMINATE",
+          "root_chain": "INDETERMINATE",
+          "source_basis": "NOT_EVALUATED_V1",
+          "template_admin_pop": "INDETERMINATE",
+          "transcript": "INDETERMINATE"
+        },
+        "verdict": "FAIL"
+      }
+    }
   },
   "refusal_hostile": {
     "future_local_clock": {

@@ -6,10 +6,19 @@ This contract records private toolchain provisioning. It grants no SDK,
 advisory, workload, or release acceptance.
 
 Inputs use `swarrm/qualification-python-inputs/v5`; plans use
-`swarrm/qualification-python-plan/v5`; completed receipts use
-`swarrm/qualification-python-component/v6`. Older input, plan, and component
+`swarrm/qualification-python-plan/v8`; completed receipts use
+`swarrm/qualification-python-component/v8`. Older input, plan, and component
 schemas are historical evidence and cannot authorize the current build or
 component reuse. Preserve them unchanged rather than rewriting their seals.
+
+On Linux, preparation observes the complete governed APT and unattended-upgrade
+unit inventory before reading expensive native inputs. Every unit must be masked
+and inactive. The plan binds the boot identity, the exact bounded boot reader,
+the exact systemctl executable, the normalized unit states and the original
+output digests. Every phase and
+receipt readmission repeats that observation. A reboot, unmask, active timer,
+changed observer, failed query or automatic package mutation invalidates reuse;
+the verifier never stops or masks services to manufacture admission.
 
 The exact configuration digest binds the reviewed, hash-bound prepared source, compiler,
 linker, make, shell, archiver, archive indexer, native libraries, CA bundle,
@@ -17,6 +26,15 @@ SDK, developer directory, and deployment target. Each executable has an
 absolute path and byte digest. Preparation and every phase revalidate these
 inputs. The closed environment sets AR, RANLIB, and SHELL explicitly; make
 receives those assignments on its command line as well.
+
+The SDK child measures the bound SDK selection only. It validates the exact
+configuration and platform overrides, uses a closed environment, retains its
+original outcome, and rechecks configuration bytes after measurement. It must
+not recursively consume source or ingredient receipts. Preparation, each direct
+phase worker, and component reuse still consume the complete input evidence
+before invoking it; an SDK observation alone grants no admission. The existing
+SDK and phase deadlines remain unchanged, including the thirty-second execute
+probe worker limit.
 
 Every library binding contains exactly `path`, `sha256` and `receipt`. The
 receipt contains its exact absolute `path` and `sha256`. Matching library bytes
@@ -73,9 +91,63 @@ length and SHA-256 digest and must survive independent readback. The helper
 recipe also binds this contract. Changed inputs or missing originals require
 fresh evidence, never reconstructed original receipts.
 
+The plan binds the original helper checkout and the version-specific upstream
+module inventory. Execution requires that checkout; readback retains its original
+identity. Reconstruct the import probe's original argv from that bound helper
+origin, never the current readback checkout. Execution still requires the
+admitted origin. This portability rule does not permit changed helper or policy
+bytes; those require fresh component evidence.
+The inventory includes hashlib and HMAC tests on every supported
+version and Zstandard tests on Python 3.14, alongside the existing native-interface
+tests. The same declaration owns the actual command and receipt interpretation.
+
+Before upstream tests, the constructed interpreter collects exact case IDs in
+isolated, no-bytecode mode. The existing owned runner bounds collection to sixty
+seconds within the unchanged 1,800-second self-test phase. Failed imports,
+diagnostics, incomplete streams, duplicate or foreign cases, failed producers,
+lost observation and changed inputs refuse before tests start. Retain collection
+streams, original exit and signal records, control and SDK observations, and the
+separate worker outcome. Selection evidence uses `swarrm/native-python-selection/v1`.
+The original JUnit must contain every collected case exactly once with a completed
+outcome, including named upstream skips. Existing requirements for executed cases
+in every selected module and absence of failures/errors remain. No case count can
+substitute for those identities. Reuse verifies the same original evidence.
+CPython's literal `unittest.loader.ModuleSkipped` case IDs remain in the inventory;
+their original JUnit records must identify them as skipped and retain a reason.
+Failed-import placeholders, foreign modules and passing module-omission records refuse.
+
+Source preparation recipe `swarrm/python-source-preparation/v2` separately binds
+`Lib/test/libregrtest/testresult.py` under local review
+`swarrm/cpython-junit-subtests/v1`. This is a qualification exporter correction,
+not an upstream security backport. Exact original/postimage hashes and contexts
+are mandatory for all four versions. The original source and installed trees
+remain unchanged; fresh preparation applies the correction to private copies.
+Imports, collection and self-tests refuse a missing, changed or unsafe installed
+exporter before executing the constructed interpreter. Recheck after collection.
+Environment creation and reuse consume the same complete source inventory.
+Historical v1 source preparation cannot authorize current native execution or
+managed-runtime admission. A valid current inventory still distinguishes older
+unmanaged runtime versions; malformed inventory is never interpreted as unmanaged.
+The upstream test command, assertions, parallelism and deadlines are unchanged.
+
+The exporter retains each collected parent once. A skipped subtest cannot consume
+its parent's XML slot or hide a later failure. Parent attributes bind the subtest
+schema, observed callback count and successful callback count. Successful callbacks
+are counted rather than expanded into unbounded XML. Each nonpassing subtest has
+its original identity, ordered sequence and original skip reason or failure/error.
+Receipts retain these summaries alongside the hash-bound original XML. Unknown
+schemas, incomplete counts, changed parents, duplicate/out-of-order sequences and
+missing reasons refuse; any failure/error still blocks acceptance. Completion
+refusal restores the original output streams. No missing record is reconstructed,
+renamed or interpreted as success. Reuse consumes the same evidence contract.
+
 On macOS the compiler and link probe name the native `arm64` or `x86_64`
 architecture explicitly. Unknown targets refuse; Linux does not inherit macOS
 architecture flags. Capability and build commands use the same target flags.
+On Linux, static SQLite dependencies also occupy configure's trailing `LIBS`
+slot: older probes put `LIBSQLITE3_LIBS` before the test object and then
+link `-lsqlite3` again. Both settings use the same fixed math, loader and thread
+dependencies; inherited `LIBS` is excluded. Required-module checks stay mandatory.
 
 ## Private Linux support material
 
@@ -102,7 +174,18 @@ normalized-file origins, complete output files and helper/policy identities.
 rederives the output from its retained originals. Extra, missing, changed or
 unsafe members refuse. Original acquisition paths need not remain available.
 Preparation returns a prefix/tree binding only after that consumer agrees and
-the source inputs remain unchanged. Keep the actual command and capture exits
+the source inputs remain unchanged.
+
+When an older parent consumes Zstandard-compressed support archives, select
+the already bound Python 3.14 control from the native configuration. Validate
+its declared baseline, binary, prefix, loaded objects and source helpers before
+launching the existing complete material consumer in a closed `-I -B` child.
+Recheck all identities and material afterward. Missing or incompatible control
+refuses before construction. The versioned reader response binds the receipt,
+prefix tree and original control observation; malformed output or any failed
+producer, capture, owner or cleanup outcome refuses. Retain failed child streams
+and actual exits outside sealed inputs. Successful scratch cleanup grants no
+new runtime, workload or release admission. Keep the actual command and capture exits
 separate: a material receipt does not establish successful process completion.
 
 This prepares input material; it does not qualify ABI compatibility, security,

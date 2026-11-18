@@ -66,13 +66,29 @@ is not successful preservation, and this command never deletes originals.
 
 Zstandard retains a separate work copy of the complete prepared source. Original
 source members and the isolated, bytecode-disabled Python launcher must remain
-unchanged except for the exact, hash-bound private test overlay declared in the
-recipe. The original archive and extracted source remain untouched. The overlay
-replaces one six-byte test string initializer with six explicit character
-initializers, preserving the buffer type and bytes under the existing warning
-policy. Its original/derived identities and readback are retained and verified. The static archive includes multithreading; the functional program
+unchanged except for the exact, hash-bound private work overlays declared in the
+recipe. The original archive and extracted source remain untouched. One overlay
+replaces a six-byte test string initializer with explicit character initializers,
+preserving its type and bytes. Another requires the CET capability probe to exit
+zero with empty diagnostics, preserving supported options and rejecting ignored
+ones. A third overlay applies upstream cef5a5611a3792cf9eaab5826f48e92c7c287f0a
+to `lib/compress/zstd_ldm.c`. Official 1.5.7 of that file is byte-identical to
+the commit parent. Automatic hash-log selection uses the minimum when windowLog
+is not greater than hashRateLog and otherwise keeps the existing bounded
+subtraction; the unsigned subtraction is not admitted. Release `tests/fuzzer.c`
+is not that parent file. A fourth overlay inserts the same regression ahead of
+the existing long-distance dictionary test: automatic hash log, windowLog 12 and
+hashRateLog 13 must compress one kibibyte with a context below 50 MiB. Seed
+7919 test 371 remains in the unchanged stream target. The `swarrm/native-static-work-overlay/v2` record binds complete original and derived file
+identities; every overlay is checked before any work copy is changed. Readback
+verifies the derivation without filtering compiler or linker diagnostics. The static archive includes multithreading; the functional program
 checks version, worker support, round-trip bytes and checksum refusal.
 
+Linux uses the declared `-fno-semantic-interposition` selection in both early
+compiler capabilities and the vendor build. Interposed functions must retain
+the same semantics and side effects; this private ingredient does not support
+overrides that change decoder error behavior. Compiler warnings remain errors,
+legacy decoders remain enabled, and macOS does not select this ELF setting.
 The full vendor contract runs all program variants, the complete tests target
 with large-data/fuzzer/stream/pool coverage, and the educational decoder. Nested
 make calls remain bounded to two jobs. The original CLI runner selects its own
@@ -80,6 +96,17 @@ complete test inventory and preserves each test's original exit/stdout/stderr;
 the next consumer checks those identities and original exact/glob expectations.
 The full target's separate pool PASS verdict is required once and is not counted
 as a CLI node; missing, duplicated or unexplained PASS records refuse.
+
+Linux Zstandard preparation also requires the measured 8,594,128,896-byte LDM
+table floor before output creation or compilation. Capacity records use
+`swarrm/native-static-capacity/v2` and retain two complete bounded kernel-memory
+snapshots, the visible cgroup-v2 ancestry and the address-space limit. Unlimited
+address space is recorded as `-1` independently of the reader's platform.
+Missing measurements, hidden ancestry, changed limits and insufficient available
+memory refuse. Retained verification replays these original bytes against the
+bound platform; it does not measure the reader's host. This necessary floor
+does not establish peak-memory sufficiency or admission for another workload.
+macOS retains its existing admission; old capacity records are not resealed.
 Known internal CLI aliases retain their original absolute target bytes. During
 historical readback, targets are checked against the corresponding retained
 regular file, without following an old absolute path or rebinding the link.
