@@ -2,8 +2,8 @@
 # RFC 4998 Evidence Record Syntax — comparison (INFORMATIVE)
 
 Status: INFORMATIVE. One page so subsequent maintenance does not re-derive
-whether Swarrm is an ERS encoding. It is not. Timestamp **renewal** is
-the non-breaking post-quantum story; it is not implemented here.
+whether Swarrm is an ERS encoding. It is not. Swarrm now supports an additive,
+offline timestamp-renewal chain without changing receipt or checkpoint bytes.
 
 ## 1. What ERS is
 
@@ -23,12 +23,16 @@ an append-only log, not an ERS archive object.
 |---|---|---|
 | Archive timestamp over a data object | RFC 3161 token over a checkpoint `body_hash` | Checkpoint, not document; tokens are non-qualified |
 | Hash-tree reduction of many objects | RFC 6962 Merkle tree of receipts | Different tree profile (CT, not ERS) |
-| Timestamp renewal when a hash ages | Not implemented | The written PQ story: renew timestamps without changing the receipt bytes |
+| Retained signer status | Offline CRL or direct-issuer OCSP evidence at token `genTime` | Separate relying-party trust material; no network fetch |
+| Timestamp renewal when a hash ages | `evd/tsa-renewal-chain/v1` over the exact predecessor evidence | Separate trust input; receipt and checkpoint bytes remain unchanged |
 | ERS ASN.1 encoding | Not used | DSSE / COSE / CBOR on the trust path |
 
 ## 3. Inherit or diverge
 
 Diverge on encoding (no ERS ASN.1, no new verifier union). Inherit the
-*requirement* that long-term verifiability needs a renewal story when
-SHA-256's calendar changes. That story is timestamp renewal, not a
-hybrid signature on the wire, and it waits for a later train.
+*requirement* that long-term verifiability needs renewal when an earlier hash
+or signer approaches the end of its useful life. `SPEC/anchor-v1.md` defines
+the versioned chain: each new RFC 3161 token hashes the exact prior token,
+carried chain and offline status evidence, verifies under independently
+supplied roots and has a strictly later `genTime`. This is timestamp renewal,
+not a hybrid signature on the wire and not a claim that Swarrm emits ERS.

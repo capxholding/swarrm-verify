@@ -49,6 +49,8 @@
   "evidence_tst_attrs_unknown": "VERIFIED",
   "evidence_tst_decoy_a": "VERIFIED",
   "evidence_tst_decoy_b": "VERIFIED",
+  "evidence_tst_ess_v2": "VERIFIED",
+  "evidence_tst_ess_v2_wrong_hash": "VERIFIED",
   "evidence_tst_expired_issuer": "VERIFIED",
   "evidence_tst_forged_ca": "VERIFIED",
   "evidence_tst_leaf_issuer": "VERIFIED",

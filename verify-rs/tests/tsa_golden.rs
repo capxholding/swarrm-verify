@@ -5,6 +5,8 @@
 //! RSASSA-PKCS1-v1_5, so both columns agree on every stored token.
 
 use serde_json::Value;
+
+type TrustMutation = Box<dyn Fn(&mut Value)>;
 use std::fs;
 use std::path::PathBuf;
 
@@ -97,4 +99,134 @@ fn syntax_versions_bind_bundle_acceptance_and_rooted_time() {
     }
     let required = ["tst_0", "tst_2", "tst_negative_1", "tst_257", "signer_0", "signer_2", "signer_3", "signer_4", "signer_5", "signer_9", "signed_data_0", "signed_data_1", "signed_data_2", "signed_data_4", "signed_data_5", "signed_data_9", "other_revocation_valid", "other_revocation_wrong", "serial_wrong_type", "serial_negative"].into_iter().collect::<std::collections::BTreeSet<_>>();
     assert_eq!(checked, required, "review the complete version mutation identities");
+}
+
+#[test]
+fn ess_cert_id_v2_policy_binds_the_actual_signer_in_the_bundle_caller() {
+    let dir = golden_dir();
+    let read = |name: &str| -> Value { serde_json::from_slice(&fs::read(dir.join(name)).unwrap()).unwrap() };
+    let lifecycle_trust = read("trust_evidence_ess_v2.json");
+    let ordinary_trust = read("trust_evidence.json");
+    let valid = read("evidence_tst_ess_v2.json");
+    let wrong_hash = read("evidence_tst_ess_v2_wrong_hash.json");
+    let missing = read("evidence_tst_attrs_unknown.json");
+
+    let accepted = swarrm_verify::verify_bundle(&valid, Some(&lifecycle_trust));
+    assert_eq!(accepted["ok"].as_bool(), Some(true));
+    assert_eq!(accepted["trusted_tst_checkpoints"].as_array().unwrap().len(), 1);
+    assert_eq!(swarrm_verify::verify_bundle(&wrong_hash, Some(&lifecycle_trust))["ok"].as_bool(), Some(false));
+    assert_eq!(swarrm_verify::verify_bundle(&missing, Some(&lifecycle_trust))["ok"].as_bool(), Some(false));
+
+    // Retained v1 evidence keeps its historical interpretation until the
+    // relying party opts into the additive profile.
+    assert_eq!(swarrm_verify::verify_bundle(&wrong_hash, Some(&ordinary_trust))["ok"].as_bool(), Some(true));
+    assert_eq!(swarrm_verify::verify_bundle(&missing, Some(&ordinary_trust))["ok"].as_bool(), Some(true));
+}
+
+#[test]
+fn malformed_timestamp_policy_refuses_in_the_bundle_caller() {
+    let dir = golden_dir();
+    let read = |name: &str| -> Value { serde_json::from_slice(&fs::read(dir.join(name)).unwrap()).unwrap() };
+    let bundle = read("evidence_tst_ess_v2.json");
+    for policy in [serde_json::json!({}), serde_json::json!({"schema": "evd/tsa-verification-policy/v1"}), serde_json::json!({"schema": "evd/tsa-verification-policy/v1", "signing_certificate": "optional"}), serde_json::json!({"schema": "evd/tsa-verification-policy/v1", "signing_certificate": "esscertid-v2-required", "unknown": true})] {
+        let mut trust = read("trust_evidence.json");
+        trust["tsa_policy"] = policy;
+        assert_eq!(swarrm_verify::verify_bundle(&bundle, Some(&trust))["ok"].as_bool(), Some(false));
+    }
+}
+
+#[test]
+fn offline_crl_and_ocsp_status_bind_the_actual_signer_and_generation_time() {
+    let dir = golden_dir();
+    let read = |name: &str| -> Value { serde_json::from_slice(&fs::read(dir.join(name)).unwrap()).unwrap() };
+    let bundle = read("evidence_tst_ess_v2.json");
+    for kind in ["crl", "ocsp"] {
+        let trust = read(&format!("trust_evidence_lifecycle_{kind}.json"));
+        let accepted = swarrm_verify::verify_bundle(&bundle, Some(&trust));
+        assert_eq!(accepted["ok"].as_bool(), Some(true), "{kind}");
+        assert_eq!(accepted["trusted_tst_checkpoints"].as_array().unwrap().len(), 1);
+        for fault in ["stale", "revoked"] {
+            let trust = read(&format!("trust_evidence_lifecycle_{kind}_{fault}.json"));
+            assert_eq!(swarrm_verify::verify_bundle(&bundle, Some(&trust))["ok"].as_bool(), Some(false), "{kind}/{fault}");
+        }
+    }
+}
+
+#[test]
+fn malformed_or_unbound_offline_status_refuses() {
+    let dir = golden_dir();
+    let read = |name: &str| -> Value { serde_json::from_slice(&fs::read(dir.join(name)).unwrap()).unwrap() };
+    let bundle = read("evidence_tst_ess_v2.json");
+    let trust = read("trust_evidence_lifecycle_crl.json");
+    let mutations: [TrustMutation; 4] = [
+        Box::new(|v| {
+            v.as_object_mut().unwrap().remove("tsa_revocation");
+        }),
+        Box::new(|v| {
+            let table = v["tsa_revocation"].as_object_mut().unwrap();
+            let key = table.keys().next().unwrap().clone();
+            let record = table.remove(&key).unwrap();
+            table.insert("00".repeat(32), record);
+        }),
+        Box::new(|v| {
+            v["tsa_revocation"].as_object_mut().unwrap().values_mut().next().unwrap()["der_b64"] = Value::String("not base64".into());
+        }),
+        Box::new(|v| {
+            v["tsa_revocation"].as_object_mut().unwrap().values_mut().next().unwrap()["unexpected"] = Value::Bool(true);
+        }),
+    ];
+    for mutate in mutations {
+        let mut candidate = trust.clone();
+        mutate(&mut candidate);
+        assert_eq!(swarrm_verify::verify_bundle(&bundle, Some(&candidate))["ok"].as_bool(), Some(false));
+    }
+}
+
+#[test]
+fn timestamp_renewal_chain_binds_the_original_and_every_retained_input() {
+    let dir = golden_dir();
+    let read = |name: &str| -> Value { serde_json::from_slice(&fs::read(dir.join(name)).unwrap()).unwrap() };
+    let bundle = read("evidence_tst_ess_v2.json");
+    let trust = read("trust_evidence_lifecycle_renewal.json");
+    let accepted = swarrm_verify::verify_bundle(&bundle, Some(&trust));
+    assert_eq!(accepted["ok"].as_bool(), Some(true));
+    assert_eq!(accepted["trusted_tst_checkpoints"].as_array().unwrap().len(), 1);
+
+    let mutations: [TrustMutation; 9] = [
+        Box::new(|v| {
+            v.as_object_mut().unwrap().remove("tsa_renewal");
+        }),
+        Box::new(|v| {
+            let table = v["tsa_renewal"].as_object_mut().unwrap();
+            let key = table.keys().next().unwrap().clone();
+            let record = table.remove(&key).unwrap();
+            table.insert("00".repeat(32), record);
+        }),
+        Box::new(|v| {
+            v["tsa_renewal"].as_object_mut().unwrap().values_mut().next().unwrap()["renewals"] = serde_json::json!([]);
+        }),
+        Box::new(|v| {
+            v["tsa_renewal"].as_object_mut().unwrap().values_mut().next().unwrap()["renewals"][0]["token_der_b64"] = Value::String("not base64".into());
+        }),
+        Box::new(|v| {
+            v["tsa_renewal"].as_object_mut().unwrap().values_mut().next().unwrap()["renewals"][0]["unexpected"] = Value::Bool(true);
+        }),
+        Box::new(|v| {
+            v["tsa_renewal"].as_object_mut().unwrap().values_mut().next().unwrap()["renewals"][0]["cert_chain_pem"] = Value::String("changed".into());
+        }),
+        Box::new(|v| {
+            v["tsa_renewal"].as_object_mut().unwrap().values_mut().next().unwrap()["renewals"].as_array_mut().unwrap().reverse();
+        }),
+        Box::new(|v| {
+            v["tsa_renewal"].as_object_mut().unwrap().values_mut().next().unwrap()["renewals"].as_array_mut().unwrap().remove(0);
+        }),
+        Box::new(|v| {
+            v.as_object_mut().unwrap().remove("tsa_roots");
+        }),
+    ];
+    for mutate in mutations {
+        let mut candidate = trust.clone();
+        mutate(&mut candidate);
+        assert_eq!(swarrm_verify::verify_bundle(&bundle, Some(&candidate))["ok"].as_bool(), Some(false));
+    }
 }

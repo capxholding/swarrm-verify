@@ -1,19 +1,6 @@
 // Apache-2.0 (public verifier repo)
-//! Independently-supplied trust anchors — mirror of `verify/trust.py`.
-//!
-//! **A favourable verdict may never derive
-//! from an input the subject supplies.** Every externally-grounded dimension
-//! used to be computed from a producer boolean (`verified: true`,
-//! `node_signed: true`, `attester_independent: true`), so a subject could award
-//! itself ASYMMETRIC / INDEPENDENT / OBSERVED / CLOSED / PROVEN_* / REGISTERED
-//! by asserting them. Same defect as a bundle carrying its own TSA chain.
-//!
-//! Two layers, both required:
-//! 1. the anchors arrive **out of band** — `derive_vector_with_trust` takes the
-//!    context as a separate argument, so the evidence document cannot supply
-//!    it, and with `None` every such dimension renders its weak value;
-//! 2. the proofs are **actually checked** — a signature over domain-separated
-//!    JCS bytes, verified under a key the relying party named.
+//! Out-of-band trust anchors and proof checks, mirrored by `verify/trust.py`.
+//! Producer-supplied flags never create a favorable externally grounded value.
 
 use crate::jcs;
 use serde::de::{self, DeserializeSeed, MapAccess, SeqAccess, Visitor};
@@ -24,11 +11,14 @@ use std::fmt;
 pub(crate) const SOURCE_WEBHOOK_SIGNATURE_CONTEXT: &str = "evd/source-webhook-body-jcs/v1";
 pub(crate) const MAX_SOURCE_PROOF_MATERIAL_BYTES: usize = 1024 * 1024;
 pub(crate) const MAX_SOURCE_PROOF_TOTAL_BYTES: usize = 8 * 1024 * 1024;
+pub(crate) const TSA_POLICY_SCHEMA: &str = "evd/tsa-verification-policy/v1";
+const TSA_LIFECYCLE_POLICY_SCHEMA: &str = "evd/tsa-verification-policy/v2";
+const TSA_RENEWAL_POLICY_SCHEMA: &str = "evd/tsa-verification-policy/v3";
+const TSA_REVOCATION_SCHEMA: &str = "evd/tsa-revocation-evidence/v1";
+const TSA_RENEWAL_SCHEMA: &str = "evd/tsa-renewal-chain/v1";
 const MAX_JSON_NUMBER_TOKEN_BYTES: usize = 128;
 
-/// Every key category a derivation may appeal to. A category absent from the
-/// supplied context means this relying party named no root there, so every
-/// dimension grounded in it renders weak — never a favourable default.
+/// Every key category a derivation may appeal to; absence always renders weak.
 pub(crate) const KEY_CATEGORIES: [&str; 12] = ["source_keys", "mac_keys", "evaluator_keys", "node_keys", "node_roots", "temporal_keys", "population_keys", "accountability_keys", "scitt_ts_keys", "log_keys", "recorder_keys", "tsa_roots"];
 
 fn decode_b64(s: &str) -> Option<Vec<u8>> {
@@ -46,8 +36,7 @@ fn decode_material(v: Option<&Value>) -> Option<Vec<u8>> {
     crate::scitt::hex_to_bytes(s).or_else(|| decode_b64(s))
 }
 
-/// The public key this relying party named for `name`, or None (the safe
-/// answer: no anchor -> no favourable value).
+/// The public key this relying party named for `name`, or None.
 pub(crate) fn key_for(trust: Option<&Value>, category: &str, name: Option<&str>) -> Option<Vec<u8>> {
     if !KEY_CATEGORIES.contains(&category) {
         return None;
@@ -56,19 +45,119 @@ pub(crate) fn key_for(trust: Option<&Value>, category: &str, name: Option<&str>)
     decode_material(table.get(name?))
 }
 
-/// Concatenated PEM roots named for the E2 time leg (`tsa_roots` holds PEM
-/// text, never Ed25519 material — mirror of verify/trust.py::_tsa_roots_pem).
-/// Non-string values are dropped: a malformed root can only fail WEAK.
+/// Concatenated PEM roots for E2 time; malformed values can only render weak.
 pub(crate) fn tsa_roots_pem(trust: Option<&Value>) -> Option<String> {
     let table = trust?.get("tsa_roots")?.as_object()?;
     let pems: Vec<&str> = table.values().filter_map(Value::as_str).filter(|s| !s.trim().is_empty()).collect();
     (!pems.is_empty()).then(|| pems.join("\n"))
 }
 
-/// Domain-separated JCS bytes — the exact material signed. Every
-/// `signature`/`*_sig` field is stripped, so a signature is never part of what
-/// it signs, and the domain stops a proof made for one purpose being replayed
-/// as proof of another.
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub(crate) enum TsaPolicy {
+    Absent,
+    EssCertIdV2,
+    OfflineLifecycle,
+    OfflineRenewal,
+    Malformed,
+}
+
+pub(crate) fn tsa_policy(trust: Option<&Value>) -> TsaPolicy {
+    let Some(policy) = trust.and_then(|v| v.get("tsa_policy")) else { return TsaPolicy::Absent };
+    let Some(policy) = policy.as_object() else { return TsaPolicy::Malformed };
+    let policy = Value::Object(policy.clone());
+    if policy == serde_json::json!({"schema": TSA_POLICY_SCHEMA, "signing_certificate": "esscertid-v2-required"}) {
+        TsaPolicy::EssCertIdV2
+    } else if policy == serde_json::json!({"schema": TSA_LIFECYCLE_POLICY_SCHEMA, "signing_certificate": "esscertid-v2-required", "revocation": "offline-crl-or-ocsp-required"}) {
+        TsaPolicy::OfflineLifecycle
+    } else if policy == serde_json::json!({"schema": TSA_RENEWAL_POLICY_SCHEMA, "signing_certificate": "esscertid-v2-required", "revocation": "offline-crl-or-ocsp-required", "renewal": "archive-timestamp-chain-required"}) {
+        TsaPolicy::OfflineRenewal
+    } else {
+        TsaPolicy::Malformed
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum TsaStatusKind {
+    Crl,
+    Ocsp,
+}
+
+fn status_record(value: &Value) -> Option<(TsaStatusKind, Vec<u8>)> {
+    let record = value.as_object()?;
+    let shape = (record.len(), record.get("schema")?.as_str()?);
+    if shape != (3, TSA_REVOCATION_SCHEMA) {
+        return None;
+    }
+    let kind = match record.get("type")?.as_str()? {
+        "crl" => TsaStatusKind::Crl,
+        "ocsp" => TsaStatusKind::Ocsp,
+        _ => return None,
+    };
+    let raw = decode_b64(record.get("der_b64")?.as_str()?)?;
+    (!raw.is_empty() && raw.len() <= 1024 * 1024).then_some((kind, raw))
+}
+
+pub(crate) fn tsa_revocation_record(trust: Option<&Value>, signer_der: &[u8]) -> Option<(TsaStatusKind, Vec<u8>)> {
+    let table = trust?.get("tsa_revocation")?.as_object()?;
+    if table.is_empty() || table.len() > 16 {
+        return None;
+    }
+    let wanted = crate::hex(&Sha256::digest(signer_der));
+    let mut selected = None;
+    for (fingerprint, value) in table {
+        if fingerprint.len() != 64 || fingerprint != &fingerprint.to_ascii_lowercase() || crate::scitt::hex_to_bytes(fingerprint).is_none() {
+            return None;
+        }
+        let record = status_record(value)?;
+        if fingerprint == &wanted {
+            selected = Some(record);
+        }
+    }
+    selected
+}
+
+fn renewal_item(value: &Value) -> Option<(Vec<u8>, String)> {
+    let item = value.as_object().filter(|item| item.len() == 2)?;
+    let token = item.get("token_der_b64").and_then(Value::as_str).and_then(decode_b64).filter(|raw| !raw.is_empty() && raw.len() <= 1024 * 1024)?;
+    let chain = item.get("cert_chain_pem").and_then(Value::as_str).filter(|text| !text.is_empty() && text.len() <= 1024 * 1024)?;
+    Some((token, chain.to_owned()))
+}
+
+fn renewal_record(value: &Value) -> Option<Vec<(Vec<u8>, String)>> {
+    let record = value.as_object()?;
+    if record.len() != 2 || record.get("schema")?.as_str()? != TSA_RENEWAL_SCHEMA {
+        return None;
+    }
+    let values = record.get("renewals")?.as_array()?;
+    if values.is_empty() || values.len() > 8 {
+        return None;
+    }
+    let parsed: Vec<_> = values.iter().map(renewal_item).collect::<Option<_>>()?;
+    let total = parsed.iter().try_fold(0usize, |n, (token, chain)| n.checked_add(token.len() + chain.len()))?;
+    (total <= 8 * 1024 * 1024).then_some(parsed)
+}
+
+pub(crate) fn tsa_renewal_chain(trust: Option<&Value>, original_token: &[u8]) -> Option<Vec<(Vec<u8>, String)>> {
+    let table = trust?.get("tsa_renewal")?.as_object()?;
+    if table.is_empty() || table.len() > 16 {
+        return None;
+    }
+    let wanted = crate::hex(&Sha256::digest(original_token));
+    let mut selected = None;
+    for (fingerprint, value) in table {
+        let valid = fingerprint.len() == 64 && fingerprint == &fingerprint.to_ascii_lowercase() && crate::scitt::hex_to_bytes(fingerprint).is_some();
+        let parsed = renewal_record(value)?;
+        if !valid {
+            return None;
+        }
+        if fingerprint == &wanted {
+            selected = Some(parsed);
+        }
+    }
+    selected
+}
+
+/// Domain-separated JCS bytes with signature members stripped.
 pub(crate) fn signed_bytes(domain: &str, payload: &Value) -> Option<Vec<u8>> {
     let mut stripped = Map::new();
     for (k, v) in payload.as_object()? {
@@ -90,9 +179,7 @@ fn signed_proof(payload: &Value, domain: &str) -> Option<(Vec<u8>, Vec<u8>)> {
     Some((decode_material(payload.get("signature"))?, signed_bytes(domain, payload)?))
 }
 
-/// True iff `payload`'s signature verifies under the named trusted key. Total:
-/// any missing anchor, missing signature or malformed input is false. This is
-/// the ONLY route to a favourable externally-grounded value.
+/// Verify under the named trusted key; missing or malformed inputs are false.
 pub(crate) fn verified(trust: Option<&Value>, category: &str, name: Option<&str>, domain: &str, payload: &Value) -> bool {
     let Some(pub_bytes) = key_for(trust, category, name) else { return false };
     let Ok(pubkey): Result<[u8; 32], _> = pub_bytes.try_into() else { return false };
@@ -132,8 +219,7 @@ fn ct_eq(a: &[u8], b: &[u8]) -> bool {
     a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
-/// A shared-secret MAC: possession by SOME holder, so the vocabulary caps it at
-/// `SHARED_SECRET`. Verified anyway — an unverified MAC is evidence of nothing.
+/// A verified shared-secret MAC proves possession only.
 pub(crate) fn mac_verified(trust: Option<&Value>, name: Option<&str>, domain: &str, payload: &Value) -> bool {
     let Some(secret) = key_for(trust, "mac_keys", name) else { return false };
     let Some((mac, msg)) = signed_proof(payload, domain) else { return false };

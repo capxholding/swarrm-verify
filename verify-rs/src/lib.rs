@@ -1,9 +1,6 @@
 // Apache-2.0 (public verifier repo)
-//! Public Rust second implementation for evd/bundle/v1.
-//!
-//! A SECOND implementation, on purpose: it shares no code with the Python
-//! verifier, so agreement on the shared golden suite (tests/golden/) is real
-//! evidence that the format is unambiguous. Verify-only, offline, no network.
+//! Independent, offline Rust verifier for evd/bundle/v1; parity is established
+//! by the shared golden suite, not shared implementation code.
 
 pub mod action;
 pub mod b28;
@@ -36,9 +33,7 @@ const DISCLOSURE_SCHEMA: &str = "evd/disclosure/v1";
 const SPARSE_CHECKPOINT_CHAIN_PROFILE: &str = "evd/checkpoint-chain/sparse-proof-v1";
 const DOMAIN_PREFIX: &str = "evd/v1/";
 
-// Resource caps match `verify/verifier.py`: input over any cap is NOT VERIFIED
-// in either implementation.
-// All caps sit far above every legitimate bundle.
+// Resource caps match verify/verifier.py and precede cryptographic work.
 #[allow(dead_code)] // enforced at byte entry points (verify_bundle_json/wasm)
 const MAX_BUNDLE_BYTES: usize = 64 * 1024 * 1024;
 const MAX_ENTRIES: usize = 200_000;
@@ -47,16 +42,11 @@ const MAX_CHECKPOINT_CHAIN_LEN: usize = 100_000;
 const MAX_SIGNATURES_PER_ENVELOPE: usize = 9;
 const MAX_ATTESTATION_RECORDS: usize = 256;
 
-// A signed checkpoint whose tree_size covers a leaf is the log's own sworn
-// statement that it already HELD that receipt, so a receipt's ts_server may
-// exceed the FIRST covering checkpoint's signed ts by at most this many
-// seconds — anything later is the log contradicting itself. Same value and
-// semantics as verify/verifier.py::RECEIPT_CHECKPOINT_SKEW_S.
+// Maximum receipt skew after its first signed covering checkpoint.
 const RECEIPT_CHECKPOINT_SKEW_S: i64 = 300;
 
 pub(crate) fn depth_exceeds(v: &Value, limit: i64) -> bool {
-    // bounded recursion: bails at the first over-deep branch (limit+2 frames
-    // at most), so the walk itself can never overflow the stack
+    // Bounded recursion exits at the first over-depth branch.
     if limit < 0 {
         return true;
     }
@@ -82,8 +72,7 @@ fn entry_within_caps(e: &Value) -> bool {
     true
 }
 
-/// Resource caps are checked before cryptographic work, using the same caps
-/// same order as _cap_error in verify/verifier.py.
+/// Apply Python-parity resource caps before cryptographic work.
 fn within_caps(bundle: &Value) -> bool {
     if let Some(entries) = bundle.get("entries").and_then(|v| v.as_array()) {
         if entries.len() > MAX_ENTRIES {
@@ -146,14 +135,7 @@ pub(crate) fn key_from_jwk(jwk: &Value) -> Option<([u8; 32], String)> {
     // kid = base64url(sha256(raw))[:16]
     let full = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(sha256(&k));
     let kid = full.chars().take(16).collect::<String>();
-    // SPEC/bundle-v1.md §3.1: every JWK's kid matches its key material, reject
-    // aliases. Guarding the comparison with `.as_str()` meant a kid that was
-    // PRESENT but not a string (false, 0, {}, []) skipped the check entirely
-    // and the alias was accepted — 10 of 672 type-confusion mutants verified
-    // here and were rejected by Python, all at jwks.keys[0].kid. A carried
-    // member that is not the shape it claims is
-    // MALFORMED, not absent; `null` alone stays equal to missing, which is the
-    // no-claim state the rest of this verifier reads through `.get()`.
+    // SPEC/bundle-v1.md §3.1 rejects aliases and type-confused carried kids.
     match jwk.get("kid") {
         None | Some(Value::Null) => {}
         Some(Value::String(claimed)) if *claimed == kid => {}
@@ -176,7 +158,7 @@ fn envelope_message(env: &Value) -> Option<Vec<u8>> {
     Some(pae(env.get("payloadType")?.as_str()?, &payload_of(env)?))
 }
 
-/// 1.4/algorithm-agility: the field set is CLOSED and an unknown `alg` fails closed. Before this, every member but `sig` was ignored, so any claim at all rode through unread -- "verified except for the parts we did not understand". Absence of `alg` means EdDSA, which is what every receipt ever issued means, so no existing verdict moves.
+/// Closed signature fields; absent alg retains the historical EdDSA meaning.
 fn signature_valid(sig: &Value, message: &[u8], pubkey: &[u8; 32]) -> bool {
     let Some(o) = sig.as_object() else { return false };
     o.contains_key("keyid") && o.iter().all(|(n, v)| matches!(n.as_str(), "keyid" | "sig" | "alg") && v.is_string()) && o.get("alg").is_none_or(|v| v.as_str() == Some("EdDSA")) && sig.get("sig").and_then(Value::as_str).and_then(|raw| B64.decode(raw).ok()).is_some_and(|raw| ed25519_verify(pubkey, message, &raw))
@@ -268,13 +250,7 @@ pub(crate) fn canonical_utc(s: &str) -> bool {
     y > 0 && (1..=12).contains(&m) && d > 0 && d <= days[m as usize] && h < 24 && n < 60 && sec < 60
 }
 
-/// Canonical extended UTC (per `canonical_utc`) → microseconds since the Unix
-/// epoch. The covering-checkpoint rule needs `checkpoint ts + 300 s`, which is
-/// ARITHMETIC — the lexicographic comparison `kid_valid_at` uses cannot add
-/// seconds, and `action::nts` only normalizes. So this reuses the strict
-/// grammar for validation (never `nts`'s permissive superset — the parser-gap
-/// lesson of `_not_before_checkpoint`) and does days-from-civil arithmetic on
-/// the already-validated parts, matching Python's `datetime` to the microsecond.
+/// Canonical UTC to epoch microseconds for arithmetic checkpoint comparisons.
 fn utc_epoch_micros(ts: &str) -> Option<i64> {
     if !canonical_utc(ts) {
         return None;
@@ -373,11 +349,7 @@ pub(crate) fn key_active(kl: &KeyLog, kid: &str, at: &str, observed_size: u64) -
     state.introduced.0 < observed_size && state.introduced.1 <= at && state.revoked_at.as_ref().is_none_or(|(leaf, ts)| observed_size <= *leaf && utc_epoch_micros(ts).is_some_and(|revoked| at <= revoked))
 }
 
-/// Some envelope signature is by a key the log had active at `ts` AND that
-/// signature actually verifies. With `issuer_only`, keys the log has marked
-/// non-issuer are excluded — one predicate, so the "active key vouched" and
-/// "an ISSUER vouched" arms of the key-created sponsorship rule below can
-/// never drift apart on what "active and signed" means.
+/// A valid signature by a key active at ts, optionally restricted to issuers.
 fn signed_by_active_key(env: &Value, kl: &KeyLog, ts: &str, observed_size: u64, issuer_only: bool) -> bool {
     env.get("signatures").and_then(Value::as_array).is_some_and(|ss| {
         ss.iter().any(|s| {
@@ -505,9 +477,7 @@ pub(crate) fn checkpoint_body_hash(cp: &Value) -> Option<String> {
     Some(hex(&sha256(&jcs::canonical_checked(body)?)))
 }
 
-/// Continuity assertions: whether the operator's statements TILE the chain they presented.
-///
-/// A dense chain is already its own statement -- `prev_hash` meeting the predecessor's body hash leaves nothing elided. A SPARSE chain elides intervals, and an elided interval with no assertion over it is a hole in what was asserted. Returns the count of such holes. It is a verdict about the assertions and never about the world: absence is not provable and nothing here claims it is.
+/// Count asserted continuity holes in a sparse chain; dense chains elide nothing.
 pub(crate) fn continuity_gaps(chain: &[Value], assertions: &[Value]) -> usize {
     let covered: Vec<(String, String)> = assertions
         .iter()
@@ -529,7 +499,7 @@ pub(crate) fn continuity_gaps(chain: &[Value], assertions: &[Value]) -> usize {
         .count()
 }
 
-/// Mirror of verify/verifier.py::_assess_continuity as (present, ok, gaps). One assertion that is not the declared shape, not signed by a log key or about another origin makes the cover unreadable: ok is false and no gap is counted, where Python stops. Counting around it instead would let an unsigned statement cover an interval and silence a detected discontinuity.
+/// Python-parity continuity result: (present, readable, uncovered gaps).
 fn assess_continuity(bundle: &Value, chain: &[Value], kl: &KeyLog) -> (bool, bool, usize) {
     let Some(raw) = bundle.get("continuity").filter(|v| !v.is_null()) else { return (false, true, continuity_gaps(chain, &[])) };
     let Some(items) = raw.as_array() else { return (false, false, 0) };
@@ -540,8 +510,7 @@ fn assess_continuity(bundle: &Value, chain: &[Value], kl: &KeyLog) -> (bool, boo
     (!items.is_empty(), items.is_empty() || gaps == 0, gaps)
 }
 
-/// Mirror the strict Python wire and signature checks. V2 adds the authority
-/// checkpoint hash; continuity_authority separately verifies its issuer binding.
+/// Strict Python-parity wire checks; v2 also binds the authority checkpoint.
 fn continuity_admissible(item: &Value, kl: &KeyLog, origin: Option<&Value>) -> bool {
     const MEMBERS: [&str; 7] = ["schema", "origin", "from_hash", "to_hash", "from_tree_size", "to_tree_size", "appended"];
     let (Some(outer), Some(body)) = (item.as_object(), item.get("body").and_then(Value::as_object)) else { return false };
@@ -571,7 +540,7 @@ fn continuity_authority(item: &Value, bundle: &Value, chain: &[Value], kl: &KeyL
     cp == &bundle["target_checkpoint"] && cp["kid"].as_str() == Some(kid) && !kl.state.get(kid).is_some_and(|s| s.non_issuer) && key_active(kl, kid, ts, size) && start < end && chain[start]["body"]["tree_size"] == b["from_tree_size"] && chain[end]["body"]["tree_size"] == b["to_tree_size"]
 }
 
-/// An assertion that disagrees with its own endpoints is two claims, not evidence about an interval; admitting it would let a quiet interval be asserted over a busy one.
+/// Assertion endpoints must agree with their retained interval.
 pub(crate) fn continuity_self_consistent(assertion: &Value) -> bool {
     let Some(b) = assertion.get("body") else { return false };
     let (Some(from), Some(to), Some(appended)) = (b.get("from_tree_size").and_then(Value::as_i64), b.get("to_tree_size").and_then(Value::as_i64), b.get("appended").and_then(Value::as_i64)) else { return false };
@@ -583,14 +552,7 @@ pub(crate) fn hex(b: &[u8]) -> String {
     b.iter().map(|x| format!("{:02x}", x)).collect()
 }
 
-/// A Merkle proof is a sequence of 32-byte hashes or it is not a proof.
-///
-/// `filter_map` over the hex decode DROPPED every element it could not decode,
-/// so a proof with junk spliced into it was evaluated as a shorter proof instead
-/// of being rejected. A proof containing `"zz"` must fail in both verifiers.
-/// ABSENT (or null) still means an empty proof — the no-claim shape, which only
-/// ever verifies a one-leaf tree — but a carried member that
-/// is not a list of 32-byte hex hashes is MALFORMED and rejects the proof.
+/// A Merkle proof is exclusively a sequence of 32-byte hashes.
 fn proof_hashes(v: Option<&Value>) -> Option<Vec<[u8; 32]>> {
     match v {
         None | Some(Value::Null) => Some(Vec::new()),
@@ -600,11 +562,7 @@ fn proof_hashes(v: Option<&Value>) -> Option<Vec<[u8; 32]>> {
 }
 
 fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool {
-    // The body member set is closed HERE, not only by signature coverage: an
-    // operator-SIGNED extra member canonicalises consistently and would verify,
-    // while Python's Checkpoint.from_dict refuses it — the divergence mirror of
-    // the unsigned-member story in that docstring. `alg` is the one optional
-    // member; absence means EdDSA and an unrecognised value never verifies.
+    // Close checkpoint members here; alg alone is optional and defaults to EdDSA.
     const CHECKPOINT_MEMBERS: [&str; 7] = ["schema", "origin", "tree_size", "root_hash", "ts", "prev_hash", "alg"];
     let Some(kid) = cp.get("kid").and_then(|v| v.as_str()) else { return false };
     let Some(pubkey) = keys.get(kid) else { return false };
@@ -625,16 +583,7 @@ fn verify_checkpoint_sig(cp: &Value, keys: &BTreeMap<String, [u8; 32]>) -> bool 
     ed25519_verify(pubkey, &msg, &sig)
 }
 
-/// Both directions. Every JWKS kid must be witnessed by the log — and every key
-/// the log says is ACTIVE must be in the JWKS.
-///
-/// The second half catches key-log TAIL TRUNCATION. The JWKS is derived from
-/// active keys, so a bundle whose `evd.key.revoked` entry has been deleted
-/// carries a log saying the key is live beside a JWKS that omits it. Entry
-/// density is computed over the key entries PRESENT, so [1, 2] reads dense once
-/// entry 3 is gone: dropping `evd.key.rotated` or `evd.key.created` was caught,
-/// dropping `evd.key.revoked` was not, and the golden `post_revocation_forgery`
-/// fixture must be rejected in both engines.
+/// Require bidirectional equality between active log keys and JWKS kids.
 fn check_jwks_match_log(bundle: &Value, kl: &KeyLog) -> bool {
     let jwks = match bundle.get("jwks").and_then(|v| v.get("keys")).and_then(|v| v.as_array()) {
         Some(k) if !k.is_empty() => k,
@@ -727,9 +676,7 @@ fn check_checkpoint_chain(chain: &[Value], chain_entries: &[Value], kl: &KeyLog,
 }
 
 fn check_bundle_origin(bundle: &Value, target: &Value, chain: &[Value]) -> bool {
-    // `bundle.origin` is outside every checkpoint signature but is consumed by
-    // reports, certificates, and relying-party trust lookup. It must exactly
-    // name the signed target and the complete signed checkpoint history.
+    // Unsigned `bundle.origin` must name both the signed target and complete history.
     let Some(origin) = bundle.get("origin").and_then(|v| v.as_str()) else { return false };
     let target_origin = target.get("body").and_then(|body| body.get("origin")).and_then(|v| v.as_str());
     target_origin == Some(origin) && chain.iter().all(|cp| cp.get("body").and_then(|body| body.get("origin")).and_then(|v| v.as_str()) == Some(origin))
@@ -742,11 +689,7 @@ fn chain_head_matches(chain: &[Value], target: &Value) -> bool {
 }
 
 fn check_entry_sigs(env: &Value, sigs: &[Value], body: &Value, leaf: u64, kl: &KeyLog) -> bool {
-    // Verify EACH signature's OWN bytes, mirroring Python verify_envelope's
-    // every-signature scan. Delegating to env_signed_by (first keyid match)
-    // let a duplicate keyid with arbitrary bytes ride on the first valid
-    // signature — Rust accepted a bundle Python rejects (parity divergence,
-    // adversarial review 2026-08-08).
+    // Verify every signature's own bytes; duplicate key IDs receive no shortcut.
     let Some(message) = envelope_message(env) else { return false };
     for s in sigs {
         let kid = s.get("keyid").and_then(|v| v.as_str()).unwrap_or("");
@@ -771,11 +714,7 @@ fn check_entry_inclusion(e: &Value, payload: &[u8], size: u64, root: &[u8]) -> b
     merkle::verify_inclusion(&leaf_hash, leaf_index, size, &proof, root)
 }
 
-/// The envelope member set is CLOSED, exactly as `core/receipt_wire.py::Envelope.from_json`
-/// closes it. This engine used to look the three members up and ignore the rest, so an
-/// envelope Python refused as "unknown or missing members" verified here (golden
-/// `receipt_envelope_unknown_member`). Two verifiers that disagree on the same bytes are
-/// not two verifiers; and only a closed set lets a member defined later be admitted by name.
+/// Close envelope members exactly as core/receipt_wire.py does.
 fn envelope_members_closed(env: &Value) -> bool {
     env.as_object().is_some_and(|members| members.len() == 3 && ["payload", "payloadType", "signatures"].iter().all(|k| members.contains_key(*k)))
 }
@@ -794,12 +733,7 @@ fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8], covers: &[(u64, i
     // every signature valid + key valid at ts_server; receipt_body_valid has
     // already admitted both timestamps under the shared canonical UTC profile.
     let ts_server = body.get("ts_server").and_then(|v| v.as_str()).unwrap_or("");
-    // ts_server may not postdate the FIRST chain checkpoint whose tree_size
-    // covers this leaf by more than RECEIPT_CHECKPOINT_SKEW_S — the same rule,
-    // boundary and skew as verify/verifier.py::_check_entries. The chain's
-    // monotone tree_size is enforced by check_checkpoint_chain; a chain that
-    // fails there fails the bundle regardless of what partition_point saw
-    // here. A leaf no presented checkpoint covers keeps its prior behavior.
+    // Bound ts_server against the first signed checkpoint covering this leaf.
     let leaf = e.get("leaf_index").and_then(Value::as_u64).unwrap_or(u64::MAX);
     let first_cover = covers.partition_point(|(covered, _)| *covered <= leaf);
     if let Some((_, deadline)) = covers.get(first_cover) {
@@ -820,18 +754,7 @@ fn check_entry(e: &Value, kl: &KeyLog, size: u64, root: &[u8], covers: &[(u64, i
     check_entry_inclusion(e, &payload, size, root)
 }
 
-/// Did this bundle arrive carrying what it was exported to carry?
-///
-/// Everything in a bundle is signed except the bundle. Entries are individually
-/// signed and individually proven included, so deleting one leaves every
-/// remaining signature valid, every inclusion proof valid, and the same target
-/// root. Removing a force-included `evd.finding.raised` must be rejected in
-/// both engines.
-///
-/// ABSENT (or null) means the bundle makes no completeness claim, which stays
-/// valid: bundles predate the manifest, and a key-less replica exports honestly
-/// without one. Python carries that third state in its report; here a bool is
-/// enough, and the asymmetry is deliberate — the same shape anchors already use.
+/// Verify the optional export manifest's claim about the carried receipt set.
 fn manifest_target_time(body: &Value, bundle: &Value, target: &Value, kid: &str) -> Option<String> {
     if body.get("schema").and_then(|v| v.as_str()) != Some("evd/export-manifest/v1") {
         return None;
@@ -851,15 +774,7 @@ fn manifest_target_time(body: &Value, bundle: &Value, target: &Value, kid: &str)
     Some(ts.to_string())
 }
 
-/// PRESENT means it must hold: signed by this target checkpoint's non-recorder
-/// issuer (never `bundle["jwks"]`), at that checkpoint's signed timestamp,
-/// and SET-EQUAL to the receipts actually carried, so neither removal nor
-/// injection survives.
-///
-/// THREE states, not two (verify/verifier.py::_check_export_manifest): None is
-/// "no completeness claim carried" — bundles predate the manifest and a
-/// key-less replica export (scripts/restore_check.py) cannot sign one — and it
-/// is NOT failure. Only `Some(false)` gates the bundle verdict.
+/// A present manifest needs the target issuer and exact carried-receipt equality.
 fn check_export_manifest(bundle: &Value, entries: &[Value], target: &Value, kl: &KeyLog) -> Option<bool> {
     let raw = bundle.get("export_manifest").filter(|v| !v.is_null())?;
     let (Some(body), Some(kid), Some(sig_b64)) = (raw.get("body").filter(|b| b.is_object()), raw.get("kid").and_then(|v| v.as_str()), raw.get("sig").and_then(|v| v.as_str())) else { return Some(false) };
@@ -884,23 +799,14 @@ fn check_export_manifest(bundle: &Value, entries: &[Value], target: &Value, kl: 
     Some(claimed == carried)
 }
 
-/// Everything about the ENTRIES a bundle carries: each one individually, the
-/// signed manifest saying which ones there should be, and per-agent sequence
-/// uniqueness. Split out of `check_checkpoints_and_entries` to keep that
-/// function within the §0.2·3a complexity ceiling.
+/// Validate entries, completeness and per-agent sequence uniqueness.
 fn check_entry_set(bundle: &Value, entries: &[Value], target: &Value, chain: &[Value], kl: &KeyLog, trust: Option<&Value>, facts: &mut BundleFacts) -> bool {
-    // seq GAPS are legitimate (subset exports); a duplicate (agent_id, seq) is
-    // always forgery or corruption. The manifest answer is recorded BEFORE the
-    // conjunction so a bundle that fails elsewhere still reports the same
-    // tri-state Python reports — `_check_export_manifest` runs unconditionally.
+    // Preserve manifest tri-state even when another entry-set check fails.
     facts.complete = check_export_manifest(bundle, entries, target, kl);
     check_entries(entries, target, chain, kl, trust, facts) && facts.complete != Some(false) && check_seq_uniqueness(entries)
 }
 
-/// (tree_size, latest admissible ts_server in epoch µs) per chain checkpoint.
-/// None when any checkpoint lacks a usable tree_size or canonical ts — Python
-/// refuses such a chain at parse (`_check_chain`), so failing the entry set
-/// here lands both engines on the same NOT VERIFIED.
+/// Per-checkpoint latest admissible receipt time; malformed chains refuse.
 fn checkpoint_cover_deadlines(chain: &[Value]) -> Option<Vec<(u64, i64)>> {
     chain
         .iter()
@@ -958,9 +864,7 @@ fn check_seq_uniqueness(entries: &[Value]) -> bool {
 
 pub(crate) fn is_internal_agent(a: &str) -> bool {
     matches!(a, "_system" | "_grants" | "_reports" | "_detect" | "_idem" | "_authority" | "_node" | "_register")
-    // `_rel_*` was exempt here too, on a false premise: it is the
-    // per-relationship SEQUENCE COUNTER id, never a receipt agent_id. The
-    // exemption shielded forged lineage and protected nothing honest.
+    // Relationship counters are never exempt receipt agent IDs.
 }
 
 type LineageItem = (String, String, i64, Value); // (action_type, receipt_hash, seq, context)
@@ -997,10 +901,7 @@ fn check_lineage_orphan(items: &[LineageItem], valid: &BTreeSet<String>) -> bool
 }
 
 fn check_lineage_established(items: &[LineageItem], valid: &BTreeSet<String>, birth_at: &str, birth_hash: &str, birth_seq: i64) -> bool {
-    // anti-laundering: `born` asserts no prior history so it must
-    // sit at seq 1 (an agent with earlier activity can't put born
-    // there). `adopted` is established at its first-OBSERVED seq
-    // and legitimately sits above seq 1 — only born is constrained.
+    // `born` requires seq 1; `adopted` may begin at its first observed seq.
     if birth_at == "lineage.born" && birth_seq != 1 {
         return false;
     }
@@ -1047,12 +948,7 @@ fn check_lineage(entries: &[Value]) -> bool {
     true
 }
 
-/// A carried anchor/TST time must be canonical and cannot predate its signed checkpoint.
-///
-/// `block_ts` and `gen_time` have equal standing as independent time. Their
-/// record member is unsigned, but the checkpoint's own `ts` is signed, so an
-/// earlier claim is refutable from the bytes alone. A malformed claimed time is
-/// a malformed carried claim, never an exemption from the ordering rule.
+/// Carried anchor/TST time must be canonical and not predate its checkpoint.
 fn record_not_before_checkpoint(rec: &Value, field: &str, signed_ts: &str) -> bool {
     let claimed = rec.get(field).and_then(Value::as_str).and_then(utc_epoch_micros);
     matches!((claimed, utc_epoch_micros(signed_ts)), (Some(claimed), Some(signed)) if claimed >= signed)
@@ -1081,7 +977,7 @@ fn check_bound_records(records: &Value, required: &[&str], time_field: &str, che
     arr.iter().all(|rec| bound_record_ok(rec, required, time_field, checkpoints))
 }
 
-fn check_tst_records(records: &Value, checkpoints: &CheckpointFacts, roots: Option<&str>, facts: &mut BundleFacts) -> bool {
+fn check_tst_records(records: &Value, checkpoints: &CheckpointFacts, roots: Option<&str>, policy: trust::TsaPolicy, trust_context: Option<&Value>, facts: &mut BundleFacts) -> bool {
     if !check_bound_records(records, &["checkpoint_body_hash", "token_der_b64", "tsa_url", "gen_time", "cert_chain_pem", "qualified"], "gen_time", checkpoints) {
         return false;
     }
@@ -1089,9 +985,18 @@ fn check_tst_records(records: &Value, checkpoints: &CheckpointFacts, roots: Opti
     for record in items {
         let (Some(body_hash), Some(token_b64), Some(displayed), Some(chain)) = (record.get("checkpoint_body_hash").and_then(Value::as_str), record.get("token_der_b64").and_then(Value::as_str), record.get("gen_time").and_then(Value::as_str), record.get("cert_chain_pem").and_then(Value::as_str)) else { return false };
         let Ok(token) = B64.decode(token_b64) else { return false };
-        let Some((actual, trusted)) = crate::tsa::verified_tst(&token, body_hash, chain, roots) else { return false };
+        if policy == trust::TsaPolicy::Malformed {
+            return false;
+        }
+        let Some((actual, trusted)) = crate::tsa::verified_tst(&token, body_hash, chain, roots, policy, trust_context) else { return false };
         if actual.to_date_time().to_string() != displayed {
             return false;
+        }
+        if policy == trust::TsaPolicy::OfflineRenewal {
+            let Some(renewals) = trust::tsa_renewal_chain(trust_context, &token) else { return false };
+            if !trusted || !crate::tsa::verify_renewal_chain(&token, chain, &actual, &renewals, roots, trust_context) {
+                return false;
+            }
         }
         if trusted {
             facts.trusted_tst_checkpoints.push(body_hash.to_string());
@@ -1101,18 +1006,11 @@ fn check_tst_records(records: &Value, checkpoints: &CheckpointFacts, roots: Opti
 }
 
 fn check_attestation_records(bundle: &Value, checkpoints: &CheckpointFacts, trust: Option<&Value>, facts: &mut BundleFacts) -> bool {
-    // 7. timestamp records (if present): full RFC 3161 CMS validation plus
-    // checkpoint binding and an exact verifier-derived genTime match. A
-    // structurally bound but unverified token is not time evidence and cannot
-    // feed action::independent_ts_map.
-    // Null compares equal to missing, the same `.get()` semantics
-    // `check_input_echo` already documents — a producer emitting null for an
-    // empty optional is not making a claim about timestamps or anchors. Any
-    // OTHER non-list value IS a claim, and a malformed one (parity with
-    // verify/verifier.py; tests/test_engine_parity.py).
+    // 7. Optional RFC 3161 records need full validation and exact genTime.
     if let Some(tsts) = bundle.get("tst_records").filter(|v| !v.is_null()) {
         let roots = trust::tsa_roots_pem(trust);
-        if !check_tst_records(tsts, checkpoints, roots.as_deref(), facts) {
+        let policy = trust::tsa_policy(trust);
+        if !check_tst_records(tsts, checkpoints, roots.as_deref(), policy, trust, facts) {
             return false;
         }
     }
@@ -1142,9 +1040,7 @@ fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog,
 
     // 3. chain: signatures, linkage, monotonic, same origin, consistency
     let Some(chain_entries) = bundle.get("checkpoint_chain").and_then(|v| v.as_array()) else { return false };
-    // Never filter malformed links out of a presented history: Python rejects
-    // every malformed entry, and silently skipping one can create a false
-    // genesis or hide a broken predecessor.
+    // Malformed links refuse; filtering could create a false history.
     let chain: Vec<Value> = match chain_entries.iter().map(|entry| entry.get("checkpoint").cloned()).collect() {
         Some(chain) => chain,
         None => return false,
@@ -1152,11 +1048,7 @@ fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog,
     if chain.is_empty() {
         return false;
     }
-    // The completeness tri-state settles HERE, at the point verify/verifier.py
-    // settles it: past the target and a structurally intact chain,
-    // `_check_export_manifest` runs whatever else fails. Deferring it to the
-    // tail would make a certificate over a chain-invalid bundle report
-    // `export_complete: null` where Python reports the real answer.
+    // Set completeness at Python's matching structural boundary.
     if !check_entry_set(bundle, entries, target, &chain, kl, trust, facts) {
         return false;
     }
@@ -1180,9 +1072,7 @@ fn check_checkpoints_and_entries(bundle: &Value, entries: &[Value], kl: &KeyLog,
         return false;
     }
 
-    // 6. lineage (birthtag-v1): absence is fine; forgery is fatal. Mirrors
-    // the Python verifier's hard-fail rules exactly (advisory notes are a
-    // Python-report concern; the boolean contract here only encodes fatality).
+    // 6. lineage: absence is allowed; forgery is fatal.
     if !check_lineage(entries) {
         return false;
     }
@@ -1319,13 +1209,7 @@ pub fn verify_disclosure_json(package_json: &[u8], bundle_json: &[u8]) -> bool {
     verify_disclosure(&pkg, &bundle)
 }
 
-/// E3 leg (temporal-authority replay) per SPEC/receipt-v1 §5 (amended) — mirror of
-/// `verify/verifier.py::_recorder_attested`: the co-signature bytes must
-/// verify under a relying-party-named recorder key (a NON-ISSUER log kid,
-/// beside an issuer signature); log registration is necessary, never
-/// sufficient. Under the gate a keyid resolves to at most one verifying key,
-/// so equality with the supplied key reuses the completed signature check.
-/// This helper is called only after the full entry gate succeeds.
+/// E3 requires a verified non-issuer recorder co-signature under local trust.
 fn entry_recorder_attested(env: &Value, kl: &KeyLog, trust: Option<&Value>) -> bool {
     let Some(sigs) = env.get("signatures").and_then(Value::as_array) else { return false };
     if sigs.len() < 2 || sigs.iter().all(|s| kl.state.get(s.get("keyid").and_then(Value::as_str).unwrap_or("")).is_some_and(|state| state.non_issuer)) {
@@ -1342,10 +1226,7 @@ fn entry_recorder_attested(env: &Value, kl: &KeyLog, trust: Option<&Value>) -> b
     })
 }
 
-/// Verify a bundle once and return its verdict and evidence-level facts.
-/// `ok` is the bundle verdict. Caller-supplied trust can award evidence levels
-/// but cannot turn an invalid bundle into a valid one. A rejected bundle earns
-/// no recorder or timestamp evidence. See SPEC/log-v1 §4 and expected_evidence.json.
+/// Verify once; local trust can award evidence levels but never validate a bad bundle.
 ///
 /// ```
 /// let report = swarrm_verify::verify_bundle(&serde_json::json!({}), None);
@@ -1491,37 +1372,40 @@ fn browser_bundle_result(verdict: &str, bundle_digest: Option<String>, error: Op
 }
 
 #[cfg(any(test, feature = "wasm"))]
-fn browser_bundle_verification_result(json: &[u8]) -> String {
-    // Preserve the verifier's established over-limit verdict without parsing
-    // or allocating another copy of attacker-controlled input.
-    if json.len() > MAX_BUNDLE_BYTES {
+fn browser_bundle_verification_result(json: &[u8], trust_json: Option<&[u8]>) -> String {
+    if json.len() > MAX_BUNDLE_BYTES || trust_json.is_some_and(|raw| raw.len() > MAX_BUNDLE_BYTES) {
         return browser_bundle_result("NOT_VERIFIED", None, None, None);
     }
     let Some(bundle) = trust::strict_json(json) else {
         return browser_bundle_result("ERROR", None, Some("INVALID_JSON"), None);
     };
-    let facts = verify_bundle_facts(&bundle, None);
+    let trust = trust_json.and_then(trust::strict_json);
+    if trust_json.is_some() && trust.is_none() {
+        return browser_bundle_result("ERROR", None, Some("INVALID_TRUST"), None);
+    }
+    let facts = verify_bundle_facts(&bundle, trust.as_ref());
     if !facts.ok {
         return browser_bundle_result("NOT_VERIFIED", None, None, None);
     }
-    // Cite the exact verified bundle semantics, independent of JSON whitespace.
-    // Never surface a digest for bytes that did not pass the full verifier.
     match jcs::canonical_checked(&bundle) {
         Some(bytes) => browser_bundle_result("VERIFIED", Some(hex(&sha256(&bytes))), None, Some(&facts)),
         None => browser_bundle_result("NOT_VERIFIED", None, None, None),
     }
 }
 
-// -- WASM binding (feature-gated; native build never pulls wasm-bindgen) -----
 #[cfg(feature = "wasm")]
 mod wasm {
     use wasm_bindgen::prelude::*;
-
-    /// Verify a bundle and return the versioned browser result JSON. A
-    /// VERIFIED result alone carries SHA-256 of the JCS-canonical full bundle.
+    /// Verify a bundle and return its versioned result and canonical digest.
     #[wasm_bindgen]
     pub fn verify_bundle_json(json: &[u8]) -> String {
-        super::browser_bundle_verification_result(json)
+        super::browser_bundle_verification_result(json, None)
+    }
+
+    /// Verify a bundle against separately supplied relying-party trust.
+    #[wasm_bindgen]
+    pub fn verify_bundle_with_trust_json(json: &[u8], trust_json: &[u8]) -> String {
+        super::browser_bundle_verification_result(json, Some(trust_json))
     }
 }
 

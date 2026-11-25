@@ -205,11 +205,119 @@ A verifier that does not implement every check above MUST treat that record as
 time for an authority or temporal-binding result. Structural checkpoint binding
 alone is not timestamp verification.
 
-Out of scope in v1 (documented limitation, not a hidden gap): CRL/OCSP
-revocation checking and ESSCertID binding. The pinned chain is the trust
-material used for cryptographic validation, but when that chain travels inside
-the same bundle it is not an independently supplied TSA trust root. The token
-therefore remains a bound claim rather than an E2 award.
+Legacy v1 verification retains its documented omission of CRL/OCSP revocation
+checking and ESSCertID binding. The pinned chain is the trust material used for
+cryptographic validation, but when that chain travels inside the same bundle it
+is not an independently supplied TSA trust root. The token therefore remains a
+bound claim rather than an E2 award.
+
+A relying party MAY opt into the additive signer-binding profile by supplying
+this exact object in its separate `evd/trust-context/v1`:
+
+```json
+"tsa_policy": {
+  "schema": "evd/tsa-verification-policy/v1",
+  "signing_certificate": "esscertid-v2-required"
+}
+```
+
+Under that profile, every timestamp token MUST contain exactly one RFC 5035
+`SigningCertificateV2` signed attribute and no legacy `SigningCertificate`
+attribute. The attribute MUST contain exactly one value; its first ESSCertIDv2
+MUST hash the embedded signer certificate with its declared supported digest
+(SHA-256 when omitted), and any issuer/serial value MUST match that certificate.
+A malformed or unsupported policy refuses rather than falling back. Absence of
+`tsa_policy` preserves the historical v1 verdict. This profile performs no
+network request and does not imply revocation status, renewal, qualified status
+or trust-list membership.
+
+A relying party MAY additionally require signer status at the token's
+`genTime` with this exact v2 policy:
+
+```json
+"tsa_policy": {
+  "schema": "evd/tsa-verification-policy/v2",
+  "signing_certificate": "esscertid-v2-required",
+  "revocation": "offline-crl-or-ocsp-required"
+},
+"tsa_revocation": {
+  "<lowercase SHA-256 of signer certificate DER>": {
+    "schema": "evd/tsa-revocation-evidence/v1",
+    "type": "crl",
+    "der_b64": "<base64 DER>"
+  }
+}
+```
+
+`tsa_revocation` MUST contain 1–16 exact records. Each decoded DER value MUST
+be non-empty and no larger than 1 MiB. Unknown members, malformed base64,
+unsupported types, duplicate JSON members, unbound fingerprints and missing
+signer evidence refuse. `type` is exactly `crl` or `ocsp`. The verifier never
+fetches status material; the relying party supplies and retains it out of band.
+
+For `crl`, the signer certificate's actual issuer MUST issue and validly sign
+a complete base CRL, hold `cRLSign`, and name an interval from `thisUpdate`
+through `nextUpdate` that contains token `genTime`. Delta CRLs and issuing
+distribution-point profiles are outside v2 and refuse. A signer revocation at
+or before `genTime` refuses; a later revocation does not rewrite historical
+status.
+
+For `ocsp`, the response MUST be successful and contain exactly one status for
+the signer certificate. V2 admits only a response signed directly by the
+signer's actual issuer; delegated responder certificates refuse. Issuer-name,
+issuer-key and serial hashes MUST match, status MUST be `good`, and the signed
+`thisUpdate`–`nextUpdate` interval MUST contain `genTime`. `producedAt` MUST
+not predate `thisUpdate`. The issuer signature MUST verify. A stale, revoked,
+unknown, mismatched or incomplete response refuses.
+
+The v2 profile includes the v1 ESSCertIDv2 requirement. A relying party MAY
+also require an ordered renewal chain with this exact v3 policy and table:
+
+```json
+"tsa_policy": {
+  "schema": "evd/tsa-verification-policy/v3",
+  "signing_certificate": "esscertid-v2-required",
+  "revocation": "offline-crl-or-ocsp-required",
+  "renewal": "archive-timestamp-chain-required"
+},
+"tsa_renewal": {
+  "<lowercase SHA-256 of original token DER>": {
+    "schema": "evd/tsa-renewal-chain/v1",
+    "renewals": [{
+      "token_der_b64": "<base64 DER>",
+      "cert_chain_pem": "<PEM certificates>"
+    }]
+  }
+}
+```
+
+`tsa_renewal` MUST contain 1–16 exact records. Each record MUST contain 1–8
+renewals. A token and chain are each limited to 1 MiB and their aggregate per
+record to 8 MiB. Unknown members, malformed base64, duplicate JSON members,
+empty material, an unbound original-token fingerprint or an unsupported
+policy refuse.
+
+The first renewal timestamps the exact original token, carried certificate
+chain and signer-status evidence. Each later renewal timestamps those same
+three inputs from its immediate predecessor. The bytes hashed are the ASCII
+domain `evd/tsa-renewal-predecessor/v1` followed by NUL, then four fields in
+this order: token DER, UTF-8 certificate-chain PEM, ASCII status type (`crl`
+or `ocsp`), and status DER. Every field is prefixed by its unsigned 64-bit
+big-endian byte length. The renewal token's `messageImprint` MUST be SHA-256,
+SHA-384 or SHA-512 over those framed bytes.
+
+Every renewal independently satisfies the v2 signer-binding, offline-status,
+certificate-path and supplied-root requirements at its own `genTime`. The
+original token and every renewal MUST chain to an out-of-band TSA root. Each
+renewal `genTime` MUST be strictly later than its predecessor. Missing,
+reordered, duplicated, changed, stale, revoked or unrooted evidence refuses.
+Verification is offline and does not modify the receipt, checkpoint or
+original token.
+
+Absence of `tsa_policy` retains legacy behavior; v1 remains signer-binding
+only and v2 remains signer-binding plus status. V3 establishes a verified
+renewal chain only. No profile establishes qualified status or trusted-list
+membership.
 
 ### Trust-rooted time — the E2 time leg (NORMATIVE as of the relying-party-rooted evidence-level revision)
 

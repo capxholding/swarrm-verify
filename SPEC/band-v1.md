@@ -71,16 +71,26 @@ absolute base-10 exponent of 128; a larger representation is out of profile
 and yields `INDETERMINATE` rather than allocating input-sized arithmetic
 precision.
 
-The v1 implementation does not yet independently verify an ECB publication or
-an audited-rate document. A self-declared rate, source and date are therefore
-insufficient: non-EUR declarations currently yield `INDETERMINATE` →
-`NO_REGISTRATION` until that verification profile ships. This is intentional;
-it forbids a fabricated low rate from down-banding a scope.
+The v1 ECB profile independently acquires the fixed official HTTPS history
+endpoint with an explicit trusted CA bundle, no proxy, no redirect and a
+bounded single attempt. It retains the original XML, its SHA-256 digest, the
+actual interpreter and CA identities, the selected publication row and the
+original terminal outcome. The consumer reparses those original bytes and
+requires the order date, currency, source, selected publication date and
+displayed reciprocal to agree. Band arithmetic uses the exact rational
+reciprocal of the ECB quote; the decimal reciprocal is display and cross-check
+material only and can never move a threshold through rounding. On a TARGET
+closing day, selection is the latest publication date not later than the order
+date. A self-declared rate, source or date without this evidence remains
+insufficient and yields `INDETERMINATE` → `NO_REGISTRATION`. Currencies absent
+from the ECB source also remain indeterminate until an independently verified
+audited-reporting-rate profile is separately specified and implemented.
 
-The managed v1 entitlement gate applies the same rule to its opaque commercial
-fact: a command carrying non-empty FX metadata is rejected rather than treating
-the self-declared rate as an auditable exception. It can be enabled only with a
-published, independently verified FX profile.
+The managed v1 entitlement gate keeps applying the same conservative rule to
+its opaque commercial fact: a command cannot turn free-form FX metadata into an
+auditable exception. The source-bound order evidence is verified before that
+opaque entitlement is issued; the managed plane still receives no customer
+limits or source document.
 
 ## 4. Criticality enum (PUBLISHED, derived, never judged)
 

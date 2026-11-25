@@ -1,12 +1,6 @@
 // Apache-2.0 (public verifier repo)
-//! Verdict engine for verified-action-v1: `derive_vector` maps an
-//! evd/verdict-input/v1 document to an evd/verdict-vector/v1, and
-//! `authority_facts` replays an evd/bundle/v1 into the authority facts
-//! block (SPEC/authority-v1.md §4–§7). Mirrors verify/action.py exactly —
-//! field for field, weak value for weak value.
-//!
-//! Weak-claim doctrine: both functions are TOTAL — malformed or missing
-//! input degrades to the weak value, never panics.
+//! Rust verdict engine for SPEC/authority-v1.md §4–§7. It mirrors
+//! verify/action.py and is total: malformed or missing input stays weak.
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde_json::{json, Map, Value};
@@ -51,8 +45,7 @@ fn g(v: &Value, k: &str) -> Value {
     v.get(k).cloned().unwrap_or(Value::Null)
 }
 
-/// Python truthiness of an optional JSON value. Shared with the certificate
-/// layer, which needs the same rule for `verdict_input`'s Python `or []`.
+/// Python truthiness, shared with the certificate layer.
 pub(crate) fn truthy(v: Option<&Value>) -> bool {
     match v {
         None | Some(Value::Null) => false,
@@ -68,9 +61,7 @@ fn nonempty(v: &Value, k: &str) -> bool {
     truthy(v.get(k))
 }
 
-/// Normalize canonical RFC 3339 UTC — fraction padded to six digits so values
-/// compare lexicographically. The shared parser owns the Gregorian calendar
-/// and exact Z/fraction grammar for both verifier layers.
+/// Canonical RFC 3339 UTC, padded to six fractional digits.
 pub(crate) fn nts(t: &Value) -> Option<String> {
     let t = t.as_str()?;
     if !crate::canonical_utc(t) {
@@ -92,12 +83,10 @@ fn tri<'a>(a: bool, av: &'a str, b: bool, bv: &'a str, weak: &'a str) -> &'a str
     }
 }
 
-/// Marker for the cases where the Python engine raises internally and its
-/// top-level handler returns the fully weak vector.
+/// Python parity marker for a fully weak top-level result.
 struct Raise;
 
-/// Python's `container.get(key) or []` followed by iteration: falsy → empty,
-/// list → items, string → characters, dict → keys, other truthy → raises.
+/// Python `container.get(key) or []` iteration semantics.
 fn iter_items(v: Option<&Value>) -> Result<Vec<Value>, Raise> {
     match v {
         None | Some(Value::Null) | Some(Value::Bool(false)) => Ok(vec![]),
@@ -213,8 +202,7 @@ fn source_proof_material_size(proof: &Value) -> Option<usize> {
     (B64.encode(&decoded) == text && decoded.len() <= crate::trust::MAX_SOURCE_PROOF_MATERIAL_BYTES).then_some(decoded.len())
 }
 
-/// Is `field` named in THIS view's withheld set? Shared by the per-view
-/// renderings (source_signature, mark) so they agree on what "withheld" means.
+/// Is `field` withheld from this view?
 fn field_withheld(vi: &Value, field: &str) -> Result<bool, Raise> {
     let view = g(vi, "view");
     let withheld = iter_items(if view.is_object() { view.get("withheld_fields") } else { None })?;
@@ -222,11 +210,8 @@ fn field_withheld(vi: &Value, field: &str) -> Result<bool, Raise> {
 }
 
 fn source_signature(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Raise> {
-    // The producer's `verified: true` is IGNORED — it is a declaration.
-    // ASYMMETRIC requires a signature verifying under a key THIS RELYING PARTY
-    // named, and the key must also be pre-bound in SourceIdentity.
-    // Per-view, like the mark: a view that WITHHOLDS the source proof cannot
-    // recompute it, and NONE there would claim the source did not sign.
+    // ASYMMETRIC requires a relying-party key and a verified signature; a
+    // withheld proof remains withheld rather than becoming NONE.
     if field_withheld(vi, "source_proofs")? {
         return Ok("NOT_RECOMPUTED");
     }
@@ -293,15 +278,12 @@ fn control_domain(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Rai
     admits = admits || s(&ev, "claimed_control_domain") == Some("OVERLAPPING");
     let grounded = if ev.as_object().map(|m| !m.is_empty()).unwrap_or(false) { grounded_controllers(&ev) } else { None };
     let shared = matches!(&grounded, Some((a, b)) if a == b);
-    // An admission of overlap is against interest -> believed without proof.
-    // INDEPENDENT is favourable -> the evaluator signature must verify.
+    // Adverse overlap is believed; favorable independence requires a signature.
     let evaluator_ok = crate::trust::verified(trust, "evaluator_keys", s(&ev, "evaluator"), "control-evidence", &ev);
     Ok(tri(admits || shared, "OVERLAPPING", grounded.is_some() && evaluator_ok, "INDEPENDENT", "UNKNOWN"))
 }
 
-/// True iff the signed scan statement is ABOUT this verdict input's batch.
-/// The digest binds source, cursor, event root, gaps and a valid ordered period;
-/// a missing/malformed digest binds nothing and therefore proves no observation.
+/// True iff the signed scan statement binds this batch and ordered period.
 fn scan_binds_batch(vi: &Value, scan: &Value) -> bool {
     let Some(declared) = s(scan, "batch_digest").filter(|d| !d.is_empty()) else { return false };
     let Some(batch) = obj(vi, "batch") else { return false };
@@ -323,9 +305,7 @@ fn node_dims(vi: &Value, trust: Option<&Value>) -> (&'static str, &'static str, 
         Some("INDEPENDENTLY_ATTESTED") if att_ok => "INDEPENDENTLY_ATTESTED",
         _ => "LOG_WITNESSED_SOFTWARE",
     };
-    // ATTESTED used to come from the boolean alone, with no attestation
-    // artifact anywhere — the same declaration-vs-proof mistake `node_signed`
-    // made one line up. It is only worth the word if the Node signed what it saw.
+    // ATTESTED requires the Node's signature, never its boolean declaration.
     let client = tri(flag(vi, "client_attestation_present") && observed, "ATTESTED", false, "", "NONE");
     (tri(observed, "OBSERVED", false, "", "NOT_OBSERVED"), client, basis)
 }
@@ -361,31 +341,17 @@ fn match_candidates(vi: &Value) -> Result<Vec<Value>, Raise> {
     Ok(iter_items(vi.get("event_matches"))?.into_iter().filter(|m| m.is_object() && keys.iter().any(|k| flag(m, k))).collect())
 }
 
-/// Any unresolved finding contradicts a claim of complete coverage.
-///
-/// A container this cannot read is NOT an absence of findings; it is a
-/// coverage question it cannot answer, and the weaker answer is `open`. The
-/// same OPEN CRITICAL finding reached CLOSED/ELIGIBLE as a keyed map, as a
-/// nested list, and as a JSON string.
+/// Unresolved or unreadable findings make coverage open.
 fn has_open_finding(vi: &Value) -> bool {
     let Some(field) = vi.get("findings").filter(|f| !f.is_null()) else { return false };
     let Some(items) = field.as_array() else { return true };
     items.iter().any(|f| !f.is_object() || !matches!(s(f, "state").unwrap_or("OPEN").to_ascii_uppercase().as_str(), "RESOLVED" | "CLOSED" | "DISMISSED"))
 }
 
-/// The NORMATIVE material floor (SPEC/reconcile-v1.md §5). A producer-named
-/// list extends it and may never retract it: the lying-agent fixture
-/// (tests/golden/reconcile/lying_agent_value_flip.json, claim 999999.99 vs
-/// event 380.99) one added key — source_manifest.material_fields=["currency"] —
-/// REPLACED the trio and flipped both engines CONTRADICTED → MATCHED.
-/// Spelling and order are pinned to verify/action.py::MATERIAL_FLOOR.
+/// Normative material floor (SPEC/reconcile-v1.md §5); declarations only extend it.
 pub(crate) const MATERIAL_FLOOR: [&str; 3] = ["value", "currency", "counterparty"];
 
-/// The declared members of AgentActionClaim and SourceEvent
-/// (SPEC/cddl/verified-action-v1.cddl) minus the floor — the names a
-/// disagreement proves nothing about. `schema` is here because it disagrees on
-/// every HONEST pair ("evd/claim/v1" vs "evd/source-event/v1"), so comparing it
-/// would flag all nine golden families.
+/// Nonmaterial CDDL members whose disagreement proves nothing about the action.
 const STRUCTURAL_FIELDS: [&str; 13] = ["action_class", "action_id", "context_commitment", "event_key", "external_ref", "finality", "inputs_commitment", "outcome", "proof_digests", "reference", "schema", "source_effect_time", "source_identity_ref"];
 
 /// The floor, then the producer's additions in the producer's own order.
@@ -408,14 +374,7 @@ fn field_text(v: &Value, f: &str) -> Option<String> {
     }
 }
 
-/// (agreements, any mismatch, any one-sided) over EVERY effective field.
-///
-/// Nothing returns early. Stopping at the first one-sided field let a producer
-/// append a field the event does not carry and hide a real `value` disagreement
-/// two positions later behind an UNCOMPARABLE — softening CONTRADICTED to
-/// CLAIM_ONLY, which SPEC/reconcile-v1.md §5 forbids ("any material
-/// disagreement → CONTRADICTED, regardless"). It is also a parity hazard: with
-/// the list a UNION, an early return makes the answer depend on iteration order.
+/// Compare every effective field; any mismatch dominates one-sided values.
 fn declared_tally(claim: &Value, event: &Value, fields: &[String]) -> (usize, bool, bool) {
     let (mut compared, mut mismatch, mut uncomparable) = (0, false, false);
     for f in fields {
@@ -429,21 +388,13 @@ fn declared_tally(claim: &Value, event: &Value, fields: &[String]) -> (usize, bo
     (compared, mismatch, uncomparable)
 }
 
-/// A field nobody declared, disagreeing on both sides (the beneficiary_iban
-/// class of lie). In production it is material by construction —
-/// node/reconcile.py::_attach_material_fields copies the manifest's named
-/// fields onto the claim — so it may not corroborate. It may not accuse either:
-/// a bare collision between two independently authored vocabularies is
-/// possible, and CONTRADICTED is terminal and never softened.
+/// Undeclared collisions neither corroborate nor accuse either vocabulary.
 fn undeclared_disagreement(claim: &Value, event: &Value, fields: &[String]) -> bool {
     let Some(members) = claim.as_object() else { return false };
     members.keys().any(|f| !STRUCTURAL_FIELDS.contains(&f.as_str()) && !fields.iter().any(|d| d == f) && matches!((field_text(claim, f), field_text(event, f)), (Some(a), Some(b)) if a != b))
 }
 
-/// AGREE / MISMATCH / UNCOMPARABLE. `material_mismatch` is honoured only when
-/// TRUE (an adverse admission); a favourable `false` is not evidence.
-/// UNCOMPARABLE can never corroborate — you cannot confirm an amount you were
-/// never shown. MISMATCH dominates it.
+/// AGREE / MISMATCH / UNCOMPARABLE; adverse admissions count, favorable ones do not.
 fn material_agreement(vi: &Value, cand: &Value) -> &'static str {
     if flag(cand, "material_mismatch") {
         return "MISMATCH";
@@ -505,12 +456,7 @@ fn temporal(vi: &Value, trust: Option<&Value>) -> &'static str {
     "UNPROVEN" // incl. declared clock sync — those clocks are incomparable
 }
 
-/// §2.8 derives a surface's sub-verdicts the same way §2.3/§2.6 derive their
-/// top-level twins — so the favourable values need the same anchor. They had
-/// none: a presentation could carry top-level `control_domain: UNKNOWN` and
-/// `coverage: GAPPED` beside a per-surface row saying INDEPENDENT and CLOSED
-/// for the same facts. An ADMISSION stays believed
-/// without proof; the favourable value needs the controlling party's signature.
+/// §2.8 surface verdicts use the same anchors as their top-level twins.
 fn surface_row(e: &Value, trust: Option<&Value>) -> Value {
     let decl = s(e, "mechanism_declaration");
     let mech = match decl {
@@ -536,9 +482,7 @@ fn surfaces(vi: &Value, trust: Option<&Value>) -> Result<SurfaceSets, Raise> {
     let manifest = g(sur, "manifest");
     let entries = iter_items(if manifest.is_object() { manifest.get("entries") } else { None })?;
     let decl: Vec<&Value> = entries.iter().filter(|e| e.is_object()).collect();
-    // membership below compares the stringified activity class against the
-    // RAW declared values, so only string declarations can ever match; an
-    // unhashable declared class raises in Python's set build
+    // Match stringified activity classes against raw string declarations.
     if decl.iter().any(|e| matches!(e.get("surface_class"), Some(v) if v.is_array() || v.is_object())) {
         return Err(Raise);
     }
@@ -566,9 +510,7 @@ fn acc_basis(kind: &str) -> Option<usize> {
     ["SPONSOR", "PARENT", "INSURER", "BOND_ESCROW"].iter().position(|k| *k == kind)
 }
 
-/// §2.9. Every basis above UNKNOWN says a THIRD PARTY stands behind this agent.
-/// The subject wrote all of it: `signed: true` was a boolean, not a signature,
-/// so a hostile input reached BONDED_OR_ESCROWED with no external party at all.
+/// §2.9: every basis above UNKNOWN requires third-party proof.
 fn accountability(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Raise> {
     const ORDER: [&str; 4] = ["SPONSOR_ASSERTED", "PARENT_GUARANTEED", "INSURER_CORROBORATED", "BONDED_OR_ESCROWED"];
     let specifics = ["signed", "agent_specific", "mandate_specific", "value_bounded", "time_bounded"];
@@ -592,9 +534,7 @@ fn accountability(vi: &Value, trust: Option<&Value>) -> Result<&'static str, Rai
     Ok(best.map(|r| ORDER[r]).unwrap_or("UNKNOWN"))
 }
 
-/// §2.12. DIRECT compared two digests the SAME producer wrote — a producer
-/// marking its own homework. A match now earns DIRECT only when the Node signed
-/// what it saw; otherwise DETERMINISTIC. A MISMATCH is adverse, so still believed.
+/// §2.12: DIRECT needs a Node signature; adverse mismatch remains believed.
 fn assurance(vi: &Value, observed: bool) -> &'static str {
     let a = g(vi, "assurance");
     if !nonempty(&a, "intent_digest") {
@@ -644,8 +584,7 @@ fn pred_map(v: &Value) -> Map<String, Value> {
     sel.get("predicates").and_then(|x| x.as_object()).cloned().unwrap_or_default()
 }
 
-/// Descriptors intersect iff classes intersect and no shared selector key is
-/// disjoint; None mirrors a Python TypeError (→ UNKNOWN).
+/// Descriptor intersection with Python TypeError parity.
 fn predicates_intersect(p: &Value, c: &Value) -> Option<bool> {
     let pc = val_set(&g(p, "action_classes"))?;
     let cc = val_set(&g(c, "action_classes"))?;
@@ -697,8 +636,7 @@ fn scope_relation(vi: &Value) -> Result<Value, Raise> {
     Ok(json!(tri(unknown, "UNKNOWN", false, "", "UNRELATED")))
 }
 
-/// PROVEN was PRESENCE, not proof: the check accepted `result_root:
-/// "not-a-root"` and the literal string "THIS IS NOT A SIGNATURE".
+/// PROVEN requires cryptographic proof, not field presence.
 fn population(vi: &Value, trust: Option<&Value>) -> Value {
     let Some(pi) = obj(vi, "population_index") else { return Value::Null };
     let complete = POP.iter().all(|f| pi.get(*f).map(|v| !v.is_null()).unwrap_or(false));
@@ -707,10 +645,7 @@ fn population(vi: &Value, trust: Option<&Value>) -> Value {
     json!(tri(complete && canonical_query && signed, "PROVEN", false, "", "INDETERMINATE"))
 }
 
-/// A manifest limits a history claim only when the presentation actually makes
-/// one. A no-surface presentation (the Counterparty Assurance handshake shape) makes no contrary
-/// scope statement, so its named history scope remains intact — exactly as in
-/// `verify/action.py::_history_manifest_surface_classes`.
+/// A manifest limits history only when the presentation makes a surface claim.
 fn history_manifest_surface_classes(vi: &Value) -> Option<BTreeSet<String>> {
     let entries = obj(vi, "surfaces").and_then(|surfaces| obj(surfaces, "manifest")).and_then(|manifest| manifest.get("entries")).and_then(Value::as_array)?;
     if entries.is_empty() {
@@ -742,9 +677,7 @@ fn history(vi: &Value) -> Result<Value, Raise> {
     Ok(json!({"state": "NO_EVIDENCED_HISTORY_IN_PRESENTED_SCOPE", "surfaces": []}))
 }
 
-/// §2.14. STILL producer-asserted, deliberately: neutralised by
-/// `handshake/verify.py::B28_DISABLED`, which refuses every PASS and names this
-/// exact route among the unauthenticated ones its rebuild must close.
+/// §2.14 remains producer-asserted and is neutralized by B28_DISABLED.
 fn authority_proof(vi: &Value) -> Value {
     let Some(h) = obj(vi, "handshake_authority") else { return Value::Null };
     json!(match s(h, "construction") {
@@ -776,10 +709,7 @@ fn eligibility(vi: &Value, v: &Value) -> Result<&'static str, Raise> {
 fn registration_status(vi: &Value, trust: Option<&Value>) -> &'static str {
     let reg = g(vi, "registration");
     let sr = g(&reg, "scope_registration");
-    // REGISTERED is what the commercial model sells, so it is exactly the value
-    // a subject most wants to assert: it needs a scope registration signed by a
-    // transparency service THIS relying party named, plus a receipt the verifier
-    // derived itself (never the producer's own scitt_receipt_valid flag).
+    // REGISTERED needs a relying-party transparency key and a derived receipt.
     let covered = flag(&sr, "covers_scope") && flag(&sr, "term_valid");
     let registered = covered && sr.get("registration").map(|x| x.is_object()).unwrap_or(false) && flag(&reg, "scitt_receipt_valid") && crate::trust::verified(trust, "scitt_ts_keys", s(&sr, "transparency_service"), "scope-registration", &sr);
     if registered {
@@ -798,10 +728,7 @@ fn mark(te: &str, reg: &str, v: &Value) -> &'static str {
         (_, "UNREGISTERED") => "UNMARKED_UNREGISTERED",
         ("INELIGIBLE", _) => "UNMARKED_TECHNICAL",
         _ => {
-            // Both paths read declaration-derived dimensions (source_signature
-            // reaches ASYMMETRIC from a `verified: true` boolean + key-NAME
-            // equality, never signature bytes; control_domain reaches INDEPENDENT
-            // from truthy strings), so a subject could award itself the top mark.
+            // Declaration-derived dimensions cannot award the top mark.
             // Explicit withdrawal, never a silent absence. Mirrors verify/action.py.
             let corroborated = s(v, "source_signature") == Some("ASYMMETRIC") && s(v, "control_domain") == Some("INDEPENDENT");
             let observed = s(v, "node_observation") == Some("OBSERVED") && s(v, "node_integrity_basis") == Some("HARDWARE_ATTESTED");
@@ -981,12 +908,8 @@ fn root_valid_auth<'a>(rows: &'a [Rec], timeline: &[RootEntry], action_type: &st
     rows.iter().filter(|r| r.agent == "_authority" && r.action == action_type && root_at(timeline, r.leaf).map(|root| dsig_ok(&root.2, &dom(action_type), &r.ctx, r.ctx.get("root_sig"))).unwrap_or(false)).collect()
 }
 
-/// checkpoint body_hash → EARLIEST independent ts, as (normalized, raw) (§4).
-///
-/// Both sources are admissible here ONLY because each is now constrained by
-/// something signed: a TST's `gen_time` must equal the token's verified
-/// genTime, and an anchor's `block_ts` must not precede the signed `ts` of the
-/// checkpoint it names (`check_anchor_record`).
+/// Checkpoint hash to earliest independent time. Token and anchor checks bind
+/// each reported time to its signed checkpoint before it reaches this map.
 fn independent_ts_map(bundle: &Value) -> BTreeMap<String, (String, String)> {
     let mut times: BTreeMap<String, (String, String)> = BTreeMap::new();
     for (list, field) in [("anchor_records", "block_ts"), ("tst_records", "gen_time")] {
@@ -1001,17 +924,9 @@ fn independent_ts_map(bundle: &Value) -> BTreeMap<String, (String, String)> {
     times
 }
 
-/// (tree_size, normalized, raw) per independently timed checkpoint, ordered by
-/// tree_size, each clamped to the EARLIEST time proven for it or for any
-/// checkpoint that contains it.
-///
-/// Checkpoint N is a prefix of every later checkpoint, so a proof that N+1
-/// existed by T is equally a proof that N did. An anchor claiming N reached the
-/// chain LATER than N+1 contradicts the chain itself. Without the clamp,
-/// post-dating one `block_ts` produced an INVERTED interval (lower 2030 > upper
-/// 2026), and "authority covers the ENTIRE interval" is vacuously true of an
-/// interval that cannot exist — an action taken BEFORE its grant was issued
-/// would otherwise be reported as VERIFIED.
+/// Independently timed checkpoints, ordered by tree size and clamped to the
+/// earliest time proved for themselves or a containing later checkpoint. This
+/// prevents contradictory timestamps from creating an inverted interval.
 fn clamped_times(bundle: &Value) -> Vec<(i64, String, String)> {
     let times = independent_ts_map(bundle);
     let mut rows: Vec<(i64, String, String)> = Vec::new();
@@ -1081,16 +996,8 @@ pub(crate) fn has_signed_action_intent(bundle: &Value) -> bool {
     entry_rows(bundle).iter().any(|row| row.action == "action.intent")
 }
 
-/// (every action id any signed row names, every class signed for `action_id`).
-///
-/// The weak binding for a bundle with no `action.intent` receipt at all, whose
-/// certificate still displays an identity that was free text until now. Two
-/// signed sources say otherwise: a domain receipt's own `action_type` is the
-/// signed spelling of what the action WAS, and a grant's
-/// `context.action_classes` is the signed set it was permitted to be. The union
-/// is required — `forged`/`revoked`/`selectively_disclosed`/`valid` have no
-/// domain receipt but `action.intent` (hence the `action.` prefix skip), while
-/// `claim_only`/`contradicted`/`gapped`/`stale` have no grant.
+/// All action IDs named by signed rows and all classes signed for `action_id`.
+/// Domain receipts bind observed classes; grants bind permitted classes.
 pub(crate) fn signed_action_intents(bundle: &Value, action_id: &str) -> (BTreeSet<String>, BTreeSet<String>) {
     let (mut ids, mut classes) = (BTreeSet::new(), BTreeSet::new());
     for row in entry_rows(bundle) {
@@ -1346,19 +1253,8 @@ fn grant_chain_verified(rows: &[Rec], timeline: &[RootEntry], issued: &Rec, pair
     docs_cover(issued, pairs, &g(&intent.ctx, "action_class"), &lo, &up)
 }
 
-/// A grant names the principal binding it was issued FOR. Using it under a
-/// DIFFERENT binding of the same subject is an authorization SUBSTITUTION.
-///
-/// `subject_birthtag_id` alone was the whole test, and a birthtag outlives any
-/// one binding — an agent legitimately holds several (key rotation, a second
-/// runtime, prod beside staging, a re-bind after a lineage revision). So a grant
-/// issued for the quiet binding authorised an action executed under the live one
-/// and both engines said authority VERIFIED.
-///
-/// Enforced only when a binding was actually MATCHED: with none in force
-/// identity is already NOT_VERIFIED and eligibility already fails on it.
-/// `binding_id` is optional on a grant (SPEC/authority-v1.md §3), and a grant
-/// naming none constrains nothing.
+/// A grant naming a binding cannot authorize another binding of the same
+/// subject. An omitted binding remains unconstrained under authority-v1 §3.
 fn binding_substituted(issued: &Rec, revised: &[&Rec], binding_id: Option<&str>) -> bool {
     let Some(binding_id) = binding_id else { return false };
     std::iter::once(&issued.ctx).chain(revised.iter().map(|r| &r.ctx)).any(|ctx| matches!(ctx.get("binding_id").and_then(Value::as_str), Some(named) if !named.is_empty() && named != binding_id))

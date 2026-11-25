@@ -20,10 +20,14 @@ export function verify_acknowledgement_json(envelope: Uint8Array, context: Uint8
 export function verify_b28_cwt(exchange: Uint8Array, local_context: Uint8Array, trust_pack: Uint8Array, expected_trust_pack_digest: Uint8Array): string;
 
 /**
- * Verify a bundle and return the versioned browser result JSON. A
- * VERIFIED result alone carries SHA-256 of the JCS-canonical full bundle.
+ * Verify a bundle and return its versioned result and canonical digest.
  */
 export function verify_bundle_json(json: Uint8Array): string;
+
+/**
+ * Verify a bundle against separately supplied relying-party trust.
+ */
+export function verify_bundle_with_trust_json(json: Uint8Array, trust_json: Uint8Array): string;
 
 /**
  * Verify certificate bytes (bare core or view envelope) and return the JSON
@@ -52,9 +56,10 @@ export interface InitOutput {
     readonly verify_disclosure_json: (a: number, b: number, c: number, d: number) => number;
     readonly verify_dispute_json: (a: number, b: number) => [number, number];
     readonly verify_acknowledgement_json: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number];
+    readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly verify_certificate_cbor: (a: number, b: number) => [number, number];
     readonly verify_bundle_json: (a: number, b: number) => [number, number];
-    readonly derive_vector_json: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly verify_bundle_with_trust_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;

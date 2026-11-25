@@ -82,8 +82,7 @@ export function verify_b28_cwt(exchange, local_context, trust_pack, expected_tru
 }
 
 /**
- * Verify a bundle and return the versioned browser result JSON. A
- * VERIFIED result alone carries SHA-256 of the JCS-canonical full bundle.
+ * Verify a bundle and return its versioned result and canonical digest.
  * @param {Uint8Array} json
  * @returns {string}
  */
@@ -99,6 +98,29 @@ export function verify_bundle_json(json) {
         return getStringFromWasm0(ret[0], ret[1]);
     } finally {
         wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * Verify a bundle against separately supplied relying-party trust.
+ * @param {Uint8Array} json
+ * @param {Uint8Array} trust_json
+ * @returns {string}
+ */
+export function verify_bundle_with_trust_json(json, trust_json) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const ptr0 = passArray8ToWasm0(json, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(trust_json, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.verify_bundle_with_trust_json(ptr0, len0, ptr1, len1);
+        deferred3_0 = ret[0];
+        deferred3_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
     }
 }
 

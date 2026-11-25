@@ -12,6 +12,7 @@ const wasm = require("../pkg-node/swarrm_verify.js");
 const { verify_certificate_cbor, verify_b28_cwt } = wasm;
 const bytes = value => Buffer.isBuffer(value) ? value : Buffer.from(value, "utf8");
 const verify_bundle_json = value => wasm.verify_bundle_json(bytes(value));
+const verify_bundle_with_trust_json = (bundle, trust) => wasm.verify_bundle_with_trust_json(bytes(bundle), bytes(trust));
 const derive_vector_json = (input, trust) => wasm.derive_vector_json(bytes(input), bytes(trust));
 const verify_disclosure_json = (input, bundle) => wasm.verify_disclosure_json(bytes(input), bytes(bundle));
 
@@ -101,10 +102,22 @@ const byteApiOk =
   /verify_dispute_json\(package_json: Uint8Array\)/.test(declarations) &&
   /verify_acknowledgement_json\(envelope: Uint8Array, context: Uint8Array, bundle_json: Uint8Array\)/.test(declarations) &&
   /verify_bundle_json\(json: Uint8Array\)/.test(declarations) &&
+  /verify_bundle_with_trust_json\(json: Uint8Array, trust_json: Uint8Array\)/.test(declarations) &&
   /derive_vector_json\(verdict_input_json: Uint8Array, trust_json: Uint8Array\)/.test(declarations) &&
   /verify_disclosure_json\(package_json: Uint8Array, bundle_json: Uint8Array\)/.test(declarations);
 if (!byteApiOk) failures++;
 console.log(`${byteApiOk ? "OK " : "XX "} WASM JSON boundaries require Uint8Array`);
+const renewalBundle = fs.readFileSync(path.join(dir, "evidence_tst_ess_v2.json"));
+const renewalTrust = JSON.parse(fs.readFileSync(path.join(dir, "trust_evidence_lifecycle_renewal.json"), "utf8"));
+const renewalAccepted = parseBundleResult(verify_bundle_with_trust_json(renewalBundle, JSON.stringify(renewalTrust)));
+const renewalOk = renewalAccepted.verdict === "VERIFIED";
+if (!renewalOk) failures++;
+console.log(`${renewalOk ? "OK " : "XX "} timestamp renewal through WASM trust entry`);
+delete renewalTrust.tsa_renewal;
+const renewalMissing = parseBundleResult(verify_bundle_with_trust_json(renewalBundle, JSON.stringify(renewalTrust)));
+const renewalMissingOk = renewalMissing.verdict === "NOT_VERIFIED";
+if (!renewalMissingOk) failures++;
+console.log(`${renewalMissingOk ? "OK " : "XX "} timestamp renewal missing through WASM trust entry`);
 for (const [name, want] of Object.entries(expected)) {
   const bundle = fs.readFileSync(path.join(dir, `${name}.json`), "utf8");
   const got = parseBundleResult(verify_bundle_json(bundle));
