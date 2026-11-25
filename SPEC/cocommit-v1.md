@@ -61,6 +61,12 @@ and opaque correlation IDs: this mechanism does not detect or remove personal
 data placed in those fields. Losing the original traffic prevents opening its
 digest; a digest is not encryption and can reveal a predictable input by guessing.
 
+### 2.1 Framework callback binding
+
+The supported framework adapters MAY bind a `CoCommitLog` to the same tenant and an explicit agent ID. An accepted start advances the client log before its terminal callback; a duplicate or ambiguous start identity is not counted twice.
+The ordinary terminal receipt is attempted before a due signed head. Automatic publication waits for all sibling callbacks, and the caller MUST flush the final head after the run so retained starts without terminal receipts remain visible as a count gap.
+This covers only configured callbacks. Direct calls count only when they invoke `CoCommitLog.record_action`; independent egress reconciliation remains separate, and neither mechanism grants authority or completeness to another.
+
 ## 3. The signed head
 
 The head statement is the RFC 8785 canonical JSON of:
@@ -152,12 +158,39 @@ observation** carrying the label `GATEWAY_INDEPENDENT_CAPTURE`:
    mismatch, bad signature bytes or a non-monotone chain change rendering
    only.
 
-## 6. Verifier impact
+## 6. Relying-party trust profile
 
-None in v1. `cocommit.head.signed` receipts verify like any receipt
-(signature + inclusion) in both engines; neither engine dispatches on this
-action type, and `public_verifier_symbols` is unchanged. Checking
-`client_sig` under a relying-party-registered client public key is a
-deliberately DEFERRED verifier leg (it needs a `trust` input and a budget
-decision); until it ships, the report labels the signature as carried, not
-verified, and derives nothing from its validity.
+`cocommit.head.signed` receipts continue to verify like any receipt (issuer
+signature + inclusion) in both bundle engines; neither engine dispatches on
+this action type, and `public_verifier_symbols` is unchanged. The report may
+separately verify the client signature when the relying party supplies a
+`cocommit_policy` object inside its out-of-band trust context:
+
+```json
+{
+  "schema": "evd/cocommit-trust/v1",
+  "max_signature_checks": 256,
+  "registrations": [{
+    "tenant": "tenant-id",
+    "agent_id": "agent-id",
+    "client_kid": "sha256:...",
+    "public_key_hex": "<64 lowercase hex>",
+    "first_head_size": 1,
+    "last_head_size": 500
+  }]
+}
+```
+
+`last_head_size` is omitted for the active key. Ranges for one tenant/agent
+MUST NOT overlap; a rotation closes the predecessor range and starts the
+successor at the next head size. The registered key id MUST derive from the
+registered 32-byte Ed25519 public key. The carried discovery key and signature
+must then match the registration and verify over the reconstructed statement.
+
+The relying party selects `max_signature_checks`; it is bounded to 1..1024.
+If the bundle carries more heads, or the policy is malformed, report
+generation refuses rather than verifying a prefix. An absent policy preserves
+the historical “carried, not verified” rendering. An unregistered or invalid
+signature renders NOT VERIFIED but does not change bundle verification, an
+evidence level, or any other receipt. This profile authenticates the customer's
+own statement; it does not prove capture completeness and never awards E3.

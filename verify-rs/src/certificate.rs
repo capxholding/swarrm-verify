@@ -1,25 +1,11 @@
 // Apache-2.0 (public verifier repo)
-//! Certificate verification (SPEC/certificate-v1.md §4) — independent verification, Rust side.
+//! Independent certificate verification under SPEC/certificate-v1.md §4.
 //!
-//! `verify_certificate_cbor` takes raw bytes (bare CertificateCore or a
-//! CertificateView envelope, deterministic CBOR per §1) → JSON result
-//! `{parse_ok, layers, certificate_id, core_present, cross_checks_ok,
-//! vector, mark, errors}`. Caps run BEFORE crypto (H5); hostile bytes never
-//! panic. The producer-shaped `verdict_input` is NOT authoritative (§4.4):
-//! authority is recomputed via `action::authority_facts`, `event_matches`
-//! flags via reconcile-v1 §4/§5 semantics (manifest conventions —
-//! `correlation_field`/`unique_fields`/`finality_rule`/`material_fields` —
-//! travel inside `coverage_doc`; an absent convention recomputes the weak
-//! value), the core's top-level members must echo `verdict_input`
-//! (a doctored input could otherwise upgrade the headline unchecked), and
-//! `coverage_doc` must sit consistent with `events`/`batch` (event_count ==
-//! deduped carried events, event_key_root recomputed over their keys).
-//! Any mismatch forces integrity INVALID before the verdict engine derives the
-//! vector — never a partial pass. The view's detached `signature` verifies
-//! under an unrevoked log-issuer key over `b"evd/v1/certificate/view\x00"` +
-//! canonical CBOR of the view minus `signature`/`*_sig` (authority-v1 §2
-//! prefix rule in this profile's one canonical form). A view without core
-//! bytes renders the layer it holds and recomputes nothing.
+//! Hostile deterministic-CBOR input returns the same closed result as Python.
+//! Resource caps precede cryptography. Authority, matching, coverage, vector,
+//! and mark are recomputed rather than trusted from producer verdict input; a
+//! mismatch invalidates integrity. Views require an unrevoked log-issuer
+//! signature, and a view without its core cannot claim recomputed results.
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ciborium::Value as C;
@@ -39,13 +25,8 @@ const MAX_CORE_BYTES: usize = 1024 * 1024;
 const MAX_LIST: usize = 10_000;
 const MAX_ATTACHMENTS: usize = 1_000;
 const MAX_DISCLOSURES: usize = 256;
-/// The CertificateCore and subject key sets, CLOSED in the FROZEN
-/// SPEC/cddl/certificate-v1.cddl and unenforced until now: both engines
-/// accepted subject["display_name"]="ACME BANK NV" + subject["amount"]="EUR
-/// 5,000,000" with errors=[] and the top mark, inside a correctly signed view.
-/// Attacker text in the identity block earns no vector at all, so this is a
-/// GATE. `subject_ids` stays OPTIONAL — five weak families correctly carry
-/// none, because `authority_facts` yields them no identity block.
+/// Closed CDDL key sets. Unknown subject text must not enter a signed identity;
+/// `subject_ids` remains optional for weak families with no authority identity.
 const CORE_KEYS: [&str; 25] = ["schema", "subject", "bundle", "claim", "events", "event_matches", "source_identity", "control_evidence", "batch", "scan", "coverage_doc", "node_attestation", "open_findings", "proof_digests", "assurance_transcript_digest", "challenge_envelope_hash", "presentation_envelope_hash", "asa_envelope_hash", "presentation_digest", "agent_context_digest", "verdict_input", "limitations", "current_through", "policy_version", "attachments"];
 const SUBJECT_KEYS: [&str; 4] = ["action_id", "action_class", "origin", "subject_ids"];
 /// SPEC/certificate-v1.md §3 called these "closed text codes" and never
@@ -185,24 +166,9 @@ fn subject_action_class_matches_input(core: &J, bundle: &J) -> bool {
     }
 }
 
-/// Producer-carried action fields must name signed material.
-///
-/// A bundle with no `action.intent` returned true outright, so the displayed
-/// identity of every intent-free family was free text: both engines verified
-/// `claim_only` relabelled to "wire.transfer.high_value", and to action_id
-/// "act-DOES-NOT-EXIST", with cross_checks_ok=true and errors=[]. Deleting
-/// `valid`'s one `action.intent` row and repairing the two derived members
-/// (verdict_input.authority, subject.subject_ids — both pure functions of bytes
-/// the attacker holds) walked a STRONG certificate into that branch.
-///
-/// So the fallback binds to the rows that survive. An empty action_id displays
-/// nothing, so `orphan` (id "" AND class "") stays verifiable — but exempting
-/// the PAIR let a BLANKED id buy an arbitrary class: orphan relabelled
-/// "wire.transfer.high_value", and the same relabel on `valid` with its one
-/// action.intent row deleted, both returned ok=true errors=[] over logs whose
-/// surviving signed rows say payment.execute. The id may be absent; the class
-/// still has to be signed. (`orphan`'s bundle DOES name act-1, so the weaker
-/// rule "empty is only OK when the log names no action" breaks it.)
+/// Producer-carried action identity must match signed material. Without an
+/// `action.intent`, surviving signed rows still bind a nonempty id or class;
+/// only a genuinely blank orphan identity remains exempt.
 fn input_action_matches_signed_intent(core: &J, bundle: &J) -> bool {
     let action = core["verdict_input"].get("action").cloned().unwrap_or(J::Null);
     let (Some(action_id), Some(action_class)) = (action.get("action_id").and_then(J::as_str), action.get("action_class").and_then(J::as_str)) else { return false };
@@ -214,32 +180,15 @@ fn input_action_matches_signed_intent(core: &J, bundle: &J) -> bool {
     class_ok && (action_id.is_empty() || ids.contains(action_id))
 }
 
-/// The claim may not disagree with the subject about which action this is.
-///
-/// `claim` was compared only against `verdict_input` — producer against
-/// producer. On `valid`, whose subject IS bound to a signed intent, relabelling
-/// claim.action_id to "act-OTHER" and claim.action_class to
-/// "wire.transfer.high_value" kept errors=[], identity VERIFIED and the top
-/// mark: two action identities in one certificate. It is also the lever for the
-/// material lie, since `material_mismatch` looks its field list up under
-/// claim.action_class. An ABSENT claim is exempt and must be tested as "not a
-/// map": `orphan` carries no `claim` (`? claim` in the CDDL) and the linkage
-/// outcome depends on that absence to render ORPHAN.
+/// A carried claim and subject must identify the same action. The optional
+/// absent claim remains valid for an orphan certificate.
 fn claim_matches_subject(core: &J) -> bool {
     let Some(claim) = core.get("claim").filter(|c| c.is_object()) else { return true };
     ["action_id", "action_class"].iter().all(|k| pystr(claim.get(*k)) == pystr(core["subject"].get(*k)))
 }
 
-/// A limitation list is refutable by the core that carries it.
-///
-/// report/certify.py::_agent_context emits the all-zeros `agent_context_digest`
-/// and AGENT_CONTEXT_UNBOUND together or emits neither, so the two carriages
-/// are one fact — the doctrine `check_findings_carried` already uses. Stripping
-/// the code while leaving the zeros left a certificate reading as "context
-/// bound" to any consumer, errors=[] and the top mark in both engines;
-/// limitations=["TOTALLY_MADE_UP_CODE", ""] verified clean too. A NON-zero
-/// digest stays unverifiable — nothing in evd/bundle/v1 carries the three part
-/// digests — so it remains a commitment a presentation must reproduce.
+/// Limitations must use the closed code set and agree with refutable core facts;
+/// the zero agent-context digest and AGENT_CONTEXT_UNBOUND are one fact.
 fn limitations_consistent(core: &J, bundle: &J) -> bool {
     let lims = core["limitations"].as_array().map(Vec::as_slice).unwrap_or(&[]);
     // one length test settles all three: a non-text member, a duplicate and an
@@ -260,18 +209,8 @@ fn limitations_consistent(core: &J, bundle: &J) -> bool {
     codes.contains("COVERAGE_CONVENTIONS_UNBOUND") != coverage_conventions_bound(core, bundle)
 }
 
-/// When the Node SIGNED a coverage document, the carried one must be it.
-///
-/// `coverage_doc` is `{ * text => any }` and carries the whole comparison
-/// convention block — correlation_field, unique_fields, finality_rule,
-/// material_fields — none of it echoed or cross-checked. No floor rule reaches
-/// finality, which has no safe normative default (sources spell it
-/// "settled"/"booked"/"POSTED"): finality_rule="pending" on `claim_only`
-/// against a carried final=true upgraded CLAIM_ONLY → MATCHED in both
-/// engines. One digest equality binds all four, and node/coverage.py
-/// ::record_coverage puts that digest in the receipt's PLAINTEXT context, so no
-/// commitment opening is needed. Conditional because none of the nine golden
-/// families carries the receipt — "no signed binding → reject" breaks all nine.
+/// A signed coverage receipt binds the complete carried comparison convention
+/// block by digest. Without such a receipt, legacy families remain admissible.
 fn coverage_doc_bound(core: &J, bundle: &J) -> bool {
     coverage_conventions_bound(core, bundle) || signed_coverage_digests(bundle).is_empty()
 }
@@ -280,14 +219,8 @@ fn signed_coverage_digests(bundle: &J) -> BTreeSet<String> {
     crate::action::entry_rows(bundle).iter().filter(|r| r.action == "evd.coverage.recorded").filter_map(|r| r.ctx.get("coverage_doc_digest").and_then(J::as_str).map(str::to_string)).collect()
 }
 
-/// Whether the four mapping conventions are tied to SIGNED material.
-///
-/// Derived here rather than believed from the producer, because the certificate
-/// must say so either way. `node/coverage.py::build_coverage` emits NONE of
-/// correlation_field / unique_fields / finality_rule / material_fields — only the
-/// golden generator ever wrote them — so in production the §4.4 material
-/// recomputation is VACUOUS, and a certificate silent about that is making a
-/// false proof. A limitation is cheaper than a false proof.
+/// Whether all four comparison conventions are bound by signed receipt material;
+/// an unbound convention must remain an explicit limitation.
 fn coverage_conventions_bound(core: &J, bundle: &J) -> bool {
     let signed = signed_coverage_digests(bundle);
     // an uncanonicalizable doc cannot match a signed digest
@@ -382,16 +315,8 @@ fn is_final(ev: &J, rule: Option<&J>) -> bool {
     }
 }
 
-/// §5 material comparison over the floor EXTENDED by the coverage doc's fields
-/// for the claim's class; an absent side proves nothing (weak-claim doctrine).
-///
-/// The lookup key is still the producer-chosen `claim.action_class`, but a
-/// missing or relabelled key now yields the floor instead of an empty list. On
-/// the `contradicted` fixture (claim 100.00, event 90.00), deleting
-/// `coverage_doc.material_fields` — or emptying it, narrowing it to
-/// ["currency"], or relabelling the class key with one trailing space — made
-/// this recomputation agree with a carried `false` and restored errors=[].
-/// `source_effect_time` stays skipped: a CDDL AgentActionClaim cannot state one.
+/// Recompute §5 material comparison over the normative floor plus valid additive
+/// coverage fields. Missing or relabeled fields cannot erase the floor.
 fn material_mismatch(claim: &J, ev: &J, man: &J) -> bool {
     let class = pystr(claim.get("action_class"));
     let named = man.get("material_fields").and_then(|m| m.get(&class)).and_then(J::as_array);
@@ -553,20 +478,8 @@ fn authorized_keys(bundle: &J, scitt: bool) -> BTreeMap<String, [u8; 32]> {
     kl.keys.iter().filter(|(kid, _)| held(kid)).map(|(kid, key)| (kid.clone(), *key)).collect()
 }
 
-/// SPEC §6: `scitt_receipt_valid` is VERIFIER-DERIVED — ALWAYS, not only when a
-/// pack happens to be carried.
-///
-/// This returned EARLY when `registration.scitt_pack` was absent, leaving the
-/// PRODUCER's own boolean standing. `scitt_receipt_valid` is the last gate on
-/// REGISTERED and one of the ANDs on ELIGIBLE, so it is a favourable value, and
-/// the trust-anchor doctrine says a favourable value may never derive from an
-/// input the subject supplies. No pack means no verified receipt, which is the
-/// same thing as a failed one (weak-claim). Python was corrected first; leaving
-/// this early return would have made the two engines disagree on every
-/// certificate that carries no pack — which, since nothing in production
-/// assembles one, is all of them. A pack's JWKs do not anchor themselves: the
-/// registration's transparency-service name resolves through the separately
-/// supplied trust context, and that local root must sign the exact pack policy.
+/// `scitt_receipt_valid` is always verifier-derived. No pack means no verified
+/// receipt, and a pack is anchored only by the named out-of-band trust root.
 fn scitt_pack_valid(pack: &J, id: &str, bundle: &J, root: Option<[u8; 32]>) -> bool {
     let Some(root) = root else { return false };
     let ss = pack.get("signed_statement").and_then(J::as_str).and_then(hex_to_bytes);

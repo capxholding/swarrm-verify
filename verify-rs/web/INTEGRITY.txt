@@ -1,32 +1,24 @@
 Swarrm public verifier — build integrity
 =========================================
-
 CANDIDATE BUILD — NOT PUBLISHED OR RELEASE-QUALIFIED.
 Public source synchronization remains required. Any public revision below
 identifies the published predecessor, not the source of these candidate bytes.
 The release's exact-source comparison must pass before this notice is removed.
-
 The verifier that runs in your browser must be auditable: you should be able
 to confirm the WASM you are served is the one built from this repo's source
 (verify-rs/), and not a silently substituted one.
-
 Reproduce and check:
 
     cd verify-rs
     tool_bin=$(bash scripts/install-canonical-wasm-tools.sh /tmp/swarrm-wasm-tools)
     PATH="$tool_bin:$PATH" bash scripts/build-canonical-wasm.sh web
     shasum -a 256 pkg/swarrm_verify_bg.wasm
-
 Expected sha256 of swarrm_verify.js (the canonical x86_64 Linux CI build
 from this source tree):
-
-    2000330331f9e91932a6b7a8070bbcaed53f6dc0ebef7cb2126305d496671d5d
-
+    7b36420be6830fffcd27cad8ac96ae2fc8dea524ac0898e34b4663010d9fa902
 Expected sha256 of swarrm_verify_bg.wasm (the canonical x86_64 Linux CI build
 from this source tree):
-
-    bcc84e5789122e53369501634088733b8596ad57ffe88b9a9ae12a8554bfa24b
-
+    6b54a9de5502225a26d44ce7b8af0148f186cd5b38a61cbcd46e407a2a954353
 This artifact was rebuilt on x86_64 Linux with Rust 1.90.0 and checksummed
 wasm-pack 0.15.0, wasm-bindgen CLI 0.2.126 and Binaryen 117 release binaries.
 CI asserts exact-byte reproduction on that host; other host platforms can
@@ -37,11 +29,8 @@ context, not the browser's source of expected values. The verifier is
 client-side only and does not upload a bundle you choose. The pins do not by
 themselves audit the source, authenticate the page that displays them,
 establish external trust roots, or prove capture completeness.
-
 Expected sha256 of verification_presentation.js
-
   f49c91ee93432f4a77979d1ed2b1395fc0bdecaf1d433b07c8a1c6ecce1cf6c1
-
 This presentation source is website/pkg/verification_presentation.js at the
 bound core/public source revision. It is copied unchanged into the web build
 output and checked before execution, separately from the WASM verifier.

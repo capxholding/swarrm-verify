@@ -1,37 +1,8 @@
 // Apache-2.0 (public verifier repo)
-//! Offline RFC 3161 timestamp-token verification — mirror of `verify/tsa.py`.
-//! NO network, ever: the pinned PEM chain supplied with the record is the
-//! trust anchor, exactly as in the Python verifier.
-//!
-//! Same checks, same order as `verify/tsa.py::verify_tst`:
-//!   1. token parses; eContent is a TSTInfo
-//!   2. messageImprint: SHA-256 and hashed_message == expected digest
-//!   3. unique single-valued CMS content-type == TSTInfo and message-digest == hash(eContent)
-//!   4. signature over the signed attributes verifies with the signer cert
-//!   5. signer cert chains to a SELF-SIGNED root inside the pinned chain
-//!   6. genTime lies within the signer cert's validity window
-//!
-//! Algorithm coverage:
-//! signatures verify under ECDSA P-256 / P-384 (`p256`/`p384`) and RSASSA-
-//! PKCS1-v1_5 (`rsa`) — the same set pyca/cryptography accepts on the Python
-//! side, so the real freeTSA token (P-384 signer key, RSA-signed chain) and
-//! RSA-signed qualified tokens verify in BOTH engines. A curve, key type, or
-//! signature family outside this set returns false — "not verifiable within the
-//! sanctioned scope", never "verified". Exact pins + sha256 digests live in
-//! ci/architecture_policy.json (`approved_rust_crates`), enforced by
-//! scripts/check_architecture.py; transitives are witnessed by the committed
-//! Cargo.lock. (verify-only: no private-key operations, so the `rsa` crate's
-//! Marvin decryption advisory RUSTSEC-2023-0071 does not apply.)
-//!
-//! Total function: this input is attacker-controlled, so malformed or hostile
-//! bytes return false — no unwrap/expect on any parse path. The `der` crate is
-//! strict DER where asn1crypto tolerates BER looseness (unsorted SET OF,
-//! trailing bytes); such tokens fail closed here.
-
 use cms::cert::CertificateChoices;
 use cms::content_info::{CmsVersion, ContentInfo};
 use cms::signed_data::{CertificateSet, DigestAlgorithmIdentifiers, EncapsulatedContentInfo, SignerIdentifier, SignerInfo, SignerInfos};
-use der::asn1::{Any, AnyRef, GeneralizedTime, IntRef, ObjectIdentifier, OctetStringRef, SetOfVec};
+use der::asn1::{Any, AnyRef, GeneralizedTime, IntRef, ObjectIdentifier, OctetString, OctetStringRef, SetOfVec};
 use der::{Decode, Encode, Reader, SliceReader, Tag, TagNumber, Tagged};
 use p256::ecdsa::signature::hazmat::PrehashVerifier; // shared trait; p384 keys implement it too
 use rsa::pkcs1::DecodeRsaPublicKey;
@@ -39,13 +10,20 @@ use rsa::{Pkcs1v15Sign, RsaPublicKey};
 use sha2::{Digest, Sha256, Sha384, Sha512};
 use std::collections::{BTreeMap, BTreeSet};
 use x509_cert::attr::Attributes;
-use x509_cert::spki::SubjectPublicKeyInfoOwned;
+use x509_cert::crl::CertificateList;
+use x509_cert::ext::pkix::certpolicy::PolicyInformation;
+use x509_cert::ext::pkix::name::{GeneralName, GeneralNames};
+use x509_cert::serial_number::SerialNumber;
+use x509_cert::spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
 use x509_cert::Certificate;
+use x509_ocsp::{BasicOcspResponse, CertStatus, OcspResponse, OcspResponseStatus, ResponderId};
 
 const OID_SIGNED_DATA: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.7.2");
 const OID_TST_INFO: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.16.1.4");
 const OID_CONTENT_TYPE: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.3");
 const OID_MESSAGE_DIGEST: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.4");
+const OID_SIGNING_CERTIFICATE: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.16.2.12");
+const OID_SIGNING_CERTIFICATE_V2: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113549.1.9.16.2.47");
 const OID_SHA256: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.1");
 const OID_SHA384: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.2");
 const OID_SHA512: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.16.840.1.101.3.4.2.3");
@@ -64,19 +42,14 @@ const OID_SUBJECT_ALT_NAME: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5
 const OID_BASIC_CONSTRAINTS: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.19");
 const OID_NAME_CONSTRAINTS: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.30");
 const OID_EXTENDED_KEY_USAGE: ObjectIdentifier = ObjectIdentifier::new_unwrap("2.5.29.37");
+const OID_BASIC_OCSP_RESPONSE: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.3.6.1.5.5.7.48.1.1");
 
-/// The TSTInfo fields the checks need; trailing optional fields (accuracy,
-/// ordering, nonce, tsa, extensions) are skipped like the Python parser
-/// leaves them untouched.
 struct TstImprint {
     alg: ObjectIdentifier,
     digest: Vec<u8>,
     gen_time: GeneralizedTime,
 }
 
-// CMS 0.2.3 models OtherRevocationInfoFormat's OID as an AlgorithmIdentifier.
-// Keep the SignedData layout, but decode that opaque optional field correctly.
-// Parsing it does not assess revocation or expand the relying party's trust.
 #[derive(der::Sequence)]
 struct TimestampSignedData {
     version: CmsVersion,
@@ -87,6 +60,25 @@ struct TimestampSignedData {
     #[asn1(context_specific = "1", tag_mode = "IMPLICIT", optional = "true")]
     crls: Option<SetOfVec<Any>>,
     signer_infos: SignerInfos,
+}
+
+#[derive(der::Sequence)]
+struct IssuerSerial {
+    issuer: GeneralNames,
+    serial_number: SerialNumber,
+}
+
+#[derive(der::Sequence)]
+struct EssCertIdV2 {
+    hash_algorithm: Option<AlgorithmIdentifierOwned>,
+    cert_hash: OctetString,
+    issuer_serial: Option<IssuerSerial>,
+}
+
+#[derive(der::Sequence)]
+struct SigningCertificateV2 {
+    certs: Vec<EssCertIdV2>,
+    policies: Option<Vec<PolicyInformation>>,
 }
 
 fn other_revocation_present(crls: Option<&SetOfVec<Any>>) -> Option<bool> {
@@ -120,14 +112,6 @@ fn hash_bytes(oid: &ObjectIdentifier, data: &[u8]) -> Option<Vec<u8>> {
     }
 }
 
-/// Verify `sig` over `data` with the signer's SPKI. The FAMILY is chosen by the
-/// public KEY type (RSA vs ECDSA) — exactly like pyca on the Python side — so a
-/// signature under the BARE `rsaEncryption` OID (the AlfaSign / qtsa.eu
-/// qualified-TSP pattern, which carries no hash in the sig alg) still resolves
-/// to RSASSA-PKCS1-v1_5. The hash is the sig-alg's own when it carries one
-/// (ecdsa-with-shaXXX, shaXXXWithRSA), else `digest_hint` (the separate digest
-/// algorithm). ECDSA backends truncate an over-long prehash to the field size
-/// (bits2field) as pyca does. Any unsupported key / curve / hash is false.
 fn verify_sig(spki: &SubjectPublicKeyInfoOwned, sig_alg: &ObjectIdentifier, digest_hint: &ObjectIdentifier, sig: &[u8], data: &[u8]) -> bool {
     let hash_oid = match *sig_alg {
         OID_ECDSA_SHA256 | OID_SHA256_RSA => OID_SHA256,
@@ -145,8 +129,6 @@ fn verify_sig(spki: &SubjectPublicKeyInfoOwned, sig_alg: &ObjectIdentifier, dige
     }
 }
 
-// P-256 and P-384 differ only in concrete types; keep their parse/fail-closed
-// path in one place so supported curves cannot drift.
 macro_rules! verify_ecdsa_curve {
     ($curve:ident, $key:expr, $sig:expr, $digest:expr) => {{
         let Ok(key) = $curve::ecdsa::VerifyingKey::from_sec1_bytes($key) else { return false };
@@ -155,8 +137,6 @@ macro_rules! verify_ecdsa_curve {
     }};
 }
 
-/// ECDSA over the SPKI's named curve (P-256 or P-384). `sig` is a DER
-/// ECDSA-Sig-Value; `digest` is the prehash.
 fn verify_ecdsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8]) -> bool {
     if spki.algorithm.oid != OID_EC_PUBLIC_KEY {
         return false;
@@ -170,7 +150,6 @@ fn verify_ecdsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8]) -> 
     }
 }
 
-/// RSASSA-PKCS1-v1_5 with the SPKI's RSA key over the prehash `digest`.
 fn verify_rsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8], hash_oid: &ObjectIdentifier) -> bool {
     if spki.algorithm.oid != OID_RSA_ENCRYPTION {
         return false;
@@ -186,12 +165,9 @@ fn verify_rsa(spki: &SubjectPublicKeyInfoOwned, sig: &[u8], digest: &[u8], hash_
     key.verify(scheme, digest, sig).is_ok()
 }
 
-/// messageImprint ::= SEQUENCE { hashAlgorithm, hashedMessage }
 fn parse_imprint(r: &mut SliceReader) -> Option<(ObjectIdentifier, Vec<u8>)> {
     let imprint = AnyRef::decode(r).ok()?;
-    if imprint.tag() != Tag::Sequence {
-        return None;
-    }
+    (imprint.tag() == Tag::Sequence).then_some(())?;
     let mut ir = SliceReader::new(imprint.value()).ok()?;
     let alg = x509_cert::spki::AlgorithmIdentifierOwned::decode(&mut ir).ok()?;
     let digest = OctetStringRef::decode(&mut ir).ok()?;
@@ -200,13 +176,9 @@ fn parse_imprint(r: &mut SliceReader) -> Option<(ObjectIdentifier, Vec<u8>)> {
 
 fn parse_tst_info(tst_der: &[u8]) -> Option<TstImprint> {
     let outer = AnyRef::from_der(tst_der).ok()?;
-    if outer.tag() != Tag::Sequence {
-        return None;
-    }
+    (outer.tag() == Tag::Sequence).then_some(())?;
     let mut r = SliceReader::new(outer.value()).ok()?;
-    if u8::decode(&mut r).ok()? != 1 {
-        return None;
-    }
+    (u8::decode(&mut r).ok()? == 1).then_some(())?;
     let _policy = ObjectIdentifier::decode(&mut r).ok()?;
     let (alg, digest) = parse_imprint(&mut r)?;
     let _serial = IntRef::decode(&mut r).ok()?;
@@ -216,22 +188,12 @@ fn parse_tst_info(tst_der: &[u8]) -> Option<TstImprint> {
 
 fn parse_token(token_der: &[u8]) -> Option<(TimestampSignedData, Vec<u8>, TstImprint)> {
     let ci = ContentInfo::from_der(token_der).ok()?;
-    if ci.content_type != OID_SIGNED_DATA {
-        return None;
-    }
+    (ci.content_type == OID_SIGNED_DATA).then_some(())?;
     let sd: TimestampSignedData = ci.content.decode_as().ok()?;
-    if sd.encap_content_info.econtent_type != OID_TST_INFO {
-        return None;
-    }
-    // RFC 5652 §5.1. Attribute certificates are unsupported by the CMS
-    // decoder; supported opaque other-format material requires version 5.
+    (sd.encap_content_info.econtent_type == OID_TST_INFO).then_some(())?;
     let other_cert = sd.certificates.as_ref().is_some_and(|cs| cs.0.iter().any(|c| matches!(c, CertificateChoices::Other(_))));
     let other_revocation = other_revocation_present(sd.crls.as_ref())?;
-    if sd.version != if other_cert || other_revocation { CmsVersion::V5 } else { CmsVersion::V3 } {
-        return None;
-    }
-    // eContent is [0] EXPLICIT — the Any holds the OCTET STRING around the
-    // raw TSTInfo DER, mirroring Python's `econtent.contents`
+    (sd.version == if other_cert || other_revocation { CmsVersion::V5 } else { CmsVersion::V3 }).then_some(())?;
     let tst_der = sd.encap_content_info.econtent.as_ref()?.decode_as::<OctetStringRef>().ok()?.as_bytes().to_vec();
     let info = parse_tst_info(&tst_der)?;
     Some((sd, tst_der, info))
@@ -240,32 +202,40 @@ fn parse_token(token_der: &[u8]) -> Option<(TimestampSignedData, Vec<u8>, TstImp
 fn signed_attribute(attrs: &Attributes, oid: ObjectIdentifier) -> Option<&Any> {
     let mut matches = attrs.iter().filter(|a| a.oid == oid);
     let (Some(attr), None) = (matches.next(), matches.next()) else { return None };
-    if attr.values.len() != 1 {
-        return None;
-    }
+    (attr.values.len() == 1).then_some(())?;
     attr.values.iter().next()
 }
 
-/// Returns the single SignerInfo after the RFC 3161 structural checks (mirror
-/// of `_check_signer_info`). The signature hash is resolved in verify_sig (from
-/// the sig alg, or the digest algorithm for the bare rsaEncryption OID).
-fn check_signer_info<'a>(sd: &'a TimestampSignedData, tst_der: &[u8]) -> Option<&'a SignerInfo> {
+fn ess_cert_id_v2_matches(attrs: &Attributes, signer: &Certificate) -> bool {
+    if attrs.iter().any(|attr| attr.oid == OID_SIGNING_CERTIFICATE) {
+        return false;
+    }
+    let Some(binding) = signed_attribute(attrs, OID_SIGNING_CERTIFICATE_V2) else { return false };
+    let Ok(binding) = binding.decode_as::<SigningCertificateV2>() else { return false };
+    let Some(identifier) = binding.certs.first() else { return false };
+    let Ok(signer_der) = signer.to_der() else { return false };
+    let algorithm = identifier.hash_algorithm.as_ref().map_or(OID_SHA256, |value| value.oid);
+    if hash_bytes(&algorithm, &signer_der).as_deref() != Some(identifier.cert_hash.as_bytes()) {
+        return false;
+    }
+    identifier.issuer_serial.as_ref().is_none_or(|id| id.serial_number == signer.tbs_certificate.serial_number && id.issuer.iter().any(|name| matches!(name, GeneralName::DirectoryName(value) if value == &signer.tbs_certificate.issuer)))
+}
+
+fn ess_requirement_met(sd: &TimestampSignedData, si: &SignerInfo, required: bool) -> bool {
+    !required || si.signed_attrs.as_ref().is_some_and(|attrs| find_signer_cert(sd, si).is_some_and(|signer| ess_cert_id_v2_matches(attrs, signer)))
+}
+
+fn check_signer_info<'a>(sd: &'a TimestampSignedData, tst_der: &[u8], require_ess: bool) -> Option<&'a SignerInfo> {
     let mut infos = sd.signer_infos.0.iter();
     let (Some(si), None) = (infos.next(), infos.next()) else {
         return None;
     }; // exactly one
-    if si.version != CmsVersion::V1 || !matches!(si.sid, SignerIdentifier::IssuerAndSerialNumber(_)) {
-        return None;
-    }
+    (si.version == CmsVersion::V1 && matches!(si.sid, SignerIdentifier::IssuerAndSerialNumber(_))).then_some(())?;
     let signed_attrs = si.signed_attrs.as_ref()?;
-    if signed_attrs.is_empty() {
-        return None; // RFC 3161 requires signed attributes
-    }
+    (!signed_attrs.is_empty()).then_some(())?;
     let want = hash_bytes(&si.digest_alg.oid, tst_der)?;
-    if signed_attribute(signed_attrs, OID_CONTENT_TYPE)?.decode_as::<ObjectIdentifier>().ok()? != OID_TST_INFO || signed_attribute(signed_attrs, OID_MESSAGE_DIGEST)?.decode_as::<OctetStringRef>().ok()?.as_bytes() != want {
-        return None;
-    }
-    Some(si)
+    (signed_attribute(signed_attrs, OID_CONTENT_TYPE)?.decode_as::<ObjectIdentifier>().ok()? == OID_TST_INFO && signed_attribute(signed_attrs, OID_MESSAGE_DIGEST)?.decode_as::<OctetStringRef>().ok()?.as_bytes() == want).then_some(())?;
+    ess_requirement_met(sd, si, require_ess).then_some(si)
 }
 
 fn find_signer_cert<'a>(sd: &'a TimestampSignedData, si: &SignerInfo) -> Option<&'a Certificate> {
@@ -291,11 +261,6 @@ fn cert_sig_valid(current: &Certificate, issuer: &Certificate, tbs_der: &[u8]) -
 
 const OID_ID_KP_TIME_STAMPING: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.3.6.1.5.5.7.3.8");
 
-/// RFC 5280 path constraint: a cert may sign another only if basicConstraints
-/// cA is TRUE and keyUsage asserts keyCertSign. Without this, a subject holding
-/// ANY end-entity leaf under a supplied root could mint its own TSA signer and
-/// forge the timestamp. A missing extension is not a CA. Mirror of
-/// verify/tsa.py::_is_ca.
 fn ca_constraint(cert: &Certificate) -> Option<Option<u8>> {
     use x509_cert::ext::pkix::{BasicConstraints, KeyUsage};
     let Ok(Some((_, bc))) = cert.tbs_certificate.get::<BasicConstraints>() else { return None };
@@ -303,8 +268,6 @@ fn ca_constraint(cert: &Certificate) -> Option<Option<u8>> {
     (bc.ca && ku.key_cert_sign()).then_some(bc.path_len_constraint)
 }
 
-/// RFC 3161 §2.3: the TST signer cert MUST carry EKU id-kp-timeStamping.
-/// Mirror of verify/tsa.py::_is_timestamping_signer.
 fn is_timestamping_signer(cert: &Certificate) -> bool {
     use x509_cert::ext::pkix::ExtendedKeyUsage;
     matches!(cert.tbs_certificate.get::<ExtendedKeyUsage>(), Ok(Some((true, eku))) if eku.0.as_slice() == [OID_ID_KP_TIME_STAMPING])
@@ -316,10 +279,6 @@ fn path_candidate_ok(current: &Certificate, issuer: &Certificate, tbs: &[u8], su
     (!supplied || profile_ok(current) && profile_ok(issuer)) && constraint.is_some() && at.is_none_or(|time| gen_time_in_validity(time, issuer)) && constraint.flatten().is_none_or(|limit| below <= usize::from(limit)) && cert_sig_valid(current, issuer, tbs)
 }
 
-/// Shared path builder for the carried-chain gate and supplied-root upgrade.
-/// The gate preserves first-subject-match semantics and ends at a self-signed
-/// carried issuer. The upgrade tries every CA candidate, roots first, and ends
-/// only at a certificate byte-identical to a relying-party-supplied root.
 fn walk_chain<'a>(signer: &'a Certificate, pool: &'a [Certificate], roots: Option<&'a [Certificate]>, at: Option<&GeneralizedTime>) -> bool {
     let supplied = roots.is_some();
     let roots = roots.unwrap_or(&[]);
@@ -358,39 +317,139 @@ fn gen_time_in_validity(gen_time: &GeneralizedTime, cert: &Certificate) -> bool 
     v.not_before.to_unix_duration() <= g && g <= v.not_after.to_unix_duration()
 }
 
-/// Verify an RFC 3161 TimeStampToken (DER) against an expected SHA-256
-/// digest (lowercase hex) and a pinned PEM certificate chain. Boolean-only
-/// mirror of `verify/tsa.py::verify_tst` (detail strings and genTime
-/// extraction are a Python-report concern). Signatures verify under ECDSA
-/// P-256/P-384 and RSASSA-PKCS1-v1_5. Malformed or hostile input is false,
-/// never a panic.
-pub(crate) fn verified_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str, roots_pem: Option<&str>) -> Option<(GeneralizedTime, bool)> {
+fn status_issuer<'a>(signer: &Certificate, pool: &'a [Certificate]) -> Option<&'a Certificate> {
+    let tbs = signer.tbs_certificate.to_der().ok()?;
+    pool.iter().find(|candidate| candidate.tbs_certificate.subject == signer.tbs_certificate.issuer && cert_sig_valid(signer, candidate, &tbs))
+}
+
+fn crl_status_ok(raw: &[u8], signer: &Certificate, issuer: &Certificate, at: &GeneralizedTime) -> bool {
+    use x509_cert::ext::pkix::KeyUsage;
+    let Ok(crl) = CertificateList::from_der(raw) else { return false };
+    let tbs = &crl.tbs_cert_list;
+    let Some(next) = tbs.next_update.as_ref() else { return false };
+    let extensions_ok = tbs.crl_extensions.as_ref().is_none_or(|extensions| extensions.iter().all(|ext| !ext.critical && !matches!(ext.extn_id.to_string().as_str(), "2.5.29.27" | "2.5.29.28")));
+    let usage_ok = matches!(issuer.tbs_certificate.get::<KeyUsage>(), Ok(Some((_, usage))) if usage.crl_sign());
+    let Some(signature) = crl.signature.as_bytes() else { return false };
+    let Ok(tbs_der) = tbs.to_der() else { return false };
+    let instant = at.to_unix_duration();
+    let time_ok = tbs.this_update.to_unix_duration() <= instant && instant <= next.to_unix_duration();
+    let not_revoked = tbs.revoked_certificates.as_ref().is_none_or(|items| items.iter().all(|entry| entry.serial_number != signer.tbs_certificate.serial_number || entry.revocation_date.to_unix_duration() > instant));
+    tbs.issuer == issuer.tbs_certificate.subject && crl.signature_algorithm == tbs.signature && extensions_ok && usage_ok && time_ok && not_revoked && verify_sig(&issuer.tbs_certificate.subject_public_key_info, &crl.signature_algorithm.oid, &crl.signature_algorithm.oid, signature, &tbs_der)
+}
+
+fn ocsp_status_ok(raw: &[u8], signer: &Certificate, issuer: &Certificate, at: &GeneralizedTime) -> bool {
+    let Ok(response) = OcspResponse::from_der(raw) else { return false };
+    if response.response_status != OcspResponseStatus::Successful {
+        return false;
+    }
+    let Some(bytes) = response.response_bytes.filter(|value| value.response_type == OID_BASIC_OCSP_RESPONSE) else { return false };
+    let Ok(basic) = BasicOcspResponse::from_der(bytes.response.as_bytes()) else { return false };
+    if basic.certs.as_ref().is_some_and(|certs| !certs.is_empty()) || basic.tbs_response_data.responses.len() != 1 || basic.tbs_response_data.responder_id != ResponderId::ByName(issuer.tbs_certificate.subject.clone()) {
+        return false;
+    }
+    let single = &basic.tbs_response_data.responses[0];
+    let id = &single.cert_id;
+    let Ok(name_der) = issuer.tbs_certificate.subject.to_der() else { return false };
+    let key = issuer.tbs_certificate.subject_public_key_info.subject_public_key.raw_bytes();
+    let instant = at.to_unix_duration();
+    let Some(next) = single.next_update.as_ref() else { return false };
+    let time_ok = single.this_update.0.to_unix_duration() <= instant && instant <= next.0.to_unix_duration() && single.this_update.0.to_unix_duration() <= basic.tbs_response_data.produced_at.0.to_unix_duration();
+    let identity_ok = id.serial_number == signer.tbs_certificate.serial_number && hash_bytes(&id.hash_algorithm.oid, &name_der).as_deref() == Some(id.issuer_name_hash.as_bytes()) && hash_bytes(&id.hash_algorithm.oid, key).as_deref() == Some(id.issuer_key_hash.as_bytes());
+    let Some(signature) = basic.signature.as_bytes() else { return false };
+    let Ok(tbs_der) = basic.tbs_response_data.to_der() else { return false };
+    identity_ok && matches!(single.cert_status, CertStatus::Good(_)) && time_ok && verify_sig(&issuer.tbs_certificate.subject_public_key_info, &basic.signature_algorithm.oid, &basic.signature_algorithm.oid, signature, &tbs_der)
+}
+
+fn offline_status_ok(trust: Option<&serde_json::Value>, signer: &Certificate, pool: &[Certificate], at: &GeneralizedTime) -> bool {
+    let Ok(signer_der) = signer.to_der() else { return false };
+    let Some((kind, raw)) = crate::trust::tsa_revocation_record(trust, &signer_der) else { return false };
+    let Some(issuer) = status_issuer(signer, pool) else { return false };
+    match kind {
+        crate::trust::TsaStatusKind::Crl => crl_status_ok(&raw, signer, issuer, at),
+        crate::trust::TsaStatusKind::Ocsp => ocsp_status_ok(&raw, signer, issuer, at),
+    }
+}
+
+fn policy_status_ok(policy: crate::trust::TsaPolicy, trust: Option<&serde_json::Value>, signer: &Certificate, pool: &[Certificate], at: &GeneralizedTime) -> bool {
+    !matches!(policy, crate::trust::TsaPolicy::OfflineLifecycle | crate::trust::TsaPolicy::OfflineRenewal) || offline_status_ok(trust, signer, pool, at)
+}
+
+fn imprint_matches(tst: &TstImprint, expected_digest_hex: &str, material: Option<&[u8]>) -> bool {
+    match material {
+        Some(value) => hash_bytes(&tst.alg, value).is_some_and(|digest| tst.digest == digest),
+        None => tst.alg == OID_SHA256 && crate::hex(&tst.digest) == expected_digest_hex,
+    }
+}
+
+fn verified_tst_inner(token_der: &[u8], expected_digest_hex: &str, renewal_material: Option<&[u8]>, cert_chain_pem: &str, roots_pem: Option<&str>, policy: crate::trust::TsaPolicy, trust: Option<&serde_json::Value>) -> Option<(GeneralizedTime, bool)> {
     let (sd, tst_der, tst) = parse_token(token_der)?;
-    // 2. message imprint: SHA-256 over exactly the expected digest (string
-    // compare on lowercase hex, exactly like the Python verifier)
-    if tst.alg != OID_SHA256 || crate::hex(&tst.digest) != expected_digest_hex {
+    if !imprint_matches(&tst, expected_digest_hex, renewal_material) {
         return None;
     }
-    // 3. signer info + message-digest attribute
-    let si = check_signer_info(&sd, &tst_der)?;
+    let require_ess = matches!(policy, crate::trust::TsaPolicy::EssCertIdV2 | crate::trust::TsaPolicy::OfflineLifecycle | crate::trust::TsaPolicy::OfflineRenewal);
+    let si = check_signer_info(&sd, &tst_der, require_ess)?;
     let signer = find_signer_cert(&sd, si)?;
-    // 4. signature over the signed attributes (re-encoded as DER SET OF —
-    // Python's `signed_attrs.untag().dump()`)
     let attrs_der = si.signed_attrs.as_ref().and_then(|a| a.to_der().ok())?;
     let spki = &signer.tbs_certificate.subject_public_key_info;
     if !verify_sig(spki, &si.signature_algorithm.oid, &si.digest_alg.oid, si.signature.as_bytes(), &attrs_der) {
         return None;
     }
     let pool = Certificate::load_pem_chain(cert_chain_pem.as_bytes()).ok()?;
+    if !policy_status_ok(policy, trust, signer, &pool, &tst.gen_time) {
+        return None;
+    }
     let trusted = roots_pem.and_then(|pem| Certificate::load_pem_chain(pem.as_bytes()).ok()).is_some_and(|roots| is_timestamping_signer(signer) && walk_chain(signer, &pool, Some(&roots), Some(&tst.gen_time)));
-    // 5. chain to a carried self-signed root
     if !walk_chain(signer, &pool, None, None) {
         return None;
     }
-    // 6. genTime within the signer certificate's validity window
     gen_time_in_validity(&tst.gen_time, signer).then_some((tst.gen_time, trusted))
 }
 
+pub(crate) fn verified_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str, roots_pem: Option<&str>, policy: crate::trust::TsaPolicy, trust: Option<&serde_json::Value>) -> Option<(GeneralizedTime, bool)> {
+    verified_tst_inner(token_der, expected_digest_hex, None, cert_chain_pem, roots_pem, policy, trust)
+}
+
+fn frame(out: &mut Vec<u8>, value: &[u8]) {
+    out.extend_from_slice(&(value.len() as u64).to_be_bytes());
+    out.extend_from_slice(value);
+}
+
+fn renewal_predecessor(token: &[u8], chain: &str, trust: Option<&serde_json::Value>) -> Option<Vec<u8>> {
+    let (sd, tst_der, _) = parse_token(token)?;
+    let si = check_signer_info(&sd, &tst_der, false)?;
+    let signer = find_signer_cert(&sd, si)?;
+    let signer_der = signer.to_der().ok()?;
+    let (kind, status) = crate::trust::tsa_revocation_record(trust, &signer_der)?;
+    let kind = match kind {
+        crate::trust::TsaStatusKind::Crl => b"crl".as_slice(),
+        crate::trust::TsaStatusKind::Ocsp => b"ocsp".as_slice(),
+    };
+    if chain.is_empty() {
+        return None;
+    }
+    let mut out = b"evd/tsa-renewal-predecessor/v1\0".to_vec();
+    for field in [token, chain.as_bytes(), kind, status.as_slice()] {
+        frame(&mut out, field);
+    }
+    Some(out)
+}
+
+pub(crate) fn verify_renewal_chain(original_token: &[u8], original_chain: &str, original_time: &GeneralizedTime, renewals: &[(Vec<u8>, String)], roots: Option<&str>, trust: Option<&serde_json::Value>) -> bool {
+    let Some(roots) = roots else { return false };
+    let Some(mut material) = renewal_predecessor(original_token, original_chain, trust) else { return false };
+    let mut previous = original_time.to_unix_duration();
+    for (token, chain) in renewals {
+        let Some((current, trusted)) = verified_tst_inner(token, "", Some(&material), chain, Some(roots), crate::trust::TsaPolicy::OfflineRenewal, trust) else { return false };
+        if !trusted || current.to_unix_duration() <= previous {
+            return false;
+        }
+        let Some(next) = renewal_predecessor(token, chain, trust) else { return false };
+        material = next;
+        previous = current.to_unix_duration();
+    }
+    true
+}
+
 pub fn verify_tst(token_der: &[u8], expected_digest_hex: &str, cert_chain_pem: &str) -> bool {
-    verified_tst(token_der, expected_digest_hex, cert_chain_pem, None).is_some()
+    verified_tst(token_der, expected_digest_hex, cert_chain_pem, None, crate::trust::TsaPolicy::Absent, None).is_some()
 }

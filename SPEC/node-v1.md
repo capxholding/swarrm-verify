@@ -29,7 +29,7 @@ customer's action; missing evidence becomes an explicit gap.
   "event_key_field", "mapping_version", "correlation_field"?,
   "material_fields": [..], "identity": SourceIdentity } ] }`.
   A `bulk_file` source names a local landing `drop_path` plus a declarative
-  `field_map` (shipped: `camt053-v1`, which also supplies the event-key /
+  `field_map` (shipped: `camt053-v1` and `ledger-csv-v1`, which also supply the event-key /
   mapping / correlation / material defaults when the config omits them); it
   declares NO `auth` — no credential exists for a directory the customer's
   own process drops into, and configuring one is refused at load.
@@ -218,6 +218,24 @@ source population nor coverage completeness.
   collapse whitespace. Event-time comparison retains the manifest's declared
   tolerance. This normalization confers neither origin authentication nor
   population completeness.
+  **ledger-csv-v1 normalization (NORMATIVE):** each UTF-8 delimited data file
+  has one strict JSON companion manifest. The manifest binds its exact SHA-256,
+  source system, account, mapping version, sequence, non-empty declared period
+  and row count. Its data filename is one regular member of the pinned landing
+  directory; unmanifested matching data, duplicate destinations, links, digest
+  changes and partial files refuse the complete snapshot. The configured
+  delimiter is comma, semicolon, tab or pipe. The configured column map must
+  name exactly one source column for payment/event id, signed decimal value,
+  uppercase three-letter currency, effect time, status and claim/reference;
+  counterparty is optional. The header must match that set exactly. Text is
+  preserved byte-for-decoded-string except that a valid ISO effect time is
+  rendered as whole-second UTC. Status has explicit outcome and finality maps;
+  an unmapped value is not guessed. Ordering uses the manifest period end and
+  sequence in the same `<period_end>#<sequence>` cursor shape. Declared rows,
+  sequence and visible-period continuity are checked, but no population proof
+  is emitted: a companion manifest can agree with its data while both omit a
+  source row. Every advancing batch therefore retains the unauthenticated-file
+  gap and every manifest/data proof is `verified: false`.
   Ordering is by DECLARED statement period, never arrival; the durable
   cursor is over periods (`<period_end>#<sequence>`), not rows. Per-file
   idempotency: an identical file redelivered inside one scan is excluded by

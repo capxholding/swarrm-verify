@@ -4,7 +4,25 @@ const VALID: &str = include_str!("../../../tests/golden/bundles/valid_e1.json");
 const VALID_DIGEST: &str = "c3c85b1143c937cacf692eb37377b72be4d53941055262623c022c64916e8239";
 
 fn result(input: &str) -> Value {
-    serde_json::from_str(&browser_bundle_verification_result(input.as_bytes())).unwrap()
+    serde_json::from_str(&browser_bundle_verification_result(input.as_bytes(), None)).unwrap()
+}
+
+fn result_with_trust(input: &[u8], trust: &[u8]) -> Value {
+    serde_json::from_str(&browser_bundle_verification_result(input, Some(trust))).unwrap()
+}
+
+#[test]
+fn browser_trust_entry_executes_the_timestamp_renewal_chain() {
+    let bundle = include_bytes!("../../../tests/golden/bundles/evidence_tst_ess_v2.json");
+    let trust = include_bytes!("../../../tests/golden/bundles/trust_evidence_lifecycle_renewal.json");
+    let accepted = result_with_trust(bundle, trust);
+    assert_eq!(accepted["verdict"], "VERIFIED");
+    let mut incomplete: Value = serde_json::from_slice(trust).unwrap();
+    incomplete.as_object_mut().unwrap().remove("tsa_renewal");
+    assert_eq!(result_with_trust(bundle, &serde_json::to_vec(&incomplete).unwrap())["verdict"], "NOT_VERIFIED");
+    let malformed = result_with_trust(bundle, b"{");
+    assert_eq!(malformed["verdict"], "ERROR");
+    assert_eq!(malformed["error"], "INVALID_TRUST");
 }
 
 fn assert_closed_shape(value: &Value) {
