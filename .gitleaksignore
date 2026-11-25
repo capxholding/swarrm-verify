@@ -139,3 +139,11 @@ d5b19065895a02f68f4fa679762535580471e99a:tests/golden/bundles/evidence_tst_synta
 d5b19065895a02f68f4fa679762535580471e99a:tests/golden/bundles/evidence_tst_syntax_signer_9.json:generic-api-key:84
 d5b19065895a02f68f4fa679762535580471e99a:tests/golden/bundles/evidence_tst_syntax_tst_2.json:generic-api-key:84
 d5b19065895a02f68f4fa679762535580471e99a:tests/golden/bundles/evidence_tst_syntax_tst_negative_1.json:generic-api-key:84
+
+# Swarrm 1.5 timestamp lifecycle fixtures. The three blobs are byte-identical
+# to the deterministic public RFC 3161 evidence already reviewed in swarrm-core.
+# Exact commit/path/rule/line fingerprints keep every changed value blocking.
+97bb9cbb9c8b5562cab4aaee4cf033b068961408:tests/golden/bundles/evidence_tst_ess_v2.json:generic-api-key:84
+97bb9cbb9c8b5562cab4aaee4cf033b068961408:tests/golden/bundles/evidence_tst_ess_v2_wrong_hash.json:generic-api-key:84
+97bb9cbb9c8b5562cab4aaee4cf033b068961408:tests/golden/bundles/trust_evidence_lifecycle_renewal.json:generic-api-key:27
+97bb9cbb9c8b5562cab4aaee4cf033b068961408:tests/golden/bundles/trust_evidence_lifecycle_renewal.json:generic-api-key:31
